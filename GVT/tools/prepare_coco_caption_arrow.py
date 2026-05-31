@@ -117,8 +117,17 @@ def parse_args():
     return parser.parse_args()
 
 
+def check_dependencies():
+    try:
+        import pyarrow  # noqa: F401
+    except ImportError as exc:
+        raise SystemExit("Missing dependency: pyarrow. Install it before converting data, e.g. `pip install pyarrow`.") from exc
+
+
 def main():
+    check_dependencies()
     args = parse_args()
+    print("Preparing COCO Karpathy validation Arrow and caption ground truth.", flush=True)
     rows, val_entries = build_rows(args.coco_root, args.karpathy_json)
 
     arrow_path = args.save_dir / "coco_caption_karpathy_val.arrow"

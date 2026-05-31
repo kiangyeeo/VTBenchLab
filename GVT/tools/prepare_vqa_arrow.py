@@ -219,12 +219,21 @@ def parse_args():
     return parser.parse_args()
 
 
+def check_dependencies():
+    try:
+        import pyarrow  # noqa: F401
+    except ImportError as exc:
+        raise SystemExit("Missing dependency: pyarrow. Install it before converting data, e.g. `pip install pyarrow`.") from exc
+
+
 def main():
+    check_dependencies()
     args = parse_args()
     for filename in [QUESTION_FILE, ANNOTATION_FILE]:
         if not (args.vqa_root / filename).is_file():
             raise FileNotFoundError(f"Missing VQAv2 file: {args.vqa_root / filename}")
 
+    print("Preparing VQAv2 validation Arrow. This reads the VQA json and COCO val2014 images.", flush=True)
     rows = build_rows(args.vqa_root, coco_val2014=args.coco_val2014)
     output_path = args.save_dir / "vqav2_rest_val.arrow"
     write_arrow(rows, output_path)

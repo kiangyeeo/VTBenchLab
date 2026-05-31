@@ -93,7 +93,15 @@ def parse_args():
     return parser.parse_args()
 
 
+def check_dependencies():
+    try:
+        import pyarrow  # noqa: F401
+    except ImportError as exc:
+        raise SystemExit("Missing dependency: pyarrow. Install it before converting data, e.g. `pip install pyarrow`.") from exc
+
+
 def main():
+    check_dependencies()
     args = parse_args()
 
     for name, filename in ANNOTATION_FILES.items():
