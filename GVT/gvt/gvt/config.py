@@ -29,6 +29,7 @@ def config():
     test_only = False
     use_sharded_training = False
     resume_during_training = False
+    use_deepspeed = False
 
     per_gpu_batchsize = 10  
     num_gpus = 1

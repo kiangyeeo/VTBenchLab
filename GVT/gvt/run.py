@@ -6,7 +6,7 @@ from collections import OrderedDict
 import pytorch_lightning as pl
 
 from gvt.config import ex
-from gvt.modules import GVT, MLLM_BLIP2, MLLM_LLAVA, MLLM_MINIGPT4
+from gvt.modules import GVT
 from gvt.datamodules.multitask_datamodule import MTDataModule
 
 from pytorch_lightning.plugins import environments as pl_env
@@ -84,17 +84,23 @@ def main(_config):
     _config["pred_result_dir"] = str(pred_result_dir)
     _config["log_dir"] = str(log_dir)
 
-    dm = MTDataModule(_config, dist=True)
+    use_distributed_sampler = _config.get("num_gpus", 1) * _config.get("num_nodes", 1) > 1
+    dm = MTDataModule(_config, dist=use_distributed_sampler)
 
     baseline = _config['use_baseline']
     if baseline:
         if baseline == "llava":
+            from gvt.modules import MLLM_LLAVA
             model = MLLM_LLAVA(config=_config)
-        if baseline == "minigpt4":
+        elif baseline == "minigpt4":
+            from gvt.modules import MLLM_MINIGPT4
             resume_ckpt = "params/pretrained_minigpt4_7b.pth"
             model = MLLM_MINIGPT4(config=_config)
-        if baseline == "blip2":
+        elif baseline == "blip2":
+            from gvt.modules import MLLM_BLIP2
             model = MLLM_BLIP2(config=_config)
+        else:
+            raise ValueError(f"Unknown use_baseline='{baseline}'. Expected llava, minigpt4, blip2, or empty.")
     else:
         model = GVT(config=_config)
     
@@ -123,14 +129,13 @@ def main(_config):
         model.load_state_dict(state_dict, strict=False)
         print("load state dict from:", resume_ckpt)
 
-    trainer = pl.Trainer(
+    trainer_kwargs = dict(
         gpus=_config["num_gpus"],
         num_nodes=_config["num_nodes"],
         precision=_config["precision"],
         accelerator="gpu",
-        strategy="deepspeed_stage_2",
         benchmark=True,
-        deterministic=False, 
+        deterministic=False,
         max_epochs=_config["max_epoch"] if max_steps is None else 1000,
         max_steps=max_steps,
         callbacks=callbacks,
@@ -142,6 +147,10 @@ def main(_config):
         fast_dev_run=_config["fast_dev_run"],
         val_check_interval=_config["val_check_interval"],
     )
+    if _config.get("use_deepspeed", False):
+        trainer_kwargs["strategy"] = "deepspeed_stage_2"
+
+    trainer = pl.Trainer(**trainer_kwargs)
 
     if not _config["test_only"]:
         trainer.fit(model, datamodule=dm)

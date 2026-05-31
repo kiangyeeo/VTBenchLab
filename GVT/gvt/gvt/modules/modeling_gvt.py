@@ -14,7 +14,10 @@ from gvt.modules import utils
 from gvt.modules.visual_modules.perceiver import PerceiverResampler        
 from gvt.modules.visual_modules.eva import EVAVisionTransformer
 from gvt.modules.visual_tokenizers import build_visual_tokenizer
-from apex.normalization import FusedLayerNorm
+try:
+    from apex.normalization import FusedLayerNorm
+except ImportError:
+    FusedLayerNorm = nn.LayerNorm
 
 # for evaluation
 import gvt.modules.evaluations.vqa as vqa
@@ -113,7 +116,7 @@ class GVT(pl.LightningModule):
 
 
         from transformers import AutoTokenizer, AutoModelForCausalLM   
-        self.tokenizer = AutoTokenizer.from_pretrained(self.config['vicuna_path'])
+        self.tokenizer = AutoTokenizer.from_pretrained(self.config['vicuna_path'], use_fast=False)
         self.llm = AutoModelForCausalLM.from_pretrained(self.config['vicuna_path'])
             
         token_dict = dict(pad_token='</s>')

@@ -1,8 +1,12 @@
 from functools import partial
 
 import torch
+import torch.nn as nn
 
-from apex.normalization import FusedLayerNorm
+try:
+    from apex.normalization import FusedLayerNorm
+except ImportError:
+    FusedLayerNorm = nn.LayerNorm
 
 from gvt.modules.visual_modules.eva import EVAVisionTransformer
 from .base import VisualTokenizerWrapper
