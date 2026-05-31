@@ -134,14 +134,15 @@ def coco_caption_eval(coco_gt_root, results_file, split):
     return coco_eval
 
 
-def _report_metrics(eval_result_file, split_name):
+def _report_metrics(eval_result_file, split_name, coco_gt_root=None):
 
-    coco_gt_root = "eval_gt"
+    if coco_gt_root is None or not os.path.isdir(coco_gt_root):
+        coco_gt_root = "eval_gt"
     coco_val = coco_caption_eval(coco_gt_root, eval_result_file, split_name)
     return coco_val
 
 
-def eval(outs, model_name):
+def eval(outs, model_name, coco_gt_root=None):
     results = []
     for out in outs:
         captions = out['pred']
@@ -166,7 +167,7 @@ def eval(outs, model_name):
         remove_duplicate="id",
     )
 
-    metrics = _report_metrics(result_file, split_name='val')
+    metrics = _report_metrics(result_file, split_name='val', coco_gt_root=coco_gt_root)
 
     print("metrics:")
     print(metrics)

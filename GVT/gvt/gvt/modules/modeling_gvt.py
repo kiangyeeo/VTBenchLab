@@ -1,5 +1,6 @@
 from functools import partial
 import string
+import os
 
 import copy
 import torch
@@ -464,8 +465,10 @@ class GVT(pl.LightningModule):
         except:
             model_name = "dummy"
 
+        eval_gt_root = os.path.join(self.config["data_root"], "eval_gt")
+
         if 'vqa' in self.config['exp_name']:
-            vqa.eval(outs, model_name)
+            vqa.eval(outs, model_name, eval_gt_root=eval_gt_root)
 
         if 'multiclass' in self.config['exp_name']:
             mc.eval(outs, model_name)
@@ -474,7 +477,7 @@ class GVT(pl.LightningModule):
             count.eval(outs, model_name)
 
         if 'caption' in self.config['exp_name']:
-            coco_cap.eval(outs, model_name)
+            coco_cap.eval(outs, model_name, coco_gt_root=eval_gt_root)
 
     def configure_optimizers(self):
         return utils.set_schedule(self)

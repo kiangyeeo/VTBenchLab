@@ -44,12 +44,12 @@ def save_result(result, result_dir, filename, remove_duplicate=""):
 
     return final_result_file
 
-def _report_metrics(result_file, split):
+def _report_metrics(result_file, split, eval_gt_root=None):
     """
     Use official VQA evaluation script to report metrics.
     """
 
-    dataroot = "eval_gt"
+    dataroot = eval_gt_root if eval_gt_root and os.path.isdir(eval_gt_root) else "eval_gt"
     ques_files = {
         "train": "v2_OpenEnded_mscoco_train2014_questions.json",
         "val" : "v2_OpenEnded_mscoco_val2014_questions.json",
@@ -95,7 +95,7 @@ def _report_metrics(result_file, split):
 
     return metrics
     
-def eval(outputs, model_name, split="val"):
+def eval(outputs, model_name, split="val", eval_gt_root=None):
     pred_result = []
     for output in outputs:
         for qid, pred in zip(output['qids'], output['preds']):
@@ -112,7 +112,7 @@ def eval(outputs, model_name, split="val"):
         remove_duplicate="question_id"
     )
 
-    metrics = _report_metrics(result_file, split=split)
+    metrics = _report_metrics(result_file, split=split, eval_gt_root=eval_gt_root)
     print("evaluated metrics:", metrics)
 
 
@@ -120,4 +120,3 @@ if __name__ == '__main__':
     result_file = "pred_result/vqa_result_val.json"
     metrics = _report_metrics(result_file, split="val")
     print("metrics:", metrics)
-
