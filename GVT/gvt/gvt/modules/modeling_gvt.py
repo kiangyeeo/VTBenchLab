@@ -130,6 +130,12 @@ class GVT(pl.LightningModule):
             tokenizer=self.tokenizer,
             model=self.llm,
         )
+        self.llm.config.pad_token_id = self.tokenizer.pad_token_id
+        self.llm.config.bos_token_id = self.tokenizer.bos_token_id
+        self.llm.config.eos_token_id = self.tokenizer.eos_token_id
+        self.llm.generation_config.pad_token_id = self.tokenizer.pad_token_id
+        self.llm.generation_config.bos_token_id = self.tokenizer.bos_token_id
+        self.llm.generation_config.eos_token_id = self.tokenizer.eos_token_id
 
         for n, p in self.llm.named_parameters():
             p.requires_grad = False
@@ -416,6 +422,7 @@ class GVT(pl.LightningModule):
                 inputs_embeds=inputs_embeds,
                 attention_mask=encoder_atts,
                 eos_token_id=self.tokenizer.eos_token_id,
+                pad_token_id=self.tokenizer.pad_token_id,
                 return_dict_in_generate=True,
                 output_scores=True,
                 do_sample=False,
