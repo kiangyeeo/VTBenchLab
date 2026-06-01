@@ -43,7 +43,7 @@ class MTDataModule(LightningDataModule):
 
         if self.dist:
             self.train_sampler = DistributedSampler(self.train_dataset, shuffle=True)
-            self.val_sampler = DistributedSampler(self.val_dataset, shuffle=True)
+            self.val_sampler = DistributedSampler(self.val_dataset, shuffle=False)
             self.test_sampler = DistributedSampler(self.test_dataset, shuffle=False)
         else:
             self.train_sampler = None

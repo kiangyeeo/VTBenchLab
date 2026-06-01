@@ -2,29 +2,29 @@ import os
 import sys
 import json
 import logging
-import torch.distributed as dist
 
 import os.path as osp
 from gvt.modules.evaluations.vqa_tools.vqa import VQA
 from gvt.modules.evaluations.vqa_tools.vqa_eval import VQAEval
+from gvt.modules.evaluations.dist import get_rank, get_world_size
 
 def save_result(result, result_dir, filename, remove_duplicate=""):
     import json
 
     os.makedirs(result_dir, exist_ok=True)
     result_file = os.path.join(
-        result_dir, "%s_rank%d.json" % (filename, dist.get_rank())
+        result_dir, "%s_rank%d.json" % (filename, get_rank())
     )
     final_result_file = os.path.join(result_dir, "%s.json" % filename)
 
     json.dump(result, open(result_file, "w"))
 
-    if dist.get_rank() == 0:
-        logging.warning("rank %d starts merging results." % dist.get_rank())
+    if get_rank() == 0:
+        logging.warning("rank %d starts merging results." % get_rank())
         # combine results from all processes
         result = []
 
-        for rank in range(dist.get_world_size()):
+        for rank in range(get_world_size()):
             result_file = os.path.join(
                 result_dir, "%s_rank%d.json" % (filename, rank)
             )
@@ -114,7 +114,7 @@ def eval(outputs, model_name, split="val", eval_gt_root=None, result_dir="pred_r
     )
 
     metrics = _report_metrics(result_file, split=split, eval_gt_root=eval_gt_root)
-    if dist.get_rank() == 0:
+    if get_rank() == 0:
         metrics_file = os.path.join(result_dir, f"{save_filename}_metrics.json")
         with open(metrics_file, "w", encoding="utf-8") as fp:
             json.dump(metrics, fp, indent=2)

@@ -2,8 +2,9 @@ import os
 import re
 import json
 import numpy as np
-import torch.distributed as dist
 from collections import defaultdict, OrderedDict
+
+from gvt.modules.evaluations.dist import get_rank, get_world_size
 
 str2d = {
     "none": 0,
@@ -24,7 +25,7 @@ def save_result(result, result_dir, filename, remove_duplicate=""):
 
     os.makedirs(result_dir, exist_ok=True)
     result_file = os.path.join(
-        result_dir, "%s_rank%d.json" % (filename, dist.get_rank())
+        result_dir, "%s_rank%d.json" % (filename, get_rank())
     )
     final_result_file = os.path.join(result_dir, "%s.json" % filename)
 
@@ -32,7 +33,7 @@ def save_result(result, result_dir, filename, remove_duplicate=""):
 
 
     result = []
-    for rank in range(dist.get_world_size()):
+    for rank in range(get_world_size()):
         result_file = os.path.join(
             result_dir, "%s_rank%d.json" % (filename, rank)
         )
@@ -138,7 +139,7 @@ def eval(outputs, model_name, split="val", result_dir="pred_results/count", task
 
     metrics, result_bin = _report_metrics(result_file)
     metrics_file = os.path.join(result_dir, f"{save_filename}_metrics.json")
-    if dist.get_rank() == 0:
+    if get_rank() == 0:
         with open(metrics_file, "w", encoding="utf-8") as fp:
             json.dump(metrics, fp, indent=2)
         print("metrics file saved to %s" % metrics_file)

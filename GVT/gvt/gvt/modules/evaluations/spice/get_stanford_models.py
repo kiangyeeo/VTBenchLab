@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # This script downloads the Stanford CoreNLP models.
 import os
+import shutil
 from urllib.request import urlretrieve
 from zipfile import ZipFile
 
@@ -8,6 +9,7 @@ CORENLP = 'stanford-corenlp-full-2015-12-09'
 SPICELIB = 'lib'
 JAR = 'stanford-corenlp-3.6.0'
 SPICEDIR = os.path.dirname(__file__)
+MAVEN_BASE = 'https://repo1.maven.org/maven2/edu/stanford/nlp/stanford-corenlp/3.6.0'
 
 
 def print_progress(transferred_blocks, block_size, total_size):
@@ -19,26 +21,72 @@ def print_progress(transferred_blocks, block_size, total_size):
 
 
 def get_stanford_models():
-    jar_name = os.path.join(SPICEDIR, SPICELIB, '{}.jar'.format(JAR))
-    # Only download file if file does not yet exist. Else: do nothing
-    if not os.path.exists(jar_name):
-        print('Downloading {} for SPICE ...'.format(JAR))
-        url = 'http://nlp.stanford.edu/software/{}.zip'.format(CORENLP)
-        zip_file, headers = urlretrieve(url, reporthook=print_progress)
-        print()
-        print('Extracting {} ...'.format(JAR))
-        file_name = os.path.join(CORENLP, JAR)
-        # file names in zip use '/' separator regardless of OS
-        zip_file_name = '/'.join([CORENLP, JAR])
-        target_name = os.path.join(SPICEDIR, SPICELIB, JAR)
-        for filef in ['{}.jar', '{}-models.jar']:
-            ZipFile(zip_file).extract(filef.format(zip_file_name), SPICEDIR)
-            os.rename(os.path.join(SPICEDIR, filef.format(file_name)),
-                      filef.format(target_name))
+    lib_dir = os.path.join(SPICEDIR, SPICELIB)
+    os.makedirs(lib_dir, exist_ok=True)
 
-        os.rmdir(os.path.join(SPICEDIR, CORENLP))
-        os.remove(zip_file)
+    required = ['{}.jar'.format(JAR), '{}-models.jar'.format(JAR)]
+    target_paths = [os.path.join(lib_dir, name) for name in required]
+    if all(os.path.exists(path) for path in target_paths):
+        return
+
+    # Recover from a previous interrupted extraction before downloading again.
+    extracted_dir = os.path.join(SPICEDIR, CORENLP)
+    for name, target_path in zip(required, target_paths):
+        source_path = os.path.join(extracted_dir, name)
+        if not os.path.exists(target_path) and os.path.exists(source_path):
+            shutil.move(source_path, target_path)
+
+    if all(os.path.exists(path) for path in target_paths):
+        shutil.rmtree(extracted_dir, ignore_errors=True)
+        return
+
+    # Prefer direct Maven downloads: this avoids downloading and extracting the
+    # full CoreNLP zip when only one jar is missing.
+    direct_failed = False
+    for name, target_path in zip(required, target_paths):
+        if os.path.exists(target_path):
+            continue
+        try:
+            print('Downloading {} for SPICE ...'.format(name))
+            urlretrieve('{}/{}'.format(MAVEN_BASE, name), target_path, reporthook=print_progress)
+            print()
+        except Exception:
+            direct_failed = True
+            if os.path.exists(target_path):
+                os.remove(target_path)
+            break
+
+    if all(os.path.exists(path) for path in target_paths):
         print('Done.')
+        return
+    if not direct_failed:
+        return
+
+    print('Downloading {} for SPICE ...'.format(JAR))
+    url = 'http://nlp.stanford.edu/software/{}.zip'.format(CORENLP)
+    zip_file, headers = urlretrieve(url, reporthook=print_progress)
+    print()
+    print('Extracting {} ...'.format(JAR))
+
+    try:
+        with ZipFile(zip_file) as archive:
+            names = archive.namelist()
+            for name, target_path in zip(required, target_paths):
+                if os.path.exists(target_path):
+                    continue
+                suffix = '/{}'.format(name)
+                matches = [member for member in names if member.endswith(suffix)]
+                if not matches:
+                    raise FileNotFoundError(
+                        "Could not find {} inside {}".format(name, zip_file)
+                    )
+                with archive.open(matches[0]) as source, open(target_path, 'wb') as target:
+                    shutil.copyfileobj(source, target)
+    finally:
+        os.remove(zip_file)
+        shutil.rmtree(extracted_dir, ignore_errors=True)
+
+    print('Done.')
 
 
 if __name__ == '__main__':
