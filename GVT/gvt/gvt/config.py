@@ -29,6 +29,7 @@ def config():
     test_only = False
     use_sharded_training = False
     resume_during_training = False
+    use_deepspeed = False
 
     per_gpu_batchsize = 10  
     num_gpus = 1
@@ -45,7 +46,15 @@ def config():
 
     data_root = ""
     vicuna_path = ""
+    output_dir = "."
+    pred_result_dir = ""
     visual_tokenizer_path = ""
+    visual_tokenizer_type = "gvt"
+    visual_tokenizer_dim = 1024
+    perceiver_dim = 1024
+    adapter_path = ""
+    freeze_visual_tokenizer = True
+    use_token_dim_proj = True
     load_path = ""
     log_dir = ""
 

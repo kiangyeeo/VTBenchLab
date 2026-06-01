@@ -2,28 +2,29 @@ import os
 import sys
 import json
 import logging
-import torch.distributed as dist
 
 import os.path as osp
 from gvt.modules.evaluations.vqa_tools.vqa import VQA
 from gvt.modules.evaluations.vqa_tools.vqa_eval import VQAEval
+from gvt.modules.evaluations.dist import get_rank, get_world_size
 
 def save_result(result, result_dir, filename, remove_duplicate=""):
     import json
 
+    os.makedirs(result_dir, exist_ok=True)
     result_file = os.path.join(
-        result_dir, "%s_rank%d.json" % (filename, dist.get_rank())
+        result_dir, "%s_rank%d.json" % (filename, get_rank())
     )
     final_result_file = os.path.join(result_dir, "%s.json" % filename)
 
     json.dump(result, open(result_file, "w"))
 
-    if dist.get_rank() == 0:
-        logging.warning("rank %d starts merging results." % dist.get_rank())
+    if get_rank() == 0:
+        logging.warning("rank %d starts merging results." % get_rank())
         # combine results from all processes
         result = []
 
-        for rank in range(dist.get_world_size()):
+        for rank in range(get_world_size()):
             result_file = os.path.join(
                 result_dir, "%s_rank%d.json" % (filename, rank)
             )
@@ -44,12 +45,12 @@ def save_result(result, result_dir, filename, remove_duplicate=""):
 
     return final_result_file
 
-def _report_metrics(result_file, split):
+def _report_metrics(result_file, split, eval_gt_root=None):
     """
     Use official VQA evaluation script to report metrics.
     """
 
-    dataroot = "eval_gt"
+    dataroot = eval_gt_root if eval_gt_root and os.path.isdir(eval_gt_root) else "eval_gt"
     ques_files = {
         "train": "v2_OpenEnded_mscoco_train2014_questions.json",
         "val" : "v2_OpenEnded_mscoco_val2014_questions.json",
@@ -95,7 +96,7 @@ def _report_metrics(result_file, split):
 
     return metrics
     
-def eval(outputs, model_name, split="val"):
+def eval(outputs, model_name, split="val", eval_gt_root=None, result_dir="pred_results"):
     pred_result = []
     for output in outputs:
         for qid, pred in zip(output['qids'], output['preds']):
@@ -107,17 +108,22 @@ def eval(outputs, model_name, split="val"):
     save_filename = f"vqa_result_{split}_{model_name}"
     result_file = save_result(
         pred_result,
-        result_dir="pred_results",
+        result_dir=result_dir,
         filename=save_filename,
         remove_duplicate="question_id"
     )
 
-    metrics = _report_metrics(result_file, split=split)
+    metrics = _report_metrics(result_file, split=split, eval_gt_root=eval_gt_root)
+    if get_rank() == 0:
+        metrics_file = os.path.join(result_dir, f"{save_filename}_metrics.json")
+        with open(metrics_file, "w", encoding="utf-8") as fp:
+            json.dump(metrics, fp, indent=2)
+        print("metrics file saved to %s" % metrics_file)
     print("evaluated metrics:", metrics)
+    return metrics
 
 
 if __name__ == '__main__':
     result_file = "pred_result/vqa_result_val.json"
     metrics = _report_metrics(result_file, split="val")
     print("metrics:", metrics)
-
