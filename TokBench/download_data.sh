@@ -8,7 +8,9 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DATA_ROOT="${DATA_ROOT:-$REPO_ROOT/tokbench_data}"
 WITH_VIDEO="${WITH_VIDEO:-0}"
 
+
 mkdir -p "$DATA_ROOT"
+echo "Using Hugging Face endpoint: $HF_ENDPOINT"
 
 # image: annotations/ (text_*.json + face_meta.json) + image archive
 huggingface-cli download Junfeng5/TokBench --repo-type dataset \

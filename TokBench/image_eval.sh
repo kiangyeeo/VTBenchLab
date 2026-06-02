@@ -17,6 +17,8 @@ RES="${RES:-256}"
 
 cd "$REPO_ROOT"
 
+python check_eval_requirements.py
+
 # ---- text recognition (T-ACC / T-NED) ----
 dataset_names=("ic13" "ic15" "tt" "textocr" "cord" "sroie" "infograph" "docvqa")
 for dataset_name in "${dataset_names[@]}"; do

@@ -84,25 +84,24 @@ More detailed results and leadborad can be found in [project page](https://wjf52
 
 ```shell
 # 1. Create conda environment
-conda create -n TokBench python==3.10
+conda create -n TokBench python=3.10 -y
 
 # 2. Activate the environment
 conda activate TokBench
 
 # 3. Install PyTorch and other dependencies using conda
 # For CUDA 11.8
-conda install pytorch==2.4.0 torchvision==0.19.0 torchaudio==2.4.0 -c pytorch -c nvidia
+conda install -c pytorch -c nvidia pytorch==2.4.0 torchvision==0.19.0 pytorch-cuda=11.8 -y
+conda install "mkl<2025" -y
 
 # 4. Install pip dependencies
-pip install -e .
-pip install nltk
-pip install insightface
-pip install onnxruntime-gpu
-pip install imageio[ffmpeg]
+pip install -i https://pypi.org/simple -r requirements.txt
+pip install -e . --no-deps
 
 
-# 5. Install CUDNN for insightface model acceleration
-https://developer.nvidia.com/cudnn
+# 5. Make pip-installed CUDA libraries visible to onnxruntime-gpu
+export USE_TORCH=1
+export LD_LIBRARY_PATH="$(python -c 'import os,glob,nvidia; print(":".join(glob.glob(os.path.join(os.path.dirname(nvidia.__file__),"*","lib"))))'):$LD_LIBRARY_PATH"
 
 # 6. download antelopev2 model for face evaluation following 
 https://github.com/deepinsight/insightface/issues/251
@@ -153,4 +152,3 @@ bash image_eval.sh
     year={2025}
   }  
 ```
-

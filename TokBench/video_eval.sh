@@ -18,6 +18,8 @@ RES="${RES:-256}"
 
 cd "$REPO_ROOT"
 
+python check_eval_requirements.py
+
 # ---- text recognition (T-ACC / T-NED) ----
 dataset_names=("ch3" "ds")
 for dataset_name in "${dataset_names[@]}"; do
