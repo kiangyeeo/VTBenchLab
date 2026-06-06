@@ -381,7 +381,7 @@ class Attention(nn.Module):
             ro_k_t = self.rope(k_t)
             k = torch.cat((k[:, :, :1, :], ro_k_t), -2).type_as(v)
 
-        if self.xattn:
+        if self.xattn and xops is not None:
             q = q.permute(0, 2, 1, 3)   # B, num_heads, N, C -> B, N, num_heads, C
             k = k.permute(0, 2, 1, 3)
             v = v.permute(0, 2, 1, 3)

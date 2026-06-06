@@ -1,7 +1,7 @@
-from .modeling_gvt import GVT
-
-
 def __getattr__(name):
+    if name == "GVT":
+        from .modeling_gvt import GVT
+        return GVT
     if name == "MLLM_LLAVA":
         from .modeling_llava import MLLM_LLAVA
         return MLLM_LLAVA

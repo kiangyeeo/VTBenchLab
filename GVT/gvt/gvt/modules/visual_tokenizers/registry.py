@@ -56,11 +56,13 @@ class GVTTokenizerWrapper(VisualTokenizerWrapper):
 
         visual_tokenizer_path = config.get("visual_tokenizer_path", "")
         if visual_tokenizer_path:
-            params = torch.load(visual_tokenizer_path, map_location="cpu")["model"]
+            params = torch.load(visual_tokenizer_path, map_location="cpu")
+            if isinstance(params, dict) and "model" in params:
+                params = params["model"]
             new_state_dict = {}
             for key, value in params.items():
                 if "visual" in key and "head" not in key:
-                    new_key = key.replace("visual.", "")
+                    new_key = key.replace("visual_encoder.", "").replace("visual.", "")
                     new_state_dict[new_key] = value
             _load_encoder_state_dict(self.visual_encoder, new_state_dict)
 
