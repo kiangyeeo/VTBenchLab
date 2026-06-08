@@ -59,7 +59,7 @@ python GVT/tools/collect_results.py \
 Final results will be saved in:
 
 ```bash
-cat /path/to/your/outputs/gvt_eval_v11/summary_results.md
+VTBenchLab/outputs/gvt_eval_v11/summary_results.md
 ```
 
 
