@@ -19,6 +19,7 @@ def get_args_parser():
     parser.add_argument('--image_path', type=str, default='/path/to/TokBench/images/text_data/ic13')
     parser.add_argument('--save_path', type=str, default='/path/to/reconstruction/images/text_data/ic13')
     parser.add_argument('--model_name', type=str, default='sd3p5', help='sdxl,sd3p5,flux1')
+    parser.add_argument('--model_path', type=str, default=None, help='Optional local VAE path; overrides model_name defaults')
     parser.add_argument('--padding_size', type=int, default=256)
     parser.add_argument('--chunk_idx', type=int, default=0)
     parser.add_argument('--num_chunks', type=int, default=1)
@@ -52,7 +53,7 @@ def main(args):
         'sd3p5':'/data3/jfwu/tokenizer_modelzoo/sd3p5-large-vae/vae/',
         'flux1':'/data3/jfwu/tokenizer_modelzoo/flux1-vae/vae/'
     }
-    model_path = model_path_dict[args.model_name]
+    model_path = args.model_path or model_path_dict[args.model_name]
     vae = AutoencoderKL.from_pretrained(model_path)
     vae.to(dtype=torch.float32)  # otherwise it produces NaNs, even madebyollin's VAE
     vae.to(device="cuda")

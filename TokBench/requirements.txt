@@ -1,7 +1,10 @@
 # Runtime dependencies for TokBench image_eval.sh and video_eval.sh.
 #
-# Install PyTorch with conda first so CUDA 11.8 is selected by conda:
-#   conda install -c pytorch -c nvidia pytorch==2.4.0 torchvision==0.19.0 pytorch-cuda=11.8 -y
+# PyTorch CUDA 12.4 wheels.
+--extra-index-url https://download.pytorch.org/whl/cu124
+torch==2.6.0
+torchvision==0.21.0
+torchaudio==2.6.0
 
 # docTR core runtime dependencies used by the vendored doctr package.
 numpy>=1.16.0,<3.0.0
@@ -27,6 +30,14 @@ onnx>=1.16.0,<2.0.0
 onnxruntime-gpu==1.23.2
 scikit-image>=0.20.0,<1.0.0
 imageio[ffmpeg]>=2.31.0,<3.0.0
+
+# HunyuanVideo VAE tokenizer reconstruction.
+diffusers==0.31.0
+transformers==4.46.3
+tokenizers==0.20.3
+accelerate==1.1.1
+einops==0.7.0
+safetensors==0.4.3
 
 # CUDA 12 runtime libraries used by onnxruntime-gpu wheels.
 nvidia-cuda-runtime-cu12

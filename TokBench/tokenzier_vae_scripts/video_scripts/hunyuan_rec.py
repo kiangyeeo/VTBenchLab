@@ -13,7 +13,12 @@ import math
 from resize_rec import resize_padding_images,restore_images
 
 import sys
-sys.path.append('HunyuanVideo')
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+HUNYUANVIDEO_PATH = os.environ.get(
+    "HUNYUANVIDEO_PATH",
+    os.path.join(SCRIPT_DIR, "HunyuanVideo"),
+)
+sys.path.insert(0, HUNYUANVIDEO_PATH)
 from hyvideo.constants import PROMPT_TEMPLATE, NEGATIVE_PROMPT, PRECISION_TO_TYPE
 from hyvideo.vae import load_vae
 
@@ -21,6 +26,7 @@ def get_args_parser():
     parser = argparse.ArgumentParser('Set transformer detector', add_help=False)
     parser.add_argument('--video_path', type=str, default='/data3/jfwu/RecBench/videos/ori/text/DS/')
     parser.add_argument('--save_path', type=str, default='/data3/jfwu/RecBench/video_results/debug')
+    parser.add_argument('--model_path', type=str, default=os.environ.get('HUNYUAN_VAE_PATH'))
     parser.add_argument('--short_size', type=int, default=480)
     parser.add_argument('--chunk_idx', type=int, default=0)
     parser.add_argument('--num_chunks', type=int, default=1)
@@ -55,7 +61,7 @@ def main(args):
 
 
     model, _, s_ratio, t_ratio = load_vae(
-                vae_path='/data3/jfwu/SSD/video_model_zoo/hunyuan-video-t2v-720p/vae/',
+                vae_path=args.model_path,
                 vae_precision='bf16',
                 device='cuda',
             )
@@ -119,6 +125,5 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser('image path check script', parents=[get_args_parser()])
     args = parser.parse_args()
     main(args)
-
 
 
