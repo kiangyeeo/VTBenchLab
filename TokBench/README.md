@@ -21,7 +21,7 @@ bash download_data.sh   #image
 WITH_VIDEO=1 bash download_data.sh   #video
 ```
 
-**3. Image Reconstruct  → evaluate → aggregate**
+**3. (resize baseline) Image Reconstruct  → evaluate → aggregate** 
 
 ```bash
 cd TokBench/tokenzier_vae_scripts/image_scripts
@@ -33,7 +33,7 @@ RES=512 bash image_eval.sh
 RES=1024 bash image_eval.sh
 ```
 
-**4. Video Reconstruct  → evaluate → aggregate**
+**4. (resize baseline) Video Reconstruct  → evaluate → aggregate**
 
 ```bash
 cd TokBench/tokenzier_vae_scripts/video_scripts
@@ -43,3 +43,26 @@ cd TokBench
 RES=256 bash video_eval.sh
 RES=480 bash video_eval.sh
 ```
+
+**Run other tokenizers**
+
+```bash
+cd TokBench/tokenzier_vae_scripts/image_scripts
+PADDING_SIZES="256 512 1024" bash sdxl.sh
+
+cd TokBench
+MODEL_NAME=sdxl RES=256 OUT_DIR=image_outputs/sdxl_256 bash image_eval.sh
+MODEL_NAME=sdxl RES=512 OUT_DIR=image_outputs/sdxl_512 bash image_eval.sh
+MODEL_NAME=sdxl RES=1024 OUT_DIR=image_outputs/sdxl_1024 bash image_eval.sh
+```
+
+```bash
+cd TokBench/tokenzier_vae_scripts/video_scripts
+git clone --depth 1 https://github.com/Tencent-Hunyuan/HunyuanVideo.git
+SHORT_SIZES="256 480" bash hunyuan.sh
+
+cd TokBench
+MODEL_NAME=hunyuan RES=256 bash video_eval.sh
+MODEL_NAME=hunyuan RES=480 bash video_eval.sh
+```
+
