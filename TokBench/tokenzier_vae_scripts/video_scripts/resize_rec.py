@@ -5,7 +5,6 @@ from tqdm import tqdm
 import argparse
 from PIL import Image
 import  numpy as np
-import imageio
 import math
 
 
@@ -110,6 +109,8 @@ def split_list(input_list, chunk_size):
  
 
 def main(args):
+    import imageio
+
     image_set_id = args.chunk_idx
     num_chunks=args.num_chunks
     batch_size = args.batch_size
