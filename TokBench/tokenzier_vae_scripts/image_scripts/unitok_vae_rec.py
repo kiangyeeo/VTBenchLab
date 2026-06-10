@@ -1,4 +1,5 @@
 import argparse
+import inspect
 import os
 import sys
 
@@ -46,6 +47,44 @@ def require_path(path, description):
         raise FileNotFoundError(f"Missing {description}: {path}")
 
 
+def patch_unitok_timm_compat():
+    import models.vitamin as vitamin
+
+    if "device" not in inspect.signature(vitamin.HybridEmbed.__init__).parameters:
+        old_hybrid_init = vitamin.HybridEmbed.__init__
+
+        def hybrid_init(self, *args, device=None, dtype=None, **kwargs):
+            old_hybrid_init(self, *args, **kwargs)
+            factory_kwargs = {k: v for k, v in {"device": device, "dtype": dtype}.items() if v is not None}
+            if factory_kwargs:
+                self.to(**factory_kwargs)
+
+        vitamin.HybridEmbed.__init__ = hybrid_init
+
+    if "device" not in inspect.signature(vitamin.GeGluMlp.__init__).parameters:
+        old_geglu_init = vitamin.GeGluMlp.__init__
+
+        def geglu_init(
+            self,
+            in_features,
+            hidden_features,
+            act_layer=None,
+            drop=0.0,
+            norm_layer=None,
+            bias=True,
+            device=None,
+            dtype=None,
+            **kwargs,
+        ):
+            del norm_layer, bias, kwargs
+            old_geglu_init(self, in_features, hidden_features, act_layer=act_layer, drop=drop)
+            factory_kwargs = {k: v for k, v in {"device": device, "dtype": dtype}.items() if v is not None}
+            if factory_kwargs:
+                self.to(**factory_kwargs)
+
+        vitamin.GeGluMlp.__init__ = geglu_init
+
+
 def load_unitok(args):
     unitok_path = os.path.abspath(args.unitok_path)
     ckpt_path = os.path.abspath(args.ckpt_path)
@@ -53,6 +92,7 @@ def load_unitok(args):
     require_path(ckpt_path, "UniTok checkpoint")
 
     sys.path.insert(0, unitok_path)
+    patch_unitok_timm_compat()
     from models.unitok import UniTok
     from utils.config import Args
     from utils.data import normalize_01_into_pm1
