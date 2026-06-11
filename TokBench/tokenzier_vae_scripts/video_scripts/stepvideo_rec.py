@@ -1,7 +1,9 @@
 import argparse
+import importlib.util
 import math
 import os
 import sys
+import types
 
 import numpy as np
 import torch
@@ -41,14 +43,42 @@ def require_path(path, description):
         raise FileNotFoundError(f"Missing {description}: {path}")
 
 
+def load_stepvideo_vae_class(stepvideo_path):
+    """Load only Step-Video's VAE module, without importing the diffusion package."""
+    stepvideo_pkg_path = os.path.join(stepvideo_path, "stepvideo")
+    utils_path = os.path.join(stepvideo_pkg_path, "utils", "utils.py")
+    vae_pkg_path = os.path.join(stepvideo_pkg_path, "vae")
+    vae_path = os.path.join(vae_pkg_path, "vae.py")
+    require_path(utils_path, "Step-Video-T2V utils code")
+    require_path(vae_path, "Step-Video-T2V VAE code")
+
+    stepvideo_pkg = types.ModuleType("stepvideo")
+    stepvideo_pkg.__path__ = [stepvideo_pkg_path]
+    sys.modules["stepvideo"] = stepvideo_pkg
+
+    utils_spec = importlib.util.spec_from_file_location("stepvideo.utils", utils_path)
+    utils_module = importlib.util.module_from_spec(utils_spec)
+    sys.modules["stepvideo.utils"] = utils_module
+    utils_spec.loader.exec_module(utils_module)
+
+    vae_pkg = types.ModuleType("stepvideo.vae")
+    vae_pkg.__path__ = [vae_pkg_path]
+    sys.modules["stepvideo.vae"] = vae_pkg
+
+    vae_spec = importlib.util.spec_from_file_location("stepvideo.vae.vae", vae_path)
+    vae_module = importlib.util.module_from_spec(vae_spec)
+    sys.modules["stepvideo.vae.vae"] = vae_module
+    vae_spec.loader.exec_module(vae_module)
+    return vae_module.AutoencoderKL
+
+
 def load_model(args, device):
     stepvideo_path = os.path.abspath(args.stepvideo_path)
     model_path = os.path.abspath(args.model_path)
     require_path(os.path.join(stepvideo_path, "stepvideo", "vae", "vae.py"), "Step-Video-T2V code")
     require_path(model_path, "Step-Video VAE checkpoint")
 
-    sys.path.insert(0, stepvideo_path)
-    from stepvideo.vae.vae import AutoencoderKL
+    AutoencoderKL = load_stepvideo_vae_class(stepvideo_path)
 
     model = AutoencoderKL(
         z_channels=64,

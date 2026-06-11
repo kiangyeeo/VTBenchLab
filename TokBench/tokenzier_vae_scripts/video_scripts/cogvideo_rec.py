@@ -39,7 +39,17 @@ def require_path(path, description):
         raise FileNotFoundError(f"Missing {description}: {path}")
 
 
+def patch_transformers_for_diffusers_rae_import():
+    import transformers
+
+    if not hasattr(transformers, "Dinov2WithRegistersConfig") and hasattr(transformers, "Dinov2Config"):
+        transformers.Dinov2WithRegistersConfig = transformers.Dinov2Config
+    if not hasattr(transformers, "Dinov2WithRegistersModel") and hasattr(transformers, "Dinov2Model"):
+        transformers.Dinov2WithRegistersModel = transformers.Dinov2Model
+
+
 def load_model(args, device, dtype):
+    patch_transformers_for_diffusers_rae_import()
     from diffusers import AutoencoderKLCogVideoX
 
     model_path = os.path.abspath(args.model_path)
