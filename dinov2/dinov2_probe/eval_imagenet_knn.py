@@ -62,10 +62,10 @@ def run_official_knn(model: str, args) -> None:
     output_dir = result_root / "paper_reproduction_raw" / model / "imagenet1k_knn"
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    config_file = REPO_ROOT / "dinov2" / "dinov2" / "configs" / "eval" / CONFIG_BY_ALIAS[model]
+    config_file = REPO_ROOT / "dinov2" / "configs" / "eval" / CONFIG_BY_ALIAS[model]
     weights = _weight_source(spec, args.allow_download)
     env = os.environ.copy()
-    env["PYTHONPATH"] = f"{REPO_ROOT / 'dinov2'}:{env.get('PYTHONPATH', '')}"
+    env["PYTHONPATH"] = f"{REPO_ROOT}:{env.get('PYTHONPATH', '')}"
     cmd = [
         sys.executable,
         "-m",
@@ -133,4 +133,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

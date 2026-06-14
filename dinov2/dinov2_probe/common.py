@@ -8,7 +8,9 @@ import yaml
 
 
 PACKAGE_ROOT = Path(__file__).resolve().parent
-REPO_ROOT = PACKAGE_ROOT.parents[1]
+DINO_ROOT = PACKAGE_ROOT.parent
+WORKSPACE_ROOT = DINO_ROOT.parent
+REPO_ROOT = DINO_ROOT
 DEFAULT_MODEL_CONFIG = PACKAGE_ROOT / "configs" / "models.yaml"
 DEFAULT_DATASET_CONFIG = PACKAGE_ROOT / "configs" / "datasets.yaml"
 
@@ -30,6 +32,11 @@ def load_dataset_config(path: Optional[str] = None) -> Dict[str, Any]:
 def repo_path(path: str | os.PathLike) -> Path:
     p = Path(path)
     return p if p.is_absolute() else REPO_ROOT / p
+
+
+def workspace_path(path: str | os.PathLike) -> Path:
+    p = Path(path)
+    return p if p.is_absolute() else WORKSPACE_ROOT / p
 
 
 def ensure_dir(path: str | os.PathLike) -> Path:
@@ -75,4 +82,3 @@ def configured_root(args: argparse.Namespace, key: str, fallback: str) -> Path:
     defaults = cfg.get("defaults", {})
     value = getattr(args, key.replace("-", "_"), None) or defaults.get(key) or fallback
     return repo_path(value)
-

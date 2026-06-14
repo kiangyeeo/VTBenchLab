@@ -96,7 +96,7 @@ class FrozenEncoder(torch.nn.Module):
 
 
 def _load_dinov2(spec: Dict[str, Any], allow_download: bool) -> Tuple[torch.nn.Module, str]:
-    sys.path.insert(0, str(REPO_ROOT / "dinov2"))
+    sys.path.insert(0, str(REPO_ROOT))
     from dinov2.hub import backbones
 
     fn = getattr(backbones, spec["hub_name"])

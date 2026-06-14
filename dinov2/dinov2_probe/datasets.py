@@ -10,7 +10,7 @@ from PIL import Image
 from torch.utils.data import Dataset, Subset
 from torchvision.datasets import ImageFolder
 
-from .common import load_dataset_config, repo_path
+from .common import load_dataset_config, workspace_path
 from .video_dataset import VideoClassificationDataset
 
 
@@ -20,7 +20,7 @@ def _clip_builder():
     except ImportError:
         import sys
 
-        sys.path.insert(0, str(repo_path("CLIP_benchmark")))
+        sys.path.insert(0, str(workspace_path("CLIP_benchmark")))
         from clip_benchmark.datasets.builder import build_dataset
     return build_dataset
 
@@ -31,7 +31,7 @@ def imagenet_wnids() -> List[str]:
     except ImportError:
         import sys
 
-        sys.path.insert(0, str(repo_path("CLIP_benchmark")))
+        sys.path.insert(0, str(workspace_path("CLIP_benchmark")))
         from clip_benchmark.datasets.builder import all_imagenet_wordnet_ids
     return list(all_imagenet_wordnet_ids)
 
@@ -261,4 +261,3 @@ def class_count_from_targets(targets: Sequence[Any]) -> int:
     if not ints:
         raise ValueError("Cannot infer class count from non-integer targets")
     return max(ints) + 1
-

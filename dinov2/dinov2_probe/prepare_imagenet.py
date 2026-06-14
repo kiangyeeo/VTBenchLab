@@ -5,11 +5,11 @@ from pathlib import Path
 
 from torchvision.datasets import ImageFolder
 
-from .common import add_common_paths, configured_root, repo_path
+from .common import add_common_paths, configured_root, repo_path, workspace_path
 
 
 def _load_imagenet_names():
-    path = repo_path("CLIP_benchmark/clip_benchmark/datasets/en_classnames.json")
+    path = workspace_path("CLIP_benchmark/clip_benchmark/datasets/en_classnames.json")
     with open(path, "r") as f:
         names = json.load(f)["imagenet1k"]
     return names
@@ -39,7 +39,7 @@ def main() -> int:
             f.write(f"{class_name},{readable}\n")
     print(f"Wrote {labels_path}")
 
-    sys.path.insert(0, str(repo_path("dinov2")))
+    sys.path.insert(0, str(repo_path(".")))
     from dinov2.data.datasets import ImageNet
 
     for split in (ImageNet.Split.TRAIN, ImageNet.Split.VAL):

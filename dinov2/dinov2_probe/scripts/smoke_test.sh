@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-python -m baselines.dinov2_probe.eval_linear_probe \
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR/../.."
+
+python -m dinov2_probe.eval_linear_probe \
   --models dinov2_vits14 \
   --datasets cifar10 \
   --smoke \
@@ -12,5 +15,5 @@ python -m baselines.dinov2_probe.eval_linear_probe \
   --dataset-download \
   "$@"
 
-python -m baselines.dinov2_probe.collect_results "$@"
+python -m dinov2_probe.collect_results "$@"
 
