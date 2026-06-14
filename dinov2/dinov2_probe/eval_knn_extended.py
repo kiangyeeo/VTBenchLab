@@ -126,7 +126,7 @@ def main() -> int:
     data_root = configured_root(args, "data_root", "data/dinov2_baseline")
     feature_root = configured_root(args, "feature_root", "outputs/dinov2_baseline/features")
     result_root = configured_root(args, "result_root", "outputs/dinov2_baseline/results")
-    model_root = Path(args.model_root)
+    model_root = configured_root(args, "model_root", "checkpoints/dinov2_baseline")
 
     for model in models:
         for dataset in datasets:
@@ -145,4 +145,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

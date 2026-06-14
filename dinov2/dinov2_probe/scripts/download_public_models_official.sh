@@ -4,7 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR/../.."
 
-ROOT="${MODEL_ROOT:-checkpoints/dinov2_baseline}"
+ROOT="${MODEL_ROOT:-../checkpoints/dinov2_baseline}"
 mkdir -p "$ROOT"
 
 download() {
@@ -26,4 +26,3 @@ download https://lf3-nlp-opensource.bytetos.com/obj/nlp-opensource/archive/2022/
 
 echo "For MAE ViT-H/14, run with --allow-download once or pre-populate $ROOT/mae_vith14 from Hugging Face facebook/vit-mae-huge."
 echo "For the paper OpenCLIP ViT-G/14 LAION-2B alias, place your explicit checkpoint at $ROOT/openclip_vitg14_laion2b.pt."
-

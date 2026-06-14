@@ -9,7 +9,7 @@ import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from .common import ensure_dir, repo_path
+from .common import ensure_dir
 from .datasets import build_dataset, collate_with_flexible_targets, dataset_spec
 from .model_zoo import build_encoder
 
@@ -134,4 +134,3 @@ def load_feature_cache(path: os.PathLike) -> Dict[str, Any]:
 
 def ensure_features(**kwargs) -> Path:
     return extract_features(**kwargs)
-

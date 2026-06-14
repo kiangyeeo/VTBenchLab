@@ -81,4 +81,4 @@ def configured_root(args: argparse.Namespace, key: str, fallback: str) -> Path:
     cfg = load_dataset_config(args.dataset_config)
     defaults = cfg.get("defaults", {})
     value = getattr(args, key.replace("-", "_"), None) or defaults.get(key) or fallback
-    return repo_path(value)
+    return workspace_path(value)

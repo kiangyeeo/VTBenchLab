@@ -27,6 +27,7 @@ def main() -> int:
     datasets = split_csv(args.datasets, linear_dataset_names(args.dataset_config))
     data_root = configured_root(args, "data_root", "data/dinov2_baseline")
     feature_root = configured_root(args, "feature_root", "outputs/dinov2_baseline/features")
+    model_root = configured_root(args, "model_root", "checkpoints/dinov2_baseline")
 
     for model in models:
         for dataset in datasets:
@@ -42,7 +43,7 @@ def main() -> int:
                 split=split,
                 data_root=data_root,
                 feature_root=feature_root,
-                model_root=args.model_root,
+                model_root=model_root,
                 model_config=args.model_config,
                 dataset_config=args.dataset_config,
                 batch_size=args.batch_size,
@@ -59,4 +60,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

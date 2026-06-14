@@ -7,7 +7,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from .common import REPO_ROOT, add_common_paths, configured_root, load_model_config, split_csv, write_json
+from .common import REPO_ROOT, add_common_paths, configured_root, load_model_config, split_csv, workspace_path, write_json
 
 
 CONFIG_BY_ALIAS = {
@@ -19,7 +19,7 @@ CONFIG_BY_ALIAS = {
 
 
 def _weight_source(spec, allow_download: bool) -> str:
-    checkpoint = REPO_ROOT / spec["checkpoint"]
+    checkpoint = workspace_path(spec["checkpoint"])
     if checkpoint.exists():
         return str(checkpoint)
     if allow_download and spec.get("official_url"):

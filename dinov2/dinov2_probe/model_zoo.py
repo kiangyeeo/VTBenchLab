@@ -9,7 +9,7 @@ import torch
 import torch.nn.functional as F
 from torchvision import transforms
 
-from .common import REPO_ROOT, load_model_config, repo_path
+from .common import REPO_ROOT, load_model_config, workspace_path
 
 
 IMAGENET_MEAN = (0.485, 0.456, 0.406)
@@ -100,7 +100,7 @@ def _load_dinov2(spec: Dict[str, Any], allow_download: bool) -> Tuple[torch.nn.M
     from dinov2.hub import backbones
 
     fn = getattr(backbones, spec["hub_name"])
-    checkpoint = repo_path(spec["checkpoint"])
+    checkpoint = workspace_path(spec["checkpoint"])
     if checkpoint.exists():
         model = fn(weights=str(checkpoint))
         return model, str(checkpoint)
@@ -113,7 +113,7 @@ def _load_dinov2(spec: Dict[str, Any], allow_download: bool) -> Tuple[torch.nn.M
 def _load_ibot(spec: Dict[str, Any]) -> Tuple[torch.nn.Module, str]:
     from SAIL.model.ibot import vit_large
 
-    checkpoint = repo_path(spec["checkpoint"])
+    checkpoint = workspace_path(spec["checkpoint"])
     if not checkpoint.exists():
         raise FileNotFoundError(f"Missing iBOT checkpoint: {checkpoint}")
     model = vit_large()
@@ -138,7 +138,7 @@ def _load_torchhub(spec: Dict[str, Any], model_root: Path, allow_download: bool)
 def _load_transformers(spec: Dict[str, Any], allow_download: bool) -> Tuple[torch.nn.Module, str]:
     from transformers import AutoModel
 
-    local_dir = repo_path(spec["checkpoint"])
+    local_dir = workspace_path(spec["checkpoint"])
     source = str(local_dir) if local_dir.exists() else spec["hf_id"]
     if not local_dir.exists() and not allow_download:
         raise FileNotFoundError(f"Missing Hugging Face model directory: {local_dir}")
@@ -150,7 +150,7 @@ def _load_openclip(spec: Dict[str, Any], allow_download: bool):
     import open_clip
 
     model_name = spec["openclip_model"]
-    checkpoint = repo_path(spec["checkpoint"]) if spec.get("checkpoint") else None
+    checkpoint = workspace_path(spec["checkpoint"]) if spec.get("checkpoint") else None
     if checkpoint and checkpoint.exists():
         model, _, preprocess = open_clip.create_model_and_transforms(model_name, pretrained=str(checkpoint))
         return model, preprocess, str(checkpoint)
@@ -180,7 +180,7 @@ def build_encoder(
     if alias not in specs:
         raise KeyError(f"Unknown model alias '{alias}'. Available: {', '.join(sorted(specs))}")
     spec = specs[alias]
-    model_root = repo_path(model_root)
+    model_root = workspace_path(model_root)
     kind = spec["kind"]
     preprocess = default_image_transform()
     source = ""

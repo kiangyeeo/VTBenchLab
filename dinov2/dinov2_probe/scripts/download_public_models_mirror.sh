@@ -4,7 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR/../.."
 
-ROOT="${MODEL_ROOT:-checkpoints/dinov2_baseline}"
+ROOT="${MODEL_ROOT:-../checkpoints/dinov2_baseline}"
 MIRROR="${MODEL_MIRROR_BASE:-}"
 
 mkdir -p "$ROOT"
@@ -35,4 +35,3 @@ download dinov2_vitg14_pretrain.pth
 download ibot_vitl16_checkpoint_teacher.pth
 
 echo "MAE/OpenCLIP local checkpoints can also be placed under $ROOT if your mirror provides them."
-
