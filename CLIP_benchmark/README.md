@@ -103,31 +103,11 @@ done < "$DATASET_LIST"
 
 ## 4. Aggregate Results
 
-The default `build` command writes the normal long table: one row per
-`model/pretrained/dataset/task`.
-
 ```bash
-cd /cache/ma-user/VTBenchLab/CLIP_benchmark
+cd /cache/ma-user/VTBenchLab
 
+PYTHONPATH=/cache/ma-user/VTBenchLab/CLIP_benchmark \
 python -m clip_benchmark.cli build \
   /cache/ma-user/VTBenchLab/outputs/clip_benchmark/*.json \
   --output /cache/ma-user/VTBenchLab/outputs/clip_benchmark/benchmark.csv
-```
-
-To get an OpenCLIP-style wide table:
-
-```bash
-python -m clip_benchmark.openclip_results \
-  /cache/ma-user/VTBenchLab/outputs/clip_benchmark/*.json \
-  --output /cache/ma-user/VTBenchLab/outputs/clip_benchmark/openclip_style.csv
-```
-
-If you have the official `openclip_results.csv`, pass it as a reference to reuse
-its column order plus `params/FLOPs` metadata:
-
-```bash
-python -m clip_benchmark.openclip_results \
-  /cache/ma-user/VTBenchLab/outputs/clip_benchmark/*.json \
-  --reference-openclip-csv /path/to/openclip_results.csv \
-  --output /cache/ma-user/VTBenchLab/outputs/clip_benchmark/openclip_style.csv
 ```
