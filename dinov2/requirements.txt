@@ -1,11 +1,22 @@
---extra-index-url https://download.pytorch.org/whl/cu117
-torch==2.0.0
-torchvision==0.15.0
+# Adapted for A100-80G + CUDA 12.4 + Python 3.10 (k-NN evaluation)
+# Original repo targeted torch 2.0 / cu117; bumped to a cu124 stack.
+--extra-index-url https://download.pytorch.org/whl/cu124
+torch==2.4.1
+torchvision==0.19.1
+xformers==0.0.28.post1            # built against torch 2.4.1 (must match torch exactly)
 omegaconf
-torchmetrics==0.10.3
+torchmetrics==1.4.2               # 1.x keeps the MulticlassAccuracy / select_topk API used here
 fvcore
 iopath
-xformers==0.0.18
 submitit
---extra-index-url https://pypi.nvidia.com
-cuml-cu11
+
+# --- Tools used only by the download / dataset-prep scripts (knn_tools/) ---
+huggingface_hub>=0.24
+datasets>=2.20
+pillow
+tqdm
+timm>=1.0.11            # for run_knn_timm.py (MAE / DINO / SEER backbones)
+
+# --- Optional: ONLY needed for log_regression.py (GPU logistic regression), NOT for k-NN ---
+# Install separately if you want it (heavy, pulls the full RAPIDS stack):
+#   pip install --extra-index-url https://pypi.nvidia.com cuml-cu12
