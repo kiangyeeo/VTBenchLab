@@ -36,10 +36,10 @@ def split_list(input_list, chunk_size):
     return [input_list[i : i + chunk_size] for i in range(0, len(input_list), chunk_size)]
 
 
-def tensor_to_pilimg(img: torch.Tensor):
+def tensor_to_pilimgs(img: torch.Tensor):
     img = img.add(1).mul_(0.5 * 255).round().nan_to_num_(128, 0, 255).clamp_(0, 255)
     img = img.to(dtype=torch.uint8).permute(0, 2, 3, 1).cpu().numpy()
-    return Image.fromarray(img[0])
+    return [Image.fromarray(arr) for arr in img]
 
 
 def require_path(path, description):
@@ -121,18 +121,24 @@ def main(args):
     chunk_inputs = split_list(subset, args.batch_size)
 
     for chunk in tqdm(chunk_inputs):
-        image_path = os.path.join(args.image_path, chunk[0])
-        original_img = Image.open(image_path).convert("RGB")
-        padded_img, meta = smart_padding(original_img, (args.padding_size, args.padding_size))
-        img = preprocess(padded_img).unsqueeze(0).to("cuda")
+        # Every image is smart_padded to padding_size x padding_size, so the whole
+        # chunk shares one spatial size and can be encoded/decoded as a single batch.
+        tensors, metas = [], []
+        for name in chunk:
+            original_img = Image.open(os.path.join(args.image_path, name)).convert("RGB")
+            padded_img, meta = smart_padding(original_img, (args.padding_size, args.padding_size))
+            tensors.append(preprocess(padded_img))
+            metas.append(meta)
+
+        img = torch.stack(tensors).to("cuda")
 
         with torch.no_grad():
             code_idx = unitok.img_to_idx(img)
-            rec_img = unitok.idx_to_img(code_idx)
+            rec_imgs = unitok.idx_to_img(code_idx)
 
-        rec_img = tensor_to_pilimg(rec_img)
-        final_img = restore_original(rec_img, meta)
-        final_img.save(os.path.join(image_save_pth, chunk[0]))
+        for name, rec_img, meta in zip(chunk, tensor_to_pilimgs(rec_imgs), metas):
+            final_img = restore_original(rec_img, meta)
+            final_img.save(os.path.join(image_save_pth, name))
 
     print(args.chunk_idx, " is done")
 
