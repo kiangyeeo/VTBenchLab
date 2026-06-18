@@ -24,7 +24,11 @@ def get_args_parser():
     parser.add_argument("--image_path", type=str, default=os.path.join(DEFAULT_DATA_ROOT, "images", "text_data", "ic13"))
     parser.add_argument("--save_path", type=str, default=os.path.join(DEFAULT_RECON_ROOT, "unitok", "text_data", "ic13"))
     parser.add_argument("--unitok_path", type=str, default=os.path.join(SCRIPT_DIR, "UniTok"))
-    parser.add_argument("--ckpt_path", type=str, default=os.path.join(DEFAULT_MODEL_ZOO, "unitok", "unitok_tokenizer.pth"))
+    parser.add_argument(
+        "--ckpt_path",
+        type=str,
+        default=os.path.join(DEFAULT_MODEL_ZOO, "unitok_20250227", "unitok_tokenizer.pth"),
+    )
     parser.add_argument("--padding_size", type=int, default=1024)
     parser.add_argument("--chunk_idx", type=int, default=0)
     parser.add_argument("--num_chunks", type=int, default=1)

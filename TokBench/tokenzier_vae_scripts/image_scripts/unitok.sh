@@ -12,7 +12,7 @@ RECON_ROOT="${RECON_ROOT:-$REPO_ROOT/image_reconstruction_results}"
 MODEL_ZOO="${MODEL_ZOO:-$REPO_ROOT/tokenizer_modelzoo}"
 MODEL_NAME="${MODEL_NAME:-unitok}"
 UNITOK_PATH="${UNITOK_PATH:-$SCRIPT_DIR/UniTok}"
-CKPT_PATH="${CKPT_PATH:-$MODEL_ZOO/unitok/unitok_tokenizer.pth}"
+CKPT_PATH="${CKPT_PATH:-$MODEL_ZOO/unitok_20250227/unitok_tokenizer.pth}"
 BATCH_SIZE="${BATCH_SIZE:-1}"
 if [ "${PADDING_SIZES+x}" ]; then PADDING_SIZES=($PADDING_SIZES); else PADDING_SIZES=(256 512 1024); fi
 if [ "${TEXT_DATAS+x}" ]; then TEXT_DATAS=($TEXT_DATAS); else TEXT_DATAS=(ic13 ic15 textocr tt cord docvqa infograph sroie); fi
