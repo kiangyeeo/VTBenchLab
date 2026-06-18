@@ -1,12 +1,13 @@
 # Runtime dependencies for TokBench image_eval.sh and video_eval.sh.
 #
-# PyTorch CUDA 12.4 wheels.
-torch==2.6.0
-torchvision==0.21.0
-torchaudio==2.6.0
+# Match the TokBench README environment used for table reproduction.
+# Prefer installing these with conda plus `pytorch-cuda=11.8` on CUDA machines.
+torch==2.4.0
+torchvision==0.19.0
+torchaudio==2.4.0
 
 # docTR core runtime dependencies used by the vendored doctr package.
-numpy>=1.16.0,<3.0.0
+numpy==1.26.4
 scipy>=1.4.0,<2.0.0
 h5py>=3.1.0,<4.0.0
 opencv-python>=4.5.0,<5.0.0
@@ -64,7 +65,7 @@ aiohttp
 flask
 flask-restful
 requests>=2.31.0
-timm>=1.0.8,<2.0.0
+timm==1.0.8
 open_clip_torch>=2.24.0
 braceexpand>=0.1.7
 webdataset==0.2.86
@@ -80,10 +81,3 @@ gradio>=5.0.0,<6.0.0
 imageio-ffmpeg>=0.5.1
 matplotlib>=3.7.0
 packaging>=23.0
-
-# CUDA 12 runtime libraries used by onnxruntime-gpu wheels.
-nvidia-cuda-runtime-cu12
-nvidia-cublas-cu12
-nvidia-cudnn-cu12==9.*
-nvidia-cufft-cu12
-nvidia-curand-cu12
