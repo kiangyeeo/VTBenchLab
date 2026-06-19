@@ -60,7 +60,6 @@ def load_tokenflow(args, device):
         teacher="clipb_224",
         enhanced_decoder=True,
         infer_interpolate=True,
-        resolution=args.padding_size,
     )
     vq_model.to(device)
     vq_model.eval()
