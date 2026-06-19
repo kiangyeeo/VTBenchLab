@@ -5,6 +5,7 @@ import sys
 
 import numpy as np
 import torch
+import torch.nn.functional as F
 from PIL import Image
 from torchvision.transforms import transforms
 from tqdm import tqdm
@@ -89,6 +90,34 @@ def patch_unitok_timm_compat():
         vitamin.GeGluMlp.__init__ = geglu_init
 
 
+def patch_unitok_legacy_causal_projection():
+    import models.vqvae as vqvae
+
+    attn_cls = getattr(vqvae, "PlainAttention", None) or getattr(vqvae, "CausalAttention", None)
+    if attn_cls is None:
+        raise RuntimeError("Cannot find UniTok projection attention class.")
+
+    def causal_forward(self, x: torch.Tensor) -> torch.Tensor:
+        bsz, num_tokens, _ = x.shape
+        qkv = F.linear(
+            input=x,
+            weight=self.qkv.weight,
+            bias=torch.cat((self.q_bias, self.zero_k_bias, self.v_bias)),
+        )
+        q, k, v = qkv.reshape(bsz, num_tokens, 3, self.num_heads, self.head_dim).permute(2, 0, 3, 1, 4).unbind(0)
+        x = F.scaled_dot_product_attention(q, k, v, attn_mask=None, dropout_p=0.0, is_causal=True)
+
+        if self.in_dim > self.out_dim:
+            x = torch.mean(x, dim=1)
+            if self.in_dim // self.num_heads != self.out_dim:
+                x = F.adaptive_avg_pool1d(x, self.out_dim)
+        else:
+            x = x.transpose(1, 2).reshape(bsz, num_tokens, -1)
+        return self.proj(x)
+
+    attn_cls.forward = causal_forward
+
+
 def load_unitok(args):
     unitok_path = os.path.abspath(args.unitok_path)
     ckpt_path = os.path.abspath(args.ckpt_path)
@@ -97,6 +126,7 @@ def load_unitok(args):
 
     sys.path.insert(0, unitok_path)
     patch_unitok_timm_compat()
+    patch_unitok_legacy_causal_projection()
     from models.unitok import UniTok
     from utils.config import Args
     from utils.data import normalize_01_into_pm1
