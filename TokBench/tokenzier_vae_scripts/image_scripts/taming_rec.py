@@ -47,7 +47,7 @@ def require_path(path, description):
 def load_vqgan(config, model_cls, ckpt_path=None):
     model = model_cls(**config.model.params)
     if ckpt_path is not None:
-        sd = torch.load(ckpt_path, map_location="cpu")["state_dict"]
+        sd = torch.load(ckpt_path, map_location="cpu", weights_only=False)["state_dict"]
         model.load_state_dict(sd, strict=False)
     return model.eval()
 
