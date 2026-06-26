@@ -12,7 +12,7 @@ export CUDA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES:-0}"
 DATA_ROOT="${DATA_ROOT:-$REPO_ROOT/tokbench_data}"          # images/ + annotations/
 RECON_ROOT="${RECON_ROOT:-$REPO_ROOT/image_reconstruction_results}"
 OUT_DIR="${OUT_DIR:-$REPO_ROOT/image_outputs}"
-TOKENIZER_NAME="${MODEL_NAME:-resize}"
+TOKENIZER_NAME="${TOKENIZER_NAME:-${MODEL_NAME:-resize}}"
 RES="${RES:-256}"
 
 cd "$REPO_ROOT"
