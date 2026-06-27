@@ -144,7 +144,7 @@ def summarize_text(args):
     for method in flatten_ans:
         if method == 'ori':
             continue
-        if method == 'titok' and setting in ['512','1024']:
+        if setting not in flatten_ans[method]:
             continue
         temp = flatten_ans[method]
         # for setting in temp:
@@ -227,6 +227,8 @@ def summarize_face(args):
 
     for method in flatten_ans:
         if method == 'ori':
+            continue
+        if setting not in flatten_ans[method]:
             continue
         temp = flatten_ans[method]
         # for setting in temp:
