@@ -68,7 +68,7 @@ def find_group(x, range_list):
 def get_args_parser():
     parser = argparse.ArgumentParser(' ', add_help=False)
     parser.add_argument('--tokenizer', type=str, default='chameleon')
-    parser.add_argument('--setting', type=str, choices=["256","512","1024","480"], default='256')
+    parser.add_argument('--setting', type=str, choices=["256","448","512","1024","480"], default='256')
     parser.add_argument("--data_type", type=str, default="image", choices=["image","video"], help=" eval for image or video")
     parser.add_argument('--output_path', type=str, default='image_outputs')
     parser.add_argument('--summary_path', type=str, default=None, help="Path to save the printed summary tables")
@@ -116,6 +116,9 @@ def summarize_text(args):
     if args.data_type=='image':
         ratio_ranges = {
             '256':[0.02, 0.03, 0.04, 1],
+            # 448 = UniFlow native res. Same absolute pixel buckets as 512 (~5.1/10.2/15.4 px),
+            # re-expressed as fractions of 448 (5.12/448=0.0114, etc.).
+            '448':[0.0114, 0.0229, 0.0343, 1],
             '512':[0.01, 0.02, 0.03, 1],
             '1024':[0.005, 0.01, 0.02, 1],
         }
@@ -199,6 +202,9 @@ def summarize_face(args):
     if args.data_type=='image':
         ratio_ranges = {
             '256':[0.1, 0.2, 0.3, 1],
+            # 448 = UniFlow native res; same absolute pixel buckets as 512, re-expressed
+            # as fractions of 448 (x512/448).
+            '448':[0.0571, 0.1143, 0.2286, 1],
             '512':[0.05, 0.10, 0.2, 1],
             '1024':[0.02, 0.05, 0.1, 1],
         }
@@ -261,7 +267,7 @@ def summarize_face(args):
 
 
 # Canonical settings per data type (mirrors the ratio_ranges dicts below).
-VALID_SETTINGS = {"image": {"256", "512", "1024"}, "video": {"256", "480"}}
+VALID_SETTINGS = {"image": {"256", "448", "512", "1024"}, "video": {"256", "480"}}
 
 
 def main(args):
