@@ -94,7 +94,7 @@ def check_img_filename(img_folder):
 
 
 # Canonical settings per data type (mirrors ratio_ranges in compute_all_metrics.py).
-VALID_SETTINGS = {"image": {"256", "512", "1024"}, "video": {"256", "480"}}
+VALID_SETTINGS = {"image": {"256", "448", "512", "1024"}, "video": {"256", "480"}}
 
 
 def check_setting(args):
@@ -360,7 +360,7 @@ def parse_args():
                         help="The GT folder of test images")
     parser.add_argument("--method_name", type=str, default="tokenizer1", help="The reconstruction method name")
     parser.add_argument("--data_type", type=str, default="image", choices=["image","video"], help=" eval for image or video")
-    parser.add_argument("--setting", type=str, default="256", choices=["256","512","1024","480"], help="The evaluation setting [256,512,1024] for image, [256,480] for video")
+    parser.add_argument("--setting", type=str, default="256", choices=["256","448","512","1024","480"], help="The evaluation setting [256,448,512,1024] for image, [256,480] for video")
     parser.add_argument("--gt_prefix", type=bool, default=False, help="Whether add prefix to GT's filenames")
     parser.add_argument("--replace", type=bool, default=False, help="Replace .jpg.jpg in filenames")
     parser.add_argument("--refine", type=bool, default=False, help="Removing false recognitions from gt?")
