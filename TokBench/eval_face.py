@@ -22,14 +22,14 @@ def get_args_parser():
     parser.add_argument('--original_image_path', type=str, default='path/to/TokBench/images/face_data/')
     parser.add_argument('--reconstruction_image_path', type=str, default='path/to/reconsturctions/face_data/chameleon/face_256/')
     parser.add_argument('--tokenizer', type=str, default='chameleon')
-    parser.add_argument('--setting', type=str, choices=["256","512","1024","480"], default='256')
+    parser.add_argument('--setting', type=str, choices=["256","448","512","1024","480"], default='256')
     parser.add_argument("--data_type", type=str, default="image", choices=["image","video"], help=" eval for image or video")
     parser.add_argument('--meta_path', type=str, default='face_meta.json')
     parser.add_argument('--save_dir', type=str, default='output')
     return parser
 
 # Canonical settings per data type (mirrors ratio_ranges in compute_all_metrics.py).
-VALID_SETTINGS = {"image": {"256", "512", "1024"}, "video": {"256", "480"}}
+VALID_SETTINGS = {"image": {"256", "448", "512", "1024"}, "video": {"256", "480"}}
 
 
 def main(args):
