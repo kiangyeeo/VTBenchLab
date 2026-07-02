@@ -14,7 +14,7 @@ DATA="${DATA:-/cache/ma-user/VTBenchLab/data/imagenet1k}"
 EXTRA="${EXTRA:-$DATA/extra}"
 VARIANT="${VARIANT:-vq8}"
 LLAMAGEN_PATH="${LLAMAGEN_PATH:-/cache/ma-user/VTBenchLab/TokBench/tokenzier_vae_scripts/image_scripts/LlamaGen}"
-BATCH_SIZE="${BATCH_SIZE:-512}"
+BATCH_SIZE="${BATCH_SIZE:-128}"
 NPROC_PER_NODE="${NPROC_PER_NODE:-1}"
 
 case "$VARIANT" in
