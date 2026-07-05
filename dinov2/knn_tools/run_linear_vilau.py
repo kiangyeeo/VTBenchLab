@@ -32,6 +32,40 @@ PM1_MEAN = (0.5, 0.5, 0.5)
 PM1_STD = (0.5, 0.5, 0.5)
 
 
+def encode_semantic_latent(model, image, layer_name):
+    vision_model = model.siglip_model.vision_model
+    hidden_states = vision_model.embeddings(image)
+
+    attention_mask = None
+    output_attentions = None
+    layers = vision_model.encoder.layers
+    target_idx = len(layers) - 2 if layer_name == "penultimate" else len(layers) - 1
+
+    for i, encoder_layer in enumerate(layers):
+        if vision_model.encoder.gradient_checkpointing and vision_model.encoder.training:
+            layer_outputs = vision_model.encoder._gradient_checkpointing_func(
+                encoder_layer.__call__,
+                hidden_states,
+                attention_mask,
+                output_attentions,
+            )
+        else:
+            layer_outputs = encoder_layer(
+                hidden_states,
+                attention_mask,
+                output_attentions=output_attentions,
+            )
+        hidden_states = layer_outputs[0]
+        if i == target_idx:
+            batch_size, seq_len, channels = hidden_states.shape
+            side = int(seq_len**0.5)
+            if side * side != seq_len:
+                raise ValueError(f"VILA-U semantic latent sequence is not square: seq_len={seq_len}")
+            return hidden_states.reshape(batch_size, side, side, channels)
+
+    raise RuntimeError(f"Failed to extract VILA-U semantic latent from {layer_name} layer")
+
+
 class VilaULinearAdapter(nn.Module):
     """Expose DINOv2-compatible intermediate layers for VILA-U spatial features."""
 
@@ -46,8 +80,6 @@ class VilaULinearAdapter(nn.Module):
         if self.feature == "quantized":
             _code, z_q = self.model.encode_image(images.to(self.dtype))
             return z_q.float()
-
-        from vilau_rec import encode_semantic_latent
 
         return encode_semantic_latent(self.model, images.to(self.dtype), self.semantic_layer).float()
 
