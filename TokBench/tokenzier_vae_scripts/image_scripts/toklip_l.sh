@@ -16,6 +16,8 @@ TOKLIP_DIR="${TOKLIP_DIR:-$MODEL_ZOO/TokLIP}"
 TOKLIP_CKPT_PATH="${TOKLIP_CKPT_PATH:-$TOKLIP_DIR/TokLIP_L_384.pt}"
 VQ_CKPT_PATH="${VQ_CKPT_PATH:-$TOKLIP_DIR/vq_ds16_t2i.pt}"
 BATCH_SIZE="${BATCH_SIZE:-1}"
+LATENT_SOURCE="${LATENT_SOURCE:-quantized}"
+TOKLIP_MODEL_CONFIG="${TOKLIP_MODEL_CONFIG:-ViT-SO400M-16-SigLIP2-384-toklip}"
 if [ "${PADDING_SIZES+x}" ]; then PADDING_SIZES=($PADDING_SIZES); else PADDING_SIZES=(256 512 1024); fi
 if [ "${TEXT_DATAS+x}" ]; then TEXT_DATAS=($TEXT_DATAS); else TEXT_DATAS=(ic13 ic15 textocr tt cord docvqa infograph sroie); fi
 if [ "${FACE_DATAS+x}" ]; then FACE_DATAS=($FACE_DATAS); else FACE_DATAS=(wflw); fi
@@ -58,6 +60,8 @@ for DATA in "${TEXT_DATAS[@]}"; do
                 --toklip_path "$TOKLIP_PATH" \
                 --toklip_ckpt_path "$TOKLIP_CKPT_PATH" \
                 --vq_ckpt_path "$VQ_CKPT_PATH" \
+                --toklip_model_config "$TOKLIP_MODEL_CONFIG" \
+                --latent_source "$LATENT_SOURCE" \
                 --padding_size "$PADDING_SIZE" \
                 --batch_size "$BATCH_SIZE" \
                 --num_chunks "$CHUNKS" \
@@ -79,6 +83,8 @@ for DATA in "${FACE_DATAS[@]}"; do
                 --toklip_path "$TOKLIP_PATH" \
                 --toklip_ckpt_path "$TOKLIP_CKPT_PATH" \
                 --vq_ckpt_path "$VQ_CKPT_PATH" \
+                --toklip_model_config "$TOKLIP_MODEL_CONFIG" \
+                --latent_source "$LATENT_SOURCE" \
                 --padding_size "$PADDING_SIZE" \
                 --batch_size "$BATCH_SIZE" \
                 --num_chunks "$CHUNKS" \
