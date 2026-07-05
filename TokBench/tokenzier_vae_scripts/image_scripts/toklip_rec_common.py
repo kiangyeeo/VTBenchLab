@@ -32,6 +32,16 @@ MODEL_CONFIGS = {
         "toklip_model_config": "ViT-SO400M-16-SigLIP2-384-toklip",
         "image_size": 384,
     },
+    "toklip_s_semantic_nn": {
+        "toklip_ckpt": os.path.join(DEFAULT_TOKLIP_DIR, "TokLIP_S_256.pt"),
+        "toklip_model_config": "ViT-SO400M-16-SigLIP2-256-toklip",
+        "image_size": 256,
+    },
+    "toklip_l_semantic_nn": {
+        "toklip_ckpt": os.path.join(DEFAULT_TOKLIP_DIR, "TokLIP_L_384.pt"),
+        "toklip_model_config": "ViT-SO400M-16-SigLIP2-384-toklip",
+        "image_size": 384,
+    },
 }
 
 
