@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# TokLIP-L VQ z_q linear-probing evaluation on ImageNet-1k.
+# TokLIP-L semantic-token linear-probing evaluation on ImageNet-1k.
 set -euo pipefail
 
 REPO="${REPO:-/cache/ma-user/VTBenchLab/dinov2}"
 DATA="${DATA:-/cache/ma-user/VTBenchLab/data/imagenet1k}"
 EXTRA="${EXTRA:-$DATA/extra}"
-OUTDIR="${OUTDIR:-/cache/ma-user/VTBenchLab/outputs/vae_linear_probing/toklip_l_zq_384}"
+OUTDIR="${OUTDIR:-/cache/ma-user/VTBenchLab/outputs/vae_linear_probing/toklip_l_semantic_384}"
 TOKLIP_PATH="${TOKLIP_PATH:-/cache/ma-user/VTBenchLab/TokBench/tokenzier_vae_scripts/image_scripts/TokLIP}"
 CKPT_PATH="${CKPT_PATH:-/cache/ma-user/VTBenchLab/TokBench/tokenizer_modelzoo/TokLIP/TokLIP_L_384.pt}"
 VQ_CKPT_PATH="${VQ_CKPT_PATH:-/cache/ma-user/VTBenchLab/TokBench/tokenizer_modelzoo/TokLIP/vq_ds16_t2i.pt}"
@@ -20,7 +20,7 @@ NPROC_PER_NODE="${NPROC_PER_NODE:-1}"
 cd "$REPO"
 mkdir -p "$OUTDIR"
 
-echo ">> TokLIP-L z_q linear probing"
+echo ">> TokLIP-L semantic linear probing"
 echo "   out=$OUTDIR"
 echo "   ckpt=$CKPT_PATH"
 echo "   vq=$VQ_CKPT_PATH"
@@ -28,6 +28,7 @@ echo "   extra args=$*"
 
 PYTHONPATH=. torchrun --standalone --nproc_per_node="$NPROC_PER_NODE" knn_tools/run_linear_toklip.py \
     --variant l \
+    --feature semantic \
     --output-dir "$OUTDIR" \
     --toklip-path "$TOKLIP_PATH" \
     --ckpt-path "$CKPT_PATH" \
