@@ -94,7 +94,7 @@ def load_toklip_vq(args, device):
     vq_model.to(device)
     vq_model.eval()
 
-    checkpoint = torch.load(vq_ckpt_path, map_location="cpu")
+    checkpoint = torch.load(vq_ckpt_path, map_location="cpu", weights_only=False)
     if "ema" in checkpoint:
         model_weight = checkpoint["ema"]
     elif "model" in checkpoint:
