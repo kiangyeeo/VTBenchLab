@@ -408,10 +408,10 @@ def eval_linear(
     return val_results_dict, feature_model, linear_classifiers, iteration
 
 
-def make_eval_data_loader(test_dataset_str, batch_size, num_workers, metric_type):
+def make_eval_data_loader(test_dataset_str, batch_size, num_workers, metric_type, transform=None):
     test_dataset = make_dataset(
         dataset_str=test_dataset_str,
-        transform=make_classification_eval_transform(),
+        transform=transform or make_classification_eval_transform(),
     )
     test_data_loader = make_data_loader(
         dataset=test_dataset,
@@ -439,11 +439,18 @@ def test_on_datasets(
     best_classifier_on_val,
     prefixstring="",
     test_class_mappings=[None],
+    eval_transform=None,
 ):
     results_dict = {}
     for test_dataset_str, class_mapping, metric_type in zip(test_dataset_strs, test_class_mappings, test_metric_types):
         logger.info(f"Testing on {test_dataset_str}")
-        test_data_loader = make_eval_data_loader(test_dataset_str, batch_size, num_workers, metric_type)
+        test_data_loader = make_eval_data_loader(
+            test_dataset_str,
+            batch_size,
+            num_workers,
+            metric_type,
+            transform=eval_transform,
+        )
         dataset_results_dict = evaluate_linear_classifiers(
             feature_model,
             remove_ddp_wrapper(linear_classifiers),
@@ -480,6 +487,8 @@ def run_eval_linear(
     test_class_mapping_fpaths=[None],
     val_metric_type=MetricType.MEAN_ACCURACY,
     test_metric_types=None,
+    train_transform=None,
+    eval_transform=None,
 ):
     seed = 0
 
@@ -491,7 +500,7 @@ def run_eval_linear(
         assert len(test_metric_types) == len(test_dataset_strs)
     assert len(test_dataset_strs) == len(test_class_mapping_fpaths)
 
-    train_transform = make_classification_train_transform()
+    train_transform = train_transform or make_classification_train_transform()
     train_dataset = make_dataset(
         dataset_str=train_dataset_str,
         transform=train_transform,
@@ -530,7 +539,13 @@ def run_eval_linear(
         drop_last=True,
         persistent_workers=True,
     )
-    val_data_loader = make_eval_data_loader(val_dataset_str, batch_size, num_workers, val_metric_type)
+    val_data_loader = make_eval_data_loader(
+        val_dataset_str,
+        batch_size,
+        num_workers,
+        val_metric_type,
+        transform=eval_transform,
+    )
 
     checkpoint_period = save_checkpoint_frequency * epoch_length
 
@@ -584,6 +599,7 @@ def run_eval_linear(
             val_results_dict["best_classifier"]["name"],
             prefixstring="",
             test_class_mappings=test_class_mappings,
+            eval_transform=eval_transform,
         )
     results_dict["best_classifier"] = val_results_dict["best_classifier"]["name"]
     results_dict[f"{val_dataset_str}_accuracy"] = 100.0 * val_results_dict["best_classifier"]["accuracy"]
