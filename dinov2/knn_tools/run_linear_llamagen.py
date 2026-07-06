@@ -106,7 +106,7 @@ def main():
     ap.add_argument("--hflip-prob", type=float, default=0.5)
     ap.add_argument("--epochs", type=int, default=100)
     ap.add_argument("--epoch-length", type=int, default=1250)
-    ap.add_argument("--batch-size", type=int, default=512)
+    ap.add_argument("--batch-size", type=int, default=128)
     ap.add_argument("--num-workers", type=int, default=8)
     ap.add_argument("--eval-period-iterations", type=int, default=1250)
     ap.add_argument("--save-checkpoint-frequency", type=int, default=20)
