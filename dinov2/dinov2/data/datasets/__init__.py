@@ -5,6 +5,7 @@
 
 from .image_net import ImageNet
 from .image_net_22k import ImageNet22k
+from .hf_dataset import HFDataset
 from .cell_dino.hpaone import HPAone
 from .cell_dino.hpafov import HPAFoV
 from .cell_dino.chammi_cp import CHAMMI_CP
