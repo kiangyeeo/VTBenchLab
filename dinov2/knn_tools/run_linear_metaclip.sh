@@ -9,41 +9,36 @@
 set -euo pipefail
 
 REPO="${REPO:-/cache/ma-user/VTBenchLab/dinov2}"
-DATA="${DATA:-/cache/ma-user/VTBenchLab/data/imagenet1k}"
-EXTRA="${EXTRA:-$DATA/extra}"
 MODEL="${MODEL:-vit_base_patch16_clip_224.metaclip_2pt5b}"
 CKPT_PATH="${CKPT_PATH:-/cache/ma-user/VTBenchLab/TokBench/tokenizer_modelzoo/MetaCLIP/vit_base_patch16_clip_224.metaclip_2pt5b}"
-OUTDIR="${OUTDIR:-/cache/ma-user/VTBenchLab/outputs/vae_linear_probing/metaclip_b16_2pt5b}"
-BATCH_SIZE="${BATCH_SIZE:-128}"
+LEGACY_OUTDIR="/cache/ma-user/VTBenchLab/outputs/vae_linear_probing/metaclip_b16_2pt5b"
 NPROC_PER_NODE="${NPROC_PER_NODE:-1}"
 
-[ -d "$DATA" ] || { echo "!! missing ImageNet root: $DATA"; exit 1; }
-[ -d "$EXTRA" ] || { echo "!! missing ImageNet extra dir: $EXTRA"; exit 1; }
+source "$REPO/knn_tools/linear_dataset_common.sh"
+setup_linear_dataset_args "metaclip" "$LEGACY_OUTDIR" "$@"
+setup_linear_training_args "$@"
+
 [ -e "$CKPT_PATH" ] || { echo "!! missing MetaCLIP checkpoint path: $CKPT_PATH"; exit 1; }
 
 cd "$REPO"
 mkdir -p "$OUTDIR"
 
 echo ">> MetaCLIP linear probing"
+echo "   dataset=$DATASET"
 echo "   model=$MODEL"
 echo "   out=$OUTDIR"
 echo "   ckpt=$CKPT_PATH"
-echo "   batch_size=$BATCH_SIZE"
+echo "   batch_size=$BATCH_SIZE epochs=$EPOCHS epoch_length=$EPOCH_LENGTH eval_period=$EVAL_PERIOD_ITERATIONS"
 echo "   extra args=$*"
-
-if [[ " $* " == *" --batch-size "* ]]; then
-    BATCH_SIZE_ARG=()
-else
-    BATCH_SIZE_ARG=(--batch-size "$BATCH_SIZE")
-fi
 
 PYTHONPATH=. torchrun --standalone --nproc_per_node="$NPROC_PER_NODE" knn_tools/run_linear_metaclip.py \
     --model "$MODEL" \
     --output-dir "$OUTDIR" \
     --checkpoint-path "$CKPT_PATH" \
-    --train-dataset "ImageNet:split=TRAIN:root=$DATA:extra=$EXTRA" \
-    --val-dataset   "ImageNet:split=VAL:root=$DATA:extra=$EXTRA" \
-    "${BATCH_SIZE_ARG[@]}" \
+    --train-dataset "$TRAIN_DATASET" \
+    --val-dataset "$VAL_DATASET" \
+    "${TEST_DATASET_ARGS[@]}" \
+    "${TRAINING_ARGS[@]}" \
     "$@"
 
 echo ">> Results -> $OUTDIR/results_eval_linear.json"
