@@ -69,7 +69,7 @@ def main():
         default=None,
         help="Optional local checkpoint file or HF local-dir. If omitted, timm downloads via HF cache.",
     )
-    ap.add_argument("--epochs", type=int, default=100)
+    ap.add_argument("--epochs", type=int, default=10)
     ap.add_argument("--epoch-length", type=int, default=1250)
     ap.add_argument("--batch-size", type=int, default=128)
     ap.add_argument("--num-workers", type=int, default=8)
