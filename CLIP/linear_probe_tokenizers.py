@@ -263,7 +263,7 @@ def load_or_create_support(dataset: datasets.ImageFolder, split_path: Path, max_
     return support
 
 
-def _feature_cache_complete(cache_dir: Path, expected_count: int) -> bool:
+def _feature_cache_complete(cache_dir: Path, expected_count: int, batch_size: int) -> bool:
     metadata_path = cache_dir / "metadata.json"
     feature_path = cache_dir / "features.npy"
     label_path = cache_dir / "labels.npy"
@@ -271,7 +271,11 @@ def _feature_cache_complete(cache_dir: Path, expected_count: int) -> bool:
         return False
     with metadata_path.open() as handle:
         metadata = json.load(handle)
-    return metadata.get("count") == expected_count and np.load(feature_path, mmap_mode="r").shape[0] == expected_count
+    return (
+        metadata.get("count") == expected_count
+        and metadata.get("extraction_batch_size") == batch_size
+        and np.load(feature_path, mmap_mode="r").shape[0] == expected_count
+    )
 
 
 @torch.inference_mode()
@@ -288,7 +292,7 @@ def extract_features(
     indices = None if indices is None else np.asarray(list(indices), dtype=np.int64)
     selected_dataset = dataset if indices is None else Subset(dataset, indices.tolist())
     expected_count = len(selected_dataset)
-    if _feature_cache_complete(cache_dir, expected_count):
+    if _feature_cache_complete(cache_dir, expected_count, batch_size):
         print(f"Using feature cache: {cache_dir}")
         return
 
@@ -338,6 +342,7 @@ def extract_features(
         "count": expected_count,
         "feature_dim": int(feature_memmap.shape[1]),
         "dtype": "float32",
+        "extraction_batch_size": batch_size,
         "elapsed_seconds": time.time() - started,
     }
     with (cache_dir / "metadata.json").open("w") as handle:
@@ -376,7 +381,14 @@ def _write_probe_results(args, output_path: Path, feature_dim: int, completed: d
         "feature_surface": FEATURE_SURFACES[args.model],
         "feature_normalized": False,
         "preprocessing": "deterministic model-native resize/center-crop",
+        "feature_extraction_batch_size": args.batch_size,
         "classifier": "sklearn.linear_model.LogisticRegression(solver='lbfgs')",
+        "classifier_config": {
+            "random_state": args.seed,
+            "C": args.c,
+            "max_iter": args.max_iter,
+            "tol": args.tol,
+        },
         "results": results,
     }
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -401,7 +413,23 @@ def run_probe(args, support: np.ndarray, train_cache: Path, val_cache: Path, out
     if output_path.exists():
         with output_path.open() as handle:
             previous = json.load(handle)
-    completed = {int(item["shot"]): item for item in previous.get("results", [])}
+    expected_classifier_config = {
+        "random_state": args.seed,
+        "C": args.c,
+        "max_iter": args.max_iter,
+        "tol": args.tol,
+    }
+    configuration_matches = (
+        previous.get("feature_extraction_batch_size") == args.batch_size
+        and previous.get("classifier_config") == expected_classifier_config
+    )
+    if previous and not configuration_matches:
+        print("Existing results use a different extraction/classifier configuration; refitting all shots")
+    completed = {
+        int(item["shot"]): item
+        for item in previous.get("results", [])
+        if configuration_matches
+    }
 
     results = []
     for shot in args.shots:
@@ -451,7 +479,12 @@ def parse_args():
     parser.add_argument("--output-root", type=Path, default=DEFAULT_OUTPUT_ROOT)
     parser.add_argument("--shots", type=int, nargs="+", default=list(DEFAULT_SHOTS))
     parser.add_argument("--seed", type=int, default=0)
-    parser.add_argument("--batch-size", type=int, default=64)
+    parser.add_argument(
+        "--batch-size",
+        type=int,
+        default=100,
+        help="Feature-extraction batch size; OpenAI CLIP README example uses 100.",
+    )
     parser.add_argument("--num-workers", type=int, default=8)
     parser.add_argument("--c", type=float, default=DEFAULT_C, help="Inverse L2 strength; OpenAI README example uses 0.316.")
     parser.add_argument("--max-iter", type=int, default=1_000)
