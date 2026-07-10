@@ -192,6 +192,31 @@ print(f"Accuracy = {accuracy:.3f}")
 
 Note that the `C` value should be determined via a hyperparameter sweep using a validation split.
 
+#### ImageNet k-shot tokenizer baseline (VTBenchLab)
+
+This workspace adds `linear_probe_tokenizers.py`, which extends the example
+above to a balanced ImageNet-1K k-shot benchmark for UniTok, TokLIP-S,
+TokLIP-L, VILA-U, and MetaCLIP. It uses a frozen encoder, deterministic
+model-native preprocessing, a nested per-class support split, and the same
+scikit-learn L-BFGS logistic-regression defaults shown above.
+
+Run every tokenizer with the shared 1/2/4/8/16-shot split:
+
+```bash
+bash run_tokenizer_kshot_linear.sh
+```
+
+Run selected tokenizers:
+
+```bash
+bash run_tokenizer_kshot_linear.sh unitok metaclip
+```
+
+Features and resumable results are written under
+`outputs/imagenet_kshot_linear_clip/` at the workspace root. The default uses
+the fixed `C=0.316` from the official example so the ImageNet validation set is
+used only for final scoring, not hyperparameter selection.
+
 
 ## See Also
 
