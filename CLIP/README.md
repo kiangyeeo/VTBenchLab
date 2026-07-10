@@ -198,7 +198,10 @@ This workspace adds `linear_probe_tokenizers.py`, which extends the example
 above to a balanced ImageNet-1K k-shot benchmark for UniTok, TokLIP-S,
 TokLIP-L, VILA-U, and MetaCLIP. It uses a frozen encoder, deterministic
 model-native preprocessing, a nested per-class support split, and the same
-scikit-learn L-BFGS logistic-regression defaults shown above.
+scikit-learn L-BFGS logistic-regression defaults shown above. In particular,
+all five models use the README's feature-extraction batch size of 100 and the
+same `random_state=0`, `C=0.316`, `max_iter=1000`, and `tol=1e-4` classifier
+configuration. A classifier may stop before 1000 iterations after converging.
 
 Run every tokenizer with the shared 1/2/4/8/16-shot split:
 
@@ -211,6 +214,17 @@ Run selected tokenizers:
 ```bash
 bash run_tokenizer_kshot_linear.sh unitok metaclip
 ```
+
+Run one model with the parameters written explicitly:
+
+```bash
+conda run --no-capture-output -n TokBench python linear_probe_tokenizers.py \
+  --model unitok --shots 1 2 4 8 16 --seed 0 \
+  --batch-size 100 --c 0.316 --max-iter 1000 --tol 1e-4
+```
+
+Feature caches record the extraction batch size. Changing `BATCH_SIZE` causes
+the launcher to regenerate features instead of silently mixing configurations.
 
 Features and resumable results are written under
 `outputs/imagenet_kshot_linear_clip/` at the workspace root. The default uses
