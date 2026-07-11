@@ -194,16 +194,31 @@ Note that the `C` value should be determined via a hyperparameter sweep using a 
 
 #### ImageNet k-shot tokenizer baseline (VTBenchLab)
 
-This workspace adds `linear_probe_tokenizers.py`, which extends the example
-above to a balanced ImageNet-1K k-shot benchmark for UniTok, TokLIP-S,
-TokLIP-L, VILA-U, and MetaCLIP. It uses a frozen encoder, deterministic
-model-native preprocessing, a nested per-class support split, and the same
-scikit-learn L-BFGS logistic-regression defaults shown above. In particular,
-all five models use the README's feature-extraction batch size of 100 and the
-same `random_state=0`, `C=0.316`, `max_iter=1000`, and `tol=1e-4` classifier
-configuration. A classifier may stop before 1000 iterations after converging.
+This workspace adds `linear_probe_tokenizers.py`, a frozen-feature ImageNet-1K
+benchmark for UniTok, TokLIP-S, TokLIP-L, VILA-U, and MetaCLIP. Its default
+`clip-paper-v1` protocol follows Appendix A.3 of the CLIP paper: an L-BFGS
+logistic-regression head, at most 1,000 iterations, and a parametric search for
+L2 regularization over `C=1e-6...1e6`. The search starts at seven two-decade
+anchors and bisects around the selection peak until reaching eight steps per
+decade. Exact ties select the smaller `C`.
 
-Run every tokenizer with the shared 1/2/4/8/16-shot split:
+The CLIP paper did not release its ImageNet train/selection indices. To make
+the protocol reproducible, this implementation adopts the official DINOv2
+logistic-regression convention: `torch.randperm(seed=0)` reserves the first
+10% of ImageNet train (128,116 images) for selecting C. Balanced, nested
+1/2/4/8/16-shot support sets are sampled only from the remaining 1,153,051
+images. The selection images are never added to the final few-shot classifier.
+All tokenizers share the same persisted split indices and use feature
+extraction batch size 100.
+
+ImageNet's official split names matter here: `val/` contains 50,000 labeled
+images and is used only for final Top-1/Top-5 reporting. The official ILSVRC
+`test` split contains 100,000 images whose labels are not public, so it is not
+used. Results from this implementation should therefore be described as a
+**CLIP-paper-aligned, fully specified reproduction**, not as a reproduction of
+CLIP's unpublished split.
+
+Run every tokenizer with support seeds 0, 1, and 2:
 
 ```bash
 bash run_tokenizer_kshot_linear.sh
@@ -219,17 +234,132 @@ Run one model with the parameters written explicitly:
 
 ```bash
 conda run --no-capture-output -n TokBench python linear_probe_tokenizers.py \
-  --model unitok --shots 1 2 4 8 16 --seed 0 \
-  --batch-size 100 --c 0.316 --max-iter 1000 --tol 1e-4
+  --model unitok --protocol clip-paper-v1 \
+  --shots 1 2 4 8 16 --seed 0 \
+  --selection-seed 0 --selection-fraction 0.1 \
+  --batch-size 100 --max-iter 1000 --tol 1e-4
 ```
 
-Feature caches record the extraction batch size. Changing `BATCH_SIZE` causes
-the launcher to regenerate features instead of silently mixing configurations.
+Feature caches record the model/checkpoint manifest, preprocessing, split,
+protocol, and extraction batch size. A mismatched cache is rejected unless
+`--overwrite-features` is explicitly supplied. Results are resumable only when
+their complete protocol hash matches.
 
-Features and resumable results are written under
-`outputs/imagenet_kshot_linear_clip/` at the workspace root. The default uses
-the fixed `C=0.316` from the official example so the ImageNet validation set is
-used only for final scoring, not hyperparameter selection.
+New results are written under
+`outputs/imagenet_kshot_linear_clip_paper_v1/`. Per-seed summaries and an
+aggregate mean/population-standard-deviation table are generated after the
+launcher completes. Existing fixed-C results under
+`outputs/imagenet_kshot_linear_clip/` are left untouched. The old behavior is
+still available with `--protocol clip-readme-fixed --c 0.316` and should be
+reported as a README-example baseline rather than the paper protocol.
+
+
+#### PASCAL VOC 2007 multi-label tokenizer baseline (VTBenchLab)
+
+`linear_probe_voc2007.py` evaluates UniTok, VILA-U, MetaCLIP, TokLIP-S, and
+TokLIP-L as frozen feature extractors on the 20-label PASCAL VOC 2007
+classification task. The protocol is based primarily on Kornblith et al.,
+[Do Better ImageNet Models Transfer Better?](https://openaccess.thecvf.com/content_CVPR_2019/papers/Kornblith_Do_Better_ImageNet_Models_Transfer_Better_CVPR_2019_paper.pdf),
+and its
+[supplementary material](https://openaccess.thecvf.com/content_CVPR_2019/supplemental/Kornblith_Do_Better_ImageNet_CVPR_2019_supplemental.pdf).
+The [VOC2007 development kit](https://www.robots.ox.ac.uk/~vgg/projects/pascal/VOC/voc2007/htmldoc/)
+defines the final metric.
+
+The exact settings are:
+
+- official train (2,501), val (2,510), and test (4,952) splits;
+- 20 independent binary L2 logistic regressions, because VOC classification is
+  a multi-label presence/absence task rather than a single-label softmax task;
+- label `1` is positive, `-1` is negative, and `0` (difficult) is ignored per
+  class, matching `VOCevalcls.m`;
+- no data augmentation, no feature normalization, and no center crop: the
+  entire image is resized bicubically to each tokenizer's native input size;
+- L-BFGS with one shared regularization value selected by validation 11-point
+  mAP from 45 values `lambda=10**np.linspace(-6, 5, 45)`;
+- the search runs from strong to weak regularization with warm starts and uses
+  the sklearn mapping `C=1/lambda`; exact validation ties choose larger lambda;
+- the selected head is refit on train+val and evaluated once on test; and
+- final reporting is the arithmetic mean of the 20 official VOC2007 11-point
+  AP values, in percent.
+
+The paper does not specify solver stopping limits. `max_iter=1000` follows the
+[OpenAI CLIP linear-probe example](https://github.com/openai/CLIP), and
+`tol=1e-4` is the sklearn default and matches the ImageNet tokenizer probe in
+this workspace. Feature extraction uses batch size 100 from that CLIP example.
+The default 8 data workers follows the local DINOv2 full-shot evaluator.
+DINOv2's SGD learning rates, 10 epochs, and 1,250-iteration epoch length are
+not used: those configure its augmented single-label linear head, whereas this
+benchmark follows the paper's convex L-BFGS classifier. Thus `--batch-size`
+below controls only frozen-feature extraction; there is no classifier epoch,
+learning rate, SGD momentum, or minibatch size.
+
+The current downloads are raw official archives. Extract them explicitly; the
+benchmark never unpacks or modifies dataset archives itself:
+
+```bash
+cd /cache/ma-user/VTBenchLab
+mkdir -p data/voc2007
+tar -xf data/voc2007_raw/VOCdevkit_08-Jun-2007.tar -C data/voc2007
+tar -xf data/voc2007_raw/VOCtrainval_06-Nov-2007.tar -C data/voc2007
+tar -xf data/voc2007_raw/VOCtest_06-Nov-2007.tar -C data/voc2007
+```
+
+Run all five tokenizers:
+
+```bash
+cd /cache/ma-user/VTBenchLab/CLIP
+bash run_tokenizer_voc2007_linear.sh
+```
+
+Run selected tokenizers:
+
+```bash
+bash run_tokenizer_voc2007_linear.sh unitok toklipl
+```
+
+Run one model with all score-affecting CLI values visible:
+
+```bash
+conda run --no-capture-output -n TokBench \
+  python linear_probe_voc2007.py \
+  --model unitok \
+  --data-root ../data/voc2007/VOCdevkit/VOC2007 \
+  --output-root ../outputs/voc2007_multilabel_linear_kornblith_v1 \
+  --batch-size 100 \
+  --num-workers 8 \
+  --max-iter 1000 \
+  --tol 1e-4 \
+  --seed 0
+```
+
+Reuse completed train/val/test feature caches and run only the CPU probing
+stage:
+
+```bash
+PROBE_ONLY=1 bash run_tokenizer_voc2007_linear.sh unitok
+```
+
+Regenerate only the comparison tables from completed model results:
+
+```bash
+conda run --no-capture-output -n TokBench \
+  python summarize_tokenizer_voc2007.py \
+  --output-root ../outputs/voc2007_multilabel_linear_kornblith_v1
+```
+
+Feature caches and per-class regularization paths are resumable only when their
+protocol fingerprints match. Use `OVERWRITE_FEATURES=1` or
+`OVERWRITE_PROBE=1` to replace the corresponding artifacts explicitly. A
+forward-only check is available with `SMOKE_TEST=1`; it does not write probe
+results.
+
+Outputs are written under
+`outputs/voc2007_multilabel_linear_kornblith_v1/`. `summary.md` and
+`summary.csv` contain one test mAP per tokenizer; `per_class_ap.csv` and
+`per_class_ap.md` contain all 20 AP values. Each model directory also contains
+`results.json`, `linear_head.npz`, feature/search caches, and official-format
+`voc_results/comp1_cls_test_<class>.txt` files that can be checked independently
+with `VOCevalcls.m`.
 
 
 ## See Also
