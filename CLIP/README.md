@@ -253,6 +253,52 @@ launcher completes. Existing fixed-C results under
 still available with `--protocol clip-readme-fixed --c 0.316` and should be
 reported as a README-example baseline rather than the paper protocol.
 
+##### K-shot-aligned full-support endpoint
+
+`linear_probe_tokenizers_full_support.py` supplies a fair endpoint for the
+1/2/4/8/16-shot curve. It preserves the exact feature surface, deterministic
+preprocessing, L-BFGS classifier, regularization search, and official ImageNet
+validation evaluation used above. Instead of selecting `k` balanced examples,
+it trains on all 1,153,051 examples in the disjoint 90% support pool. The fixed
+10% selection split remains excluded from the final classifier, matching the
+support-only k-shot definition. This is therefore approximately 1,153-shot per
+class, although ImageNet is not perfectly class-balanced.
+
+Run one model end to end:
+
+```bash
+cd /cache/ma-user/VTBenchLab/CLIP
+bash run_tokenizer_full_support_linear.sh unitok
+```
+
+Run all five models:
+
+```bash
+bash run_tokenizer_full_support_linear.sh
+```
+
+The exact C search requires multiple CPU fits over 1.15M examples and is much
+more expensive than 16-shot. A safer operational split is to extract features
+on GPU first, then run the resumable CPU probe:
+
+```bash
+FEATURES_ONLY=1 bash run_tokenizer_full_support_linear.sh unitok
+PROBE_ONLY=1 OMP_NUM_THREADS=32 bash run_tokenizer_full_support_linear.sh unitok
+```
+
+Each completed C candidate is persisted under
+`<output-root>/<model>/full_support/c_search_state.json`, so rerunning the same
+command resumes the search. Final JSON is written to
+`<output-root>/<model>/full_support/results.json`; combined CSV and Markdown
+summaries are written at the output root. Existing k-shot selection and
+validation feature caches are reused when their fingerprints match.
+
+For a quick fixed-C diagnostic (not the exact k-shot protocol), set `FIXED_C`:
+
+```bash
+FIXED_C=0.01 bash run_tokenizer_full_support_linear.sh unitok
+```
+
 
 #### PASCAL VOC 2007 multi-label tokenizer baseline (VTBenchLab)
 
