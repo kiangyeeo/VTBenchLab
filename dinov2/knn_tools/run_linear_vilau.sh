@@ -24,7 +24,7 @@ echo ">> VILA-U semantic linear probing"
 echo "   dataset=$DATASET"
 echo "   out=$OUTDIR"
 echo "   model=$MODEL_PATH"
-echo "   batch_size=$BATCH_SIZE epochs=$EPOCHS epoch_length=$EPOCH_LENGTH"
+echo "   batch_size=$BATCH_SIZE epochs=$EPOCHS epoch_length=$EPOCH_LENGTH eval_period=$EVAL_PERIOD_ITERATIONS"
 echo "   extra args=$*"
 
 PYTHONPATH=. torchrun --standalone --nproc_per_node="$NPROC_PER_NODE" knn_tools/run_linear_vilau.py \
