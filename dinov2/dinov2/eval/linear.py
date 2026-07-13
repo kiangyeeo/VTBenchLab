@@ -183,15 +183,37 @@ def create_linear_input(x_tokens_list, use_n_blocks, use_avgpool):
     return output.float()
 
 
+def linear_classifier_name(use_n_blocks, use_avgpool, effective_lr):
+    """Build a lossless, ModuleDict-safe classifier name.
+
+    The previous ``{lr:.5f}`` formatting merges distinct small learning rates
+    (for example 5e-6 and 1e-5), silently reducing a 52-head grid to 48 heads
+    at batch size 128 on one worker.
+    """
+    lr_token = format(float(effective_lr), ".12g")
+    lr_token = lr_token.replace(".", "_").replace("+", "p").replace("-", "m")
+    return f"classifier_{use_n_blocks}_blocks_avgpool_{use_avgpool}_lr_{lr_token}"
+
+
 class LinearClassifier(nn.Module):
     """Linear layer to train on top of frozen features"""
 
-    def __init__(self, out_dim, use_n_blocks, use_avgpool, num_classes=1000):
+    def __init__(
+        self,
+        out_dim,
+        use_n_blocks,
+        use_avgpool,
+        num_classes=1000,
+        configured_lr=None,
+        effective_lr=None,
+    ):
         super().__init__()
         self.out_dim = out_dim
         self.use_n_blocks = use_n_blocks
         self.use_avgpool = use_avgpool
         self.num_classes = num_classes
+        self.configured_lr = None if configured_lr is None else float(configured_lr)
+        self.effective_lr = None if effective_lr is None else float(effective_lr)
         self.linear = nn.Linear(out_dim, num_classes)
         self.linear.weight.data.normal_(mean=0.0, std=0.01)
         self.linear.bias.data.zero_()
@@ -235,18 +257,29 @@ def scale_lr(learning_rates, batch_size):
 def setup_linear_classifiers(sample_output, n_last_blocks_list, learning_rates, batch_size, num_classes=1000):
     linear_classifiers_dict = nn.ModuleDict()
     optim_param_groups = []
+    learning_rates = [float(lr) for lr in learning_rates]
+    if not learning_rates or any(not np.isfinite(lr) or lr <= 0 for lr in learning_rates):
+        raise ValueError("learning_rates must contain finite positive values")
+    if len(learning_rates) != len(set(learning_rates)):
+        raise ValueError("learning_rates must not contain duplicates")
     for n in n_last_blocks_list:
         for avgpool in [False, True]:
             for _lr in learning_rates:
                 lr = scale_lr(_lr, batch_size)
                 out_dim = create_linear_input(sample_output, use_n_blocks=n, use_avgpool=avgpool).shape[1]
                 linear_classifier = LinearClassifier(
-                    out_dim, use_n_blocks=n, use_avgpool=avgpool, num_classes=num_classes
+                    out_dim,
+                    use_n_blocks=n,
+                    use_avgpool=avgpool,
+                    num_classes=num_classes,
+                    configured_lr=_lr,
+                    effective_lr=lr,
                 )
                 linear_classifier = linear_classifier.cuda()
-                linear_classifiers_dict[
-                    f"classifier_{n}_blocks_avgpool_{avgpool}_lr_{lr:.5f}".replace(".", "_")
-                ] = linear_classifier
+                name = linear_classifier_name(n, avgpool, lr)
+                if name in linear_classifiers_dict:
+                    raise RuntimeError(f"Classifier name collision for effective learning rate {lr}: {name}")
+                linear_classifiers_dict[name] = linear_classifier
                 optim_param_groups.append({"params": linear_classifier.parameters(), "lr": lr})
 
     linear_classifiers = AllClassifiers(linear_classifiers_dict)
@@ -286,17 +319,57 @@ def evaluate_linear_classifiers(
 
     logger.info("")
     results_dict = {}
-    max_accuracy = 0
+    classifier_results = []
+    max_accuracy = float("-inf")
     best_classifier = ""
+    configured_lrs = [
+        classifier.configured_lr
+        for classifier in linear_classifiers.classifiers_dict.values()
+        if classifier.configured_lr is not None
+    ]
+    min_configured_lr = min(configured_lrs) if configured_lrs else None
+    max_configured_lr = max(configured_lrs) if configured_lrs else None
     for i, (classifier_string, metric) in enumerate(results_dict_temp.items()):
         logger.info(f"{prefixstring} -- Classifier: {classifier_string} * {metric}")
+        classifier = linear_classifiers.classifiers_dict[classifier_string]
+        metric_values = {name: float(value.item()) for name, value in metric.items()}
+        configured_lr = classifier.configured_lr
+        if configured_lr == min_configured_lr:
+            lr_boundary = "low"
+        elif configured_lr == max_configured_lr:
+            lr_boundary = "high"
+        else:
+            lr_boundary = "interior"
+        classifier_results.append(
+            {
+                "name": classifier_string,
+                "n_last_blocks": int(classifier.use_n_blocks),
+                "avgpool": bool(classifier.use_avgpool),
+                "configured_lr": configured_lr,
+                "effective_lr": classifier.effective_lr,
+                "lr_boundary": lr_boundary,
+                "metrics": metric_values,
+            }
+        )
         if (
             best_classifier_on_val is None and metric["top-1"].item() > max_accuracy
         ) or classifier_string == best_classifier_on_val:
             max_accuracy = metric["top-1"].item()
             best_classifier = classifier_string
 
-    results_dict["best_classifier"] = {"name": best_classifier, "accuracy": max_accuracy}
+    if not best_classifier:
+        raise RuntimeError(f"Requested validation classifier was not evaluated: {best_classifier_on_val!r}")
+    best_item = next(item for item in classifier_results if item["name"] == best_classifier)
+    results_dict["best_classifier"] = {
+        "name": best_classifier,
+        "accuracy": max_accuracy,
+        "n_last_blocks": best_item["n_last_blocks"],
+        "avgpool": best_item["avgpool"],
+        "configured_lr": best_item["configured_lr"],
+        "effective_lr": best_item["effective_lr"],
+        "lr_boundary": best_item["lr_boundary"],
+    }
+    results_dict["classifiers"] = classifier_results
 
     logger.info(f"best classifier: {results_dict['best_classifier']}")
 
