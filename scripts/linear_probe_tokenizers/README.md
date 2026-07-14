@@ -11,7 +11,8 @@ is specific to ViT/DINO-style intermediate features.
 |---|---|
 | Dataset | ImageNet-1k train / validation |
 | Hardware | one visible GPU, one process |
-| Physical/global batch | 1024 |
+| Optimization global batch | 1024 |
+| Frozen-backbone feature microbatch | 128; 8 chunks concatenated to `[1024,D]` before the heads |
 | Gradient accumulation | 1 (none) |
 | Updates | 12,500 (`10 x 1,250`) |
 | Loss | cross entropy |
@@ -23,7 +24,7 @@ is specific to ViT/DINO-style intermediate features.
 | Feature normalization | none |
 | Class weighting | none |
 | Seed | 0 |
-| Validation | every 1,250 updates and after update 12,500 |
+| Validation | batch 128; every 1,250 updates and after update 12,500 |
 
 The 13 paper base learning rates are:
 
@@ -38,9 +39,14 @@ At batch 1024 the effective grid is:
 0.0004 0.0008 0.002 0.004 0.008 0.02 0.04 0.08 0.2 0.4 0.8 1.2 2.0
 ```
 
-All 13 heads are trained in parallel from one frozen feature extraction per
-batch. The best validation top-1 head is reported. `protocol.json` records the
-complete configuration and prevents incompatible checkpoints from being mixed.
+The DataLoader still produces one optimization batch of 1,024 images.  The
+frozen backbone processes that CPU batch in eight 128-image chunks, and the
+resulting ordinary FP32 tensors are concatenated to one `[1024,D]` tensor before
+all 13 heads run.  There is one loss/backward/optimizer/scheduler step per 1,024
+images; feature microbatching is not gradient accumulation and does not change
+the LR scaling or update count.  The best validation top-1 head is reported.
+`protocol.json` records the complete configuration and prevents incompatible
+checkpoints from being mixed.
 
 ## Fixed representations
 

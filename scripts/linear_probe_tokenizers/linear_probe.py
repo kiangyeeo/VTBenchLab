@@ -32,7 +32,7 @@ from feature_extractors import FeatureBundle, load_feature_bundle
 
 
 LOGGER = logging.getLogger("dinov2")
-PROTOCOL_VERSION = "tokenizer_linear_probe_dinov2_single_surface_v1"
+PROTOCOL_VERSION = "tokenizer_linear_probe_dinov2_single_surface_v2"
 MODEL_NAMES = ("metaclip", "toklip_s", "toklip_l", "unitok", "vilau")
 OUTPUT_NAMES = {
     "metaclip": "metaclip_b16_2pt5b",
@@ -44,6 +44,8 @@ OUTPUT_NAMES = {
 
 # Protocol-critical constants are intentionally not command-line options.
 BATCH_SIZE = 1024
+FEATURE_MICROBATCH_SIZE = 128
+EVAL_BATCH_SIZE = 128
 EPOCHS = 10
 EPOCH_LENGTH = 1250
 MAX_UPDATES = EPOCHS * EPOCH_LENGTH
@@ -72,21 +74,41 @@ def _lr_token(value: float) -> str:
 
 
 class FrozenFeatureModel(nn.Module):
-    """Run a frozen encoder and return one ordinary FP32 feature tensor."""
+    """Run a frozen encoder in chunks and return one ordinary FP32 batch."""
 
-    def __init__(self, bundle: FeatureBundle):
+    def __init__(self, bundle: FeatureBundle, device: torch.device, microbatch_size: int):
         super().__init__()
         self.encoder = bundle.encoder
         self.autocast_context = bundle.autocast_context
+        self.device = device
+        self.microbatch_size = int(microbatch_size)
+        if self.microbatch_size <= 0:
+            raise ValueError("Feature microbatch size must be positive")
 
     def forward(self, images: torch.Tensor) -> torch.Tensor:
         self.encoder.eval()
-        with torch.inference_mode():
-            with self.autocast_context():
-                features = self.encoder(images)
-        # clone outside inference_mode so nn.Linear can save this tensor for its
-        # weight gradient without inheriting inference-tensor restrictions.
-        return features.float().clone()
+        feature_chunks = []
+        for image_chunk in images.split(self.microbatch_size, dim=0):
+            device_images = image_chunk.to(self.device, non_blocking=True)
+            with torch.inference_mode():
+                with self.autocast_context():
+                    chunk_features = self.encoder(device_images)
+            del device_images
+            if chunk_features.ndim != 2 or chunk_features.shape[0] != image_chunk.shape[0]:
+                raise RuntimeError(
+                    "Feature extractor must return [B,D] for every microbatch, "
+                    f"got {tuple(chunk_features.shape)}"
+                )
+            # Clone outside the local inference_mode context so training-time
+            # nn.Linear can save this tensor for its weight gradient.
+            feature_chunks.append(chunk_features.float().clone())
+
+        features = torch.cat(feature_chunks, dim=0)
+        if features.shape[0] != images.shape[0]:
+            raise RuntimeError(
+                f"Expected {images.shape[0]} concatenated features, got {features.shape[0]}"
+            )
+        return features
 
 
 class LinearHead(nn.Module):
@@ -216,6 +238,11 @@ def _make_protocol(args, bundle: FeatureBundle, effective_lrs: list[float]) -> d
         "dataset": "ImageNet-1k",
         "single_gpu": True,
         "global_batch_size": BATCH_SIZE,
+        "feature_extraction_microbatch_size": FEATURE_MICROBATCH_SIZE,
+        "feature_microbatch_semantics": (
+            "frozen backbone only; concatenate one FP32 [global_batch,D] tensor before linear heads"
+        ),
+        "validation_batch_size": EVAL_BATCH_SIZE,
         "gradient_accumulation_steps": 1,
         "epochs": EPOCHS,
         "epoch_length_updates": EPOCH_LENGTH,
@@ -369,7 +396,11 @@ def main() -> int:
     val_dataset_str = f"ImageNet:split=VAL:root={data_root}:extra={extra_root}"
     bundle = load_feature_bundle(args.model, args, device)
     _configure_cuda_math()
-    feature_model = FrozenFeatureModel(bundle).to(device).eval()
+    feature_model = FrozenFeatureModel(
+        bundle,
+        device=device,
+        microbatch_size=FEATURE_MICROBATCH_SIZE,
+    ).to(device).eval()
 
     train_dataset = make_dataset(dataset_str=train_dataset_str, transform=bundle.train_transform)
     val_dataset = make_dataset(dataset_str=val_dataset_str, transform=bundle.eval_transform)
@@ -417,7 +448,7 @@ def main() -> int:
     )
     val_loader = make_data_loader(
         dataset=val_dataset,
-        batch_size=BATCH_SIZE,
+        batch_size=EVAL_BATCH_SIZE,
         num_workers=args.num_workers,
         shuffle=False,
         seed=SEED,
@@ -427,11 +458,13 @@ def main() -> int:
     )
 
     LOGGER.info(
-        "Starting %s from update %d/%d with physical global batch %d",
+        "Starting %s from update %d/%d with optimization global batch %d "
+        "and frozen-backbone feature microbatch %d",
         args.model,
         start_update,
         MAX_UPDATES,
         BATCH_SIZE,
+        FEATURE_MICROBATCH_SIZE,
     )
     if start_update < MAX_UPDATES:
         metric_logger = MetricLogger(delimiter="  ")
@@ -445,10 +478,13 @@ def main() -> int:
             start_update,
         ):
             if images.shape[0] != BATCH_SIZE:
-                raise RuntimeError(f"Expected physical batch {BATCH_SIZE}, got {images.shape[0]}")
-            images = images.to(device, non_blocking=True)
+                raise RuntimeError(
+                    f"Expected optimization batch {BATCH_SIZE}, got {images.shape[0]}"
+                )
             labels = labels.to(device, non_blocking=True)
             features = feature_model(images)
+            if features.shape[0] != BATCH_SIZE:
+                raise RuntimeError(f"Expected feature batch {BATCH_SIZE}, got {features.shape[0]}")
             logits = head_grid(features)
             losses = [nn.functional.cross_entropy(output, labels) for output in logits.values()]
             loss = torch.stack(losses).sum()
