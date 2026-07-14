@@ -12,7 +12,7 @@ is specific to ViT/DINO-style intermediate features.
 | Dataset | ImageNet-1k train / validation |
 | Hardware | one visible GPU, one process |
 | Optimization global batch | 1024 |
-| Frozen-backbone feature microbatch | 128; 8 chunks concatenated to `[1024,D]` before the heads |
+| Frozen-backbone feature microbatch | 256; 4 chunks concatenated to `[1024,D]` before the heads |
 | Gradient accumulation | 1 (none) |
 | Updates | 12,500 (`10 x 1,250`) |
 | Loss | cross entropy |
@@ -24,7 +24,7 @@ is specific to ViT/DINO-style intermediate features.
 | Feature normalization | none |
 | Class weighting | none |
 | Seed | 0 |
-| Validation | batch 128; every 1,250 updates and after update 12,500 |
+| Validation | batch 256; every 1,250 updates and after update 12,500 |
 
 The 13 paper base learning rates are:
 
@@ -40,7 +40,7 @@ At batch 1024 the effective grid is:
 ```
 
 The DataLoader still produces one optimization batch of 1,024 images.  The
-frozen backbone processes that CPU batch in eight 128-image chunks, and the
+frozen backbone processes that CPU batch in four 256-image chunks, and the
 resulting ordinary FP32 tensors are concatenated to one `[1024,D]` tensor before
 all 13 heads run.  There is one loss/backward/optimizer/scheduler step per 1,024
 images; feature microbatching is not gradient accumulation and does not change
