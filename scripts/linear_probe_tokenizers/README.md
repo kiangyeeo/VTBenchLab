@@ -7,6 +7,7 @@ is specific to ViT/DINO-style intermediate features.
 
 ## Fixed protocol
 
+
 | Parameter | Value |
 |---|---|
 | Dataset | ImageNet-1k train / validation |
