@@ -36,7 +36,7 @@ class FeatureBundle:
 
 
 class MetaCLIPEncoder(nn.Module):
-    """Final normalized MetaCLIP CLS, before the 768-to-512 projection."""
+    """Final normalized MetaCLIP CLS, before the vision projection head."""
 
     def __init__(self, model: nn.Module):
         super().__init__()
@@ -53,6 +53,21 @@ class MetaCLIPEncoder(nn.Module):
         if prefix_tokens.ndim != 3 or prefix_tokens.shape[1] < 1:
             raise RuntimeError(f"Unexpected MetaCLIP prefix-token shape: {tuple(prefix_tokens.shape)}")
         return prefix_tokens[:, 0].float()
+
+
+class OpenAIClipEncoder(nn.Module):
+    """Final post-LayerNorm OpenAI CLIP CLS, before visual_projection."""
+
+    def __init__(self, model: nn.Module):
+        super().__init__()
+        self.model = model
+
+    def forward(self, images: torch.Tensor) -> torch.Tensor:
+        outputs = self.model(pixel_values=images, return_dict=True)
+        if outputs.pooler_output is None or outputs.pooler_output.ndim != 2:
+            shape = None if outputs.pooler_output is None else tuple(outputs.pooler_output.shape)
+            raise RuntimeError(f"Unexpected OpenAI CLIP pooled-output shape: {shape}")
+        return outputs.pooler_output.float()
 
 
 class TokLIPEncoder(nn.Module):
@@ -142,13 +157,18 @@ def _resolve_checkpoint(path: str) -> str:
     raise FileNotFoundError(f"No supported checkpoint found at {checkpoint}")
 
 
-def _load_metaclip(args, device: torch.device) -> FeatureBundle:
+def _load_metaclip(
+    model_name: str,
+    checkpoint_path: str,
+    representation: str,
+    device: torch.device,
+) -> FeatureBundle:
     import timm
     from timm.data import create_transform, resolve_model_data_config
     from timm.models import load_checkpoint
 
-    checkpoint = _resolve_checkpoint(args.metaclip_checkpoint)
-    model = timm.create_model(args.metaclip_model, pretrained=False)
+    checkpoint = _resolve_checkpoint(checkpoint_path)
+    model = timm.create_model(model_name, pretrained=False)
     load_checkpoint(model, checkpoint, strict=True)
     data_config = resolve_model_data_config(model)
     image_size = int(data_config["input_size"][-1])
@@ -171,10 +191,84 @@ def _load_metaclip(args, device: torch.device) -> FeatureBundle:
         train_transform=train_transform,
         eval_transform=eval_transform,
         autocast_context=nullcontext,
-        representation="final normalized CLS before the MetaCLIP 768-to-512 projection",
+        representation=representation,
         transform_description=(
             f"train=RandomResizedCrop({image_size})+HorizontalFlip(0.5), "
             f"eval=timm deterministic native transform, mean={mean}, std={std}, no ColorJitter"
+        ),
+        backbone_precision="float32",
+        checkpoint_paths=[checkpoint],
+    )
+
+
+def _processor_square_size(value, name: str) -> int:
+    if isinstance(value, int):
+        return value
+    if isinstance(value, dict):
+        if "shortest_edge" in value:
+            return int(value["shortest_edge"])
+        height = value.get("height")
+        width = value.get("width")
+        if height is not None and width is not None and int(height) == int(width):
+            return int(height)
+    raise ValueError(f"Expected a square CLIP image-processor {name}, got {value!r}")
+
+
+def _load_clip_openai_l14(args, device: torch.device) -> FeatureBundle:
+    from transformers import CLIPImageProcessor, CLIPVisionModel
+
+    model_path = Path(args.clip_openai_model_path).expanduser().resolve()
+    if not model_path.is_dir():
+        raise FileNotFoundError(f"Missing OpenAI CLIP model directory: {model_path}")
+    checkpoint = _resolve_checkpoint(str(model_path))
+    model, loading_info = CLIPVisionModel.from_pretrained(
+        str(model_path),
+        local_files_only=True,
+        output_loading_info=True,
+    )
+    unexpected_vision_keys = [
+        key for key in loading_info["unexpected_keys"] if key.startswith("vision_model.")
+    ]
+    if (
+        loading_info["missing_keys"]
+        or loading_info["mismatched_keys"]
+        or loading_info["error_msgs"]
+        or unexpected_vision_keys
+    ):
+        raise RuntimeError(f"Failed to strictly load the OpenAI CLIP vision tower: {loading_info}")
+    processor = CLIPImageProcessor.from_pretrained(str(model_path), local_files_only=True)
+
+    image_size = int(model.config.image_size)
+    crop_size = _processor_square_size(processor.crop_size, "crop_size")
+    resize_size = _processor_square_size(processor.size, "size")
+    if crop_size != image_size:
+        raise ValueError(
+            f"CLIP processor crop size {crop_size} does not match model image size {image_size}"
+        )
+    mean = tuple(float(value) for value in processor.image_mean)
+    std = tuple(float(value) for value in processor.image_std)
+    train_transform = make_classification_train_transform(
+        crop_size=image_size,
+        hflip_prob=0.5,
+        mean=mean,
+        std=std,
+    )
+    eval_transform = make_classification_eval_transform(
+        resize_size=resize_size,
+        crop_size=image_size,
+        mean=mean,
+        std=std,
+    )
+    encoder = OpenAIClipEncoder(model).to(device).eval().requires_grad_(False)
+    return FeatureBundle(
+        encoder=encoder,
+        train_transform=train_transform,
+        eval_transform=eval_transform,
+        autocast_context=nullcontext,
+        representation="final post-LayerNorm CLS before the OpenAI CLIP 1024-to-768 visual projection",
+        transform_description=(
+            f"train=RandomResizedCrop({image_size})+HorizontalFlip(0.5), "
+            f"eval=Resize({resize_size})+CenterCrop({image_size}), mean={mean}, std={std}"
         ),
         backbone_precision="float32",
         checkpoint_paths=[checkpoint],
@@ -288,7 +382,21 @@ def _load_vilau(args, device: torch.device) -> FeatureBundle:
 
 def load_feature_bundle(model_name: str, args, device: torch.device) -> FeatureBundle:
     if model_name == "metaclip":
-        return _load_metaclip(args, device)
+        return _load_metaclip(
+            args.metaclip_model,
+            args.metaclip_checkpoint,
+            "final normalized CLS before the MetaCLIP 768-to-512 projection",
+            device,
+        )
+    if model_name == "clip_openai__l14":
+        return _load_clip_openai_l14(args, device)
+    if model_name == "clip_meta__l14":
+        return _load_metaclip(
+            args.clip_meta_model,
+            args.clip_meta_checkpoint,
+            "final normalized CLS before the MetaCLIP 1024-to-768 projection",
+            device,
+        )
     if model_name == "toklip_s":
         return _load_toklip(args, device, "s")
     if model_name == "toklip_l":
