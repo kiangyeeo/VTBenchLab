@@ -33,9 +33,19 @@ from feature_extractors import FeatureBundle, load_feature_bundle
 
 LOGGER = logging.getLogger("dinov2")
 PROTOCOL_VERSION = "tokenizer_linear_probe_dinov2_single_surface_v2"
-MODEL_NAMES = ("metaclip", "toklip_s", "toklip_l", "unitok", "vilau")
+MODEL_NAMES = (
+    "metaclip",
+    "clip_openai__l14",
+    "clip_meta__l14",
+    "toklip_s",
+    "toklip_l",
+    "unitok",
+    "vilau",
+)
 OUTPUT_NAMES = {
     "metaclip": "metaclip_b16_2pt5b",
+    "clip_openai__l14": "clip_openai__l14",
+    "clip_meta__l14": "clip_meta__l14",
     "toklip_s": "toklip_s_semantic_256",
     "toklip_l": "toklip_l_semantic_384",
     "unitok": "unitok",
@@ -144,6 +154,7 @@ class LinearPostprocessor(nn.Module):
 
 def _parse_args():
     model_zoo = WORKSPACE / "TokBench" / "tokenizer_modelzoo"
+    continuous_model_zoo = model_zoo / "continuous"
     image_scripts = WORKSPACE / "TokBench" / "tokenzier_vae_scripts" / "image_scripts"
     parser = argparse.ArgumentParser(
         description="DINOv2-style single-surface ImageNet linear probing for visual tokenizers"
@@ -164,6 +175,18 @@ def _parse_args():
     parser.add_argument(
         "--metaclip-checkpoint",
         default=str(model_zoo / "MetaCLIP" / "vit_base_patch16_clip_224.metaclip_2pt5b"),
+    )
+    parser.add_argument(
+        "--clip-openai-model-path",
+        default=str(continuous_model_zoo / "clip_openai__l14"),
+    )
+    parser.add_argument(
+        "--clip-meta-model",
+        default="vit_large_patch14_clip_224.metaclip_2pt5b",
+    )
+    parser.add_argument(
+        "--clip-meta-checkpoint",
+        default=str(continuous_model_zoo / "mc1_l14_224_2.5b"),
     )
     parser.add_argument("--toklip-path", default=str(image_scripts / "TokLIP"))
     parser.add_argument("--toklip-s-checkpoint", default=str(model_zoo / "TokLIP" / "TokLIP_S_256.pt"))
