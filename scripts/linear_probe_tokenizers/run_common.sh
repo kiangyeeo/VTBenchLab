@@ -23,7 +23,7 @@ run_tokenizer_linear_probe() {
 
     echo ">> tokenizer linear probing: $model"
     echo "   single visible GPU; optimization global batch=1024; accumulation=1"
-    echo "   frozen-backbone feature microbatch=256; concatenated before linear heads"
+    echo "   frozen-backbone feature batch=1024; one forward before linear heads"
     echo "   updates=12500; base LR grid=0.0001 ... 0.5; DINO batch scaling=x4"
     echo "   output_root=$OUT_ROOT"
 
