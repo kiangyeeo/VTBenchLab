@@ -13,7 +13,7 @@ Since visual tokenizers in our project may come from different sources and follo
 - [GVTBench](GVT/README.md)
 - [TokBench](TokBench/README.md)
 - [CLIP](CLIP_benchmark/README.md)
-linear probing: dinov2 protocal: 13 learning rate search in [here](./scripts/linear_probe_tokenizers/)
+- [linear probing](./scripts/linear_probe_tokenizers/) 
 
 
 
