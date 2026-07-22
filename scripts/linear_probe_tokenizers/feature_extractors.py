@@ -22,6 +22,24 @@ from dinov2.data.transforms import make_classification_eval_transform, make_clas
 PM1_MEAN = (0.5, 0.5, 0.5)
 PM1_STD = (0.5, 0.5, 0.5)
 
+METACLIP_400M_SPECS = {
+    "mc1_b32_224_400m": (
+        "vit_base_patch32_clip_224.metaclip_400m",
+        "mc1_b32_224_400m_checkpoint",
+        "final normalized CLS before the MetaCLIP 768-to-512 projection",
+    ),
+    "mc1_b16_224_400m": (
+        "vit_base_patch16_clip_224.metaclip_400m",
+        "mc1_b16_224_400m_checkpoint",
+        "final normalized CLS before the MetaCLIP 768-to-512 projection",
+    ),
+    "mc1_l14_224_400m": (
+        "vit_large_patch14_clip_224.metaclip_400m",
+        "mc1_l14_224_400m_checkpoint",
+        "final normalized CLS before the MetaCLIP 1024-to-768 projection",
+    ),
+}
+
 
 @dataclass
 class FeatureBundle:
@@ -395,6 +413,14 @@ def load_feature_bundle(model_name: str, args, device: torch.device) -> FeatureB
             args.clip_meta_model,
             args.clip_meta_checkpoint,
             "final normalized CLS before the MetaCLIP 1024-to-768 projection",
+            device,
+        )
+    if model_name in METACLIP_400M_SPECS:
+        timm_model_name, checkpoint_arg, representation = METACLIP_400M_SPECS[model_name]
+        return _load_metaclip(
+            timm_model_name,
+            getattr(args, checkpoint_arg),
+            representation,
             device,
         )
     if model_name == "toklip_s":
