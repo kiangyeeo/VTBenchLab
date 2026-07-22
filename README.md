@@ -14,7 +14,6 @@ Since visual tokenizers in our project may come from different sources and follo
 - [TokBench](TokBench/README.md)
 - [CLIP](CLIP_benchmark/README.md)
 linear probing: dinov2
-knn dinov2
 other probing:clip
 
 
