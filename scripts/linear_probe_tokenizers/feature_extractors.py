@@ -22,7 +22,7 @@ from dinov2.data.transforms import make_classification_eval_transform, make_clas
 PM1_MEAN = (0.5, 0.5, 0.5)
 PM1_STD = (0.5, 0.5, 0.5)
 
-METACLIP_400M_SPECS = {
+MC1_SPECS = {
     "mc1_b32_224_400m": (
         "vit_base_patch32_clip_224.metaclip_400m",
         "mc1_b32_224_400m_checkpoint",
@@ -37,6 +37,36 @@ METACLIP_400M_SPECS = {
         "vit_large_patch14_clip_224.metaclip_400m",
         "mc1_l14_224_400m_checkpoint",
         "final normalized CLS before the MetaCLIP 1024-to-768 projection",
+    ),
+    "mc1_b32_224_2.5b": (
+        "vit_base_patch32_clip_224.metaclip_2pt5b",
+        "mc1_b32_224_2_5b_checkpoint",
+        "final normalized CLS before the MetaCLIP 768-to-512 projection",
+    ),
+    "mc1_b16_224_2.5b": (
+        "vit_base_patch16_clip_224.metaclip_2pt5b",
+        "mc1_b16_224_2_5b_checkpoint",
+        "final normalized CLS before the MetaCLIP 768-to-512 projection",
+    ),
+    "mc1_l14_224_2.5b": (
+        "vit_large_patch14_clip_224.metaclip_2pt5b",
+        "mc1_l14_224_2_5b_checkpoint",
+        "final normalized CLS before the MetaCLIP 1024-to-768 projection",
+    ),
+    "mc1_h14_224_2.5b": (
+        "vit_huge_patch14_clip_224.metaclip_2pt5b",
+        "mc1_h14_224_2_5b_checkpoint",
+        "final normalized CLS before the MetaCLIP 1280-to-1024 projection",
+    ),
+    "mc1_g14_224_2.5b": (
+        "vit_gigantic_patch14_clip_224.metaclip_2pt5b",
+        "mc1_g14_224_2_5b_checkpoint",
+        "final normalized CLS before the MetaCLIP 1664-to-1280 projection",
+    ),
+    "mc1_h14_224_v1.2": (
+        "vit_huge_patch14_clip_224.metaclip_altogether",
+        "mc1_h14_224_v1_2_checkpoint",
+        "final normalized CLS before the MetaCLIP 1280-to-1024 projection",
     ),
 }
 
@@ -415,8 +445,8 @@ def load_feature_bundle(model_name: str, args, device: torch.device) -> FeatureB
             "final normalized CLS before the MetaCLIP 1024-to-768 projection",
             device,
         )
-    if model_name in METACLIP_400M_SPECS:
-        timm_model_name, checkpoint_arg, representation = METACLIP_400M_SPECS[model_name]
+    if model_name in MC1_SPECS:
+        timm_model_name, checkpoint_arg, representation = MC1_SPECS[model_name]
         return _load_metaclip(
             timm_model_name,
             getattr(args, checkpoint_arg),
