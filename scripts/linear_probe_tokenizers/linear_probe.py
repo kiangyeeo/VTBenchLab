@@ -40,6 +40,12 @@ MODEL_NAMES = (
     "mc1_b32_224_400m",
     "mc1_b16_224_400m",
     "mc1_l14_224_400m",
+    "mc1_b32_224_2.5b",
+    "mc1_b16_224_2.5b",
+    "mc1_l14_224_2.5b",
+    "mc1_h14_224_2.5b",
+    "mc1_g14_224_2.5b",
+    "mc1_h14_224_v1.2",
     "toklip_s",
     "toklip_l",
     "unitok",
@@ -52,6 +58,12 @@ OUTPUT_NAMES = {
     "mc1_b32_224_400m": "mc1_b32_224_400m",
     "mc1_b16_224_400m": "mc1_b16_224_400m",
     "mc1_l14_224_400m": "mc1_l14_224_400m",
+    "mc1_b32_224_2.5b": "mc1_b32_224_2.5b",
+    "mc1_b16_224_2.5b": "mc1_b16_224_2.5b",
+    "mc1_l14_224_2.5b": "mc1_l14_224_2.5b",
+    "mc1_h14_224_2.5b": "mc1_h14_224_2.5b",
+    "mc1_g14_224_2.5b": "mc1_g14_224_2.5b",
+    "mc1_h14_224_v1.2": "mc1_h14_224_v1.2",
     "toklip_s": "toklip_s_semantic_256",
     "toklip_l": "toklip_l_semantic_384",
     "unitok": "unitok",
@@ -205,6 +217,36 @@ def _parse_args():
     parser.add_argument(
         "--mc1-l14-224-400m-checkpoint",
         default=str(continuous_model_zoo / "mc1_l14_224_400m"),
+    )
+    parser.add_argument(
+        "--mc1-b32-224-2.5b-checkpoint",
+        dest="mc1_b32_224_2_5b_checkpoint",
+        default=str(continuous_model_zoo / "mc1_b32_224_2.5b"),
+    )
+    parser.add_argument(
+        "--mc1-b16-224-2.5b-checkpoint",
+        dest="mc1_b16_224_2_5b_checkpoint",
+        default=str(continuous_model_zoo / "mc1_b16_224_2.5b"),
+    )
+    parser.add_argument(
+        "--mc1-l14-224-2.5b-checkpoint",
+        dest="mc1_l14_224_2_5b_checkpoint",
+        default=str(continuous_model_zoo / "mc1_l14_224_2.5b"),
+    )
+    parser.add_argument(
+        "--mc1-h14-224-2.5b-checkpoint",
+        dest="mc1_h14_224_2_5b_checkpoint",
+        default=str(continuous_model_zoo / "mc1_h14_224_2.5b"),
+    )
+    parser.add_argument(
+        "--mc1-g14-224-2.5b-checkpoint",
+        dest="mc1_g14_224_2_5b_checkpoint",
+        default=str(continuous_model_zoo / "mc1_g14_224_2.5b"),
+    )
+    parser.add_argument(
+        "--mc1-h14-224-v1.2-checkpoint",
+        dest="mc1_h14_224_v1_2_checkpoint",
+        default=str(continuous_model_zoo / "mc1_h14_224_v1.2"),
     )
     parser.add_argument("--toklip-path", default=str(image_scripts / "TokLIP"))
     parser.add_argument("--toklip-s-checkpoint", default=str(model_zoo / "TokLIP" / "TokLIP_S_256.pt"))
