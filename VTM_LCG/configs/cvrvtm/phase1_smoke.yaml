@@ -1,0 +1,39 @@
+schema_version: 1
+
+phase0_summary: artifacts/cvrvtm/phase0_smoke/summary.json
+artifact_root: artifacts/cvrvtm/phase1_smoke
+
+split:
+  seed: 0
+  train: 800
+  validation: 100
+  test: 100
+
+predictor:
+  visual_input_dim: 1024
+  model_dim: 256
+  depth: 4
+  num_heads: 8
+  mlp_ratio: 4
+  dropout: 0.0
+  grid_shape: [16, 16]
+  block_shape: [4, 4]
+  mask_ratio: 0.75
+  symmetric: true
+
+training:
+  epochs: 20
+  batch_size: 32
+  optimizer: adamw
+  learning_rate: 3.0e-4
+  weight_decay: 0.05
+  warmup_ratio: 0.05
+  precision: bfloat16
+  stats_epsilon: 1.0e-6
+  seeds: [0]
+
+evaluation:
+  batch_size: 32
+  mask_seed: 41000
+  sanity_seed: 42000
+  noise_std: 0.5

@@ -128,6 +128,49 @@ def load_phase1_full_config(path: str | Path) -> tuple[dict[str, Any], Path]:
     return config, project_root
 
 
+def load_cvrvtm_config(path: str | Path) -> tuple[dict[str, Any], Path]:
+    config_path = Path(path).expanduser().resolve()
+    project_root = find_project_root(config_path)
+    with config_path.open("r", encoding="utf-8") as handle:
+        payload = yaml.safe_load(handle)
+    if not isinstance(payload, dict):
+        raise ValueError(f"Configuration must be a mapping: {config_path}")
+    config = deepcopy(payload)
+    for section in ("artifact_root", "predictor", "training", "evaluation"):
+        if section not in config:
+            raise ValueError(f"Missing required CV-RVTM config section: {section}")
+    has_single = "phase0_summary" in config
+    has_split_summaries = "phase0_summaries" in config
+    if has_single == has_split_summaries:
+        raise ValueError(
+            "CV-RVTM config requires exactly one of phase0_summary or phase0_summaries"
+        )
+    if has_single:
+        if "split" not in config:
+            raise ValueError("Single-cache CV-RVTM config requires split")
+        config["phase0_summary"] = str(
+            resolve_project_path(project_root, config["phase0_summary"])
+        )
+    else:
+        if "expected_counts" not in config:
+            raise ValueError(
+                "Split-cache CV-RVTM config requires expected_counts"
+            )
+        summaries = config["phase0_summaries"]
+        for split_name in ("train", "validation", "test"):
+            if split_name not in summaries:
+                raise ValueError(
+                    f"Missing CV-RVTM Phase 0 summary for split: {split_name}"
+                )
+            summaries[split_name] = str(
+                resolve_project_path(project_root, summaries[split_name])
+            )
+    config["artifact_root"] = str(
+        resolve_project_path(project_root, config["artifact_root"])
+    )
+    return config, project_root
+
+
 def torch_dtype_from_name(name):
     import torch
 

@@ -35,11 +35,31 @@ class AdapterIntegrationTest(unittest.TestCase):
         for tokenizer_config in config["tokenizers"]:
             with self.subTest(tokenizer=tokenizer_config["id"]):
                 adapter = create_adapter(tokenizer_config, config["preprocess"])
+                expected_input_size = int(
+                    tokenizer_config.get("preprocess", {}).get(
+                        "input_size",
+                        config["preprocess"]["input_size"],
+                    )
+                )
+                self.assertEqual(adapter.input_size, (expected_input_size,) * 2)
                 dataset = CocoImageTensorDataset(records, [0], adapter.preprocess)
                 image, image_id, record_index = dataset[0]
                 self.assertEqual(image_id, records[0].image_id)
                 self.assertEqual(record_index, 0)
                 adapter.load(device, dtype)
+                if tokenizer_config["adapter"] == "metaclip2":
+                    layer_norms = [
+                        module
+                        for module in adapter._model.modules()
+                        if isinstance(module, torch.nn.LayerNorm)
+                    ]
+                    self.assertTrue(layer_norms)
+                    self.assertTrue(
+                        all(
+                            module.weight.dtype is torch.float32
+                            for module in layer_norms
+                        )
+                    )
                 with torch.inference_mode():
                     batch = adapter.encode(image.unsqueeze(0))
                 self.assertEqual(tuple(batch.values.shape), (1, 256, 1024))
@@ -53,4 +73,3 @@ class AdapterIntegrationTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

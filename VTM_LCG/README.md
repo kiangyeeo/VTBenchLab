@@ -1,13 +1,15 @@
 # VTM-LCG
 
 这是 [`VTM_LCG_MLLM_PREDICTOR.md`](../VTM_LCG_MLLM_PREDICTOR.md) 的独立工程目录。
-目前已经实现 Phase 0 特征缓存和 Phase 1 masked predictor smoke test。下游 MLLM
-ground truth 与 tokenizer 排名拟合留到后续阶段。
+目前已经实现原始 VTM-LCG 协议，以及避免全局 token 广播获得虚高分的
+CV-RVTM（Cross-View Residual VTM）协议。下游 MLLM ground truth 与 tokenizer
+排名拟合留到后续阶段。
 
 ## Phase 0 范围
 
-- OpenAI CLIP ViT-L/14 与 MetaCLIP ViT-L/14 2.5B；
-- 224×224 输入、16×16 patch 网格、256 个 1024 维 patch token；
+- OpenAI CLIP ViT-L/14、MetaCLIP ViT-L/14 2.5B、SigLIP2 L/16 256 与
+  MetaCLIP 2 L/14 224；
+- 模型原生 224/256 输入、16×16 patch 网格、256 个 1024 维 patch token；
 - COCO Karpathy train 中稳定排序的前 1000 张图；
 - FP16 SafeTensors 分片缓存；
 - per-channel mean/std、空间 token variance、NaN/Inf 和标准化回读检查。
@@ -16,7 +18,9 @@ ground truth 与 tokenizer 排名拟合留到后续阶段。
 
 ## 环境
 
-仓库现有的 `dino` Conda 环境已包含本阶段依赖。无需安装或下载新内容：
+仓库现有的 `dino` Conda 环境已包含本阶段依赖。无需安装或下载新内容。
+必须使用这个环境或其他满足 `transformers<5` 的环境；base 环境中的
+Transformers 5.x 与当前 PyTorch 不兼容。
 
 ```bash
 conda activate dino
@@ -68,7 +72,15 @@ PYTHONPATH=. python -m vtm_lcg.cache.extract \
 - `shards/*.safetensors`：`values` 与 `image_ids`；
 - `stats.json`：完整 mean/std 和验收指标。
 
-两个 tokenizer 完成后，根输出目录会生成 `summary.json` 和 `summary.md`。
+四个 tokenizer 完成后，根输出目录会生成 `summary.json` 和 `summary.md`。
+
+四个 tokenizer 的共同 predictor 表面都是 `16×16×1024`，但预处理保持模型原生：
+
+- OpenAI CLIP、MetaCLIP 1/2：224×224、CLIP mean/std；
+- SigLIP2：resize 284 后 center-crop 256、mean/std 均为 0.5。
+
+tokenizer 级 preprocess override 会进入 cache identity，不能用 224 输入替代
+SigLIP2 的原生 256 输入。
 
 ## Phase 1：Masked Predictor
 
@@ -218,7 +230,7 @@ per-channel mean/std，validation 选择最佳 epoch，test 只计算最终指�
 - train：40.42 GiB/tokenizer；
 - validation：2.44 GiB/tokenizer；
 - test：2.44 GiB/tokenizer；
-- 两个 tokenizer 合计约 90.61 GiB，建议至少预留 120 GiB 空间。
+- 四个 tokenizer 合计约 181.22 GiB，建议至少预留 220 GiB 空间。
 
 完整 Phase 1 不会把全部视觉特征载入内存，而是按 Phase 0 SafeTensors shard 流式训练。
 Caption 也不再预计算约 55 GiB 的全量 embedding cache，而是在每个 batch 中由冻结 CLIP
@@ -275,6 +287,87 @@ artifacts/coco_karpathy_full/
     ├── summary.json
     └── summary.md
 ```
+
+## CV-RVTM
+
+原始 VTM 的 MSE explained variance 会奖励跨 patch 的全局复制。CV-RVTM v1
+改为对齐双视图上的位置特有残差预测：
+
+1. view A 使用模型原生 deterministic center crop；
+2. view B 使用同一 crop 的水平翻转和确定性 brightness/contrast/saturation 扰动；
+3. vision encoder 前向后将 view B 的 patch columns 翻回 view A 坐标，因此两个
+   `16×16` token grid 严格对齐；
+4. 使用 4×4 coarse grid 上的完整 block，固定遮挡 12/16 blocks，即 75% patch；
+5. 只用 source visible tokens 估计图像共享成分
+   \(g_V=\operatorname{mean}_{t\in V}Z_t\)，不读取 masked target；
+6. predictor 双向训练 A→B 和 B→A，目标是 \(R_t=Z_t-g_V\)；
+7. 最终分数为
+
+\[
+\mathrm{CVRVTM}
+=
+\frac{L_{\mathrm{residual,null}}-L_{\mathrm{residual,pred}}}
+{L_{\mathrm{total}}}.
+\]
+
+分母保留原始 token 总能量，因此全位置复制会得到零 residual gain；独立噪声虽然
+有 residual energy，但跨视图无法预测，也不会得到高分。
+
+测试集自动运行三个必要对照：
+
+- collapsed tokens：每张图的所有 patch 替换为图内均值；
+- independent noise：两个视图加入相互独立的确定性噪声；
+- spatial shuffle：只打乱 source visible-token values 与位置的对应。
+
+三个对照的 CV-RVTM 都应低于主结果。
+
+### CV-RVTM smoke
+
+提取 1K COCO train paired-view cache，并对 800/100/100 split 训练四个 tokenizer：
+
+```bash
+scripts/run_cvrvtm_smoke.sh
+```
+
+也可以分开运行：
+
+```bash
+PYTHONPATH=. python -m vtm_lcg.cvrvtm.cache \
+  --config configs/phase0_smoke.yaml \
+  --artifact-root artifacts/cvrvtm/phase0_smoke \
+  --all
+
+PYTHONPATH=. python -m vtm_lcg.cvrvtm.train \
+  --config configs/cvrvtm/phase1_smoke.yaml \
+  --all
+```
+
+### CV-RVTM full COCO
+
+```bash
+scripts/run_cvrvtm_phase0_full.sh
+scripts/run_cvrvtm_phase1_full.sh
+```
+
+或一键运行：
+
+```bash
+scripts/run_cvrvtm_full.sh
+```
+
+输出位于：
+
+```text
+artifacts/cvrvtm/
+├── phase0_smoke/
+├── phase1_smoke/
+└── coco_karpathy_full/
+    ├── phase0/{train,validation,test}/
+    └── phase1/
+```
+
+paired-view FP16 cache 每个 tokenizer 的完整 COCO 约 90.6 GiB，四个 tokenizer
+约 362.4 GiB；连同 checkpoint、临时空间和结果，建议至少预留 420 GiB。
 
 ## 后续
 

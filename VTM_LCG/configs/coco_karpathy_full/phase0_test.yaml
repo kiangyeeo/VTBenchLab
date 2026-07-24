@@ -22,6 +22,12 @@ preprocess:
   mean: [0.48145466, 0.4578275, 0.40821073]
   std: [0.26862954, 0.26130258, 0.27577711]
 
+cross_view:
+  horizontal_flip: true
+  brightness_delta: 0.1
+  contrast_delta: 0.1
+  saturation_delta: 0.1
+
 tokenizers:
   - id: clip_openai__l14
     adapter: openai_clip
@@ -38,3 +44,24 @@ tokenizers:
     expected_hidden_dim: 1024
     surface: final normalized patch tokens before the MetaCLIP visual projection
 
+  - id: siglip2_l16_256
+    adapter: siglip2
+    checkpoint: ../TokBench/tokenizer_modelzoo/continuous/siglip2_l16_256
+    model_name: vit_large_patch16_siglip_256
+    expected_grid: [16, 16]
+    expected_hidden_dim: 1024
+    surface: final normalized patch tokens before SigLIP2 attention pooling
+    preprocess:
+      input_size: 256
+      resize_size: 284
+      mean: [0.5, 0.5, 0.5]
+      std: [0.5, 0.5, 0.5]
+
+  - id: mc2_l14_224
+    adapter: metaclip2
+    checkpoint: ../TokBench/tokenizer_modelzoo/continuous/mc2_l14_224/metaclip2_l14_224px_worldwide.pt
+    depth: 24
+    projection_dim: 768
+    expected_grid: [16, 16]
+    expected_hidden_dim: 1024
+    surface: final normalized patch tokens before the MetaCLIP 2 visual projection

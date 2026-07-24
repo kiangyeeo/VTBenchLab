@@ -24,7 +24,13 @@ class SequenceTokenizerAdapter(ABC):
         preprocess_config: Mapping[str, Any],
     ) -> None:
         self.tokenizer_config = dict(tokenizer_config)
-        self.preprocess_config = dict(preprocess_config)
+        tokenizer_preprocess = self.tokenizer_config.get("preprocess", {})
+        if not isinstance(tokenizer_preprocess, Mapping):
+            raise ValueError("tokenizer preprocess override must be a mapping")
+        self.preprocess_config = {
+            **dict(preprocess_config),
+            **dict(tokenizer_preprocess),
+        }
         self.tokenizer_id = str(self.tokenizer_config["id"])
         self.surface = str(self.tokenizer_config["surface"])
         expected_grid = self.tokenizer_config["expected_grid"]
@@ -152,4 +158,3 @@ class SequenceTokenizerAdapter(ABC):
             input_size=self.input_size,
             metadata=self.metadata,
         )
-

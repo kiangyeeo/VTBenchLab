@@ -1,0 +1,42 @@
+schema_version: 1
+
+phase0_summaries:
+  train: artifacts/cvrvtm/coco_karpathy_full/phase0/train/summary.json
+  validation: artifacts/cvrvtm/coco_karpathy_full/phase0/validation/summary.json
+  test: artifacts/cvrvtm/coco_karpathy_full/phase0/test/summary.json
+
+expected_counts:
+  train: 82783
+  validation: 5000
+  test: 5000
+
+artifact_root: artifacts/cvrvtm/coco_karpathy_full/phase1
+
+predictor:
+  visual_input_dim: 1024
+  model_dim: 256
+  depth: 4
+  num_heads: 8
+  mlp_ratio: 4
+  dropout: 0.0
+  grid_shape: [16, 16]
+  block_shape: [4, 4]
+  mask_ratio: 0.75
+  symmetric: true
+
+training:
+  epochs: 20
+  batch_size: 32
+  optimizer: adamw
+  learning_rate: 3.0e-4
+  weight_decay: 0.05
+  warmup_ratio: 0.05
+  precision: bfloat16
+  stats_epsilon: 1.0e-6
+  seeds: [0]
+
+evaluation:
+  batch_size: 32
+  mask_seed: 41000
+  sanity_seed: 42000
+  noise_std: 0.5
