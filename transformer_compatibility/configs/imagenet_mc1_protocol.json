@@ -1,0 +1,69 @@
+{
+  "protocol_version": "imagenet_mc1_transformer_compatibility_v1",
+  "dataset": {
+    "name": "ImageNet-1k",
+    "num_classes": 1000,
+    "image_size": 224,
+    "train_augmentation": "RandomResizedCrop(224,bicubic)+RandomHorizontalFlip(0.5)",
+    "eval_augmentation": "Resize(224,bicubic)+CenterCrop(224)",
+    "mean": [0.48145466, 0.4578275, 0.40821073],
+    "std": [0.26862954, 0.26130258, 0.27577711]
+  },
+  "models": {
+    "mc1_b16_224_2.5b": {
+      "timm_model": "vit_base_patch16_clip_224.metaclip_2pt5b",
+      "checkpoint": "TokBench/tokenizer_modelzoo/continuous/mc1_b16_224_2.5b",
+      "input_dim": 768,
+      "token_count": 196,
+      "grid_shape": [14, 14]
+    },
+    "mc1_b16_224_400m": {
+      "timm_model": "vit_base_patch16_clip_224.metaclip_400m",
+      "checkpoint": "TokBench/tokenizer_modelzoo/continuous/mc1_b16_224_400m",
+      "input_dim": 768,
+      "token_count": 196,
+      "grid_shape": [14, 14]
+    }
+  },
+  "surface": {
+    "name": "final_normalized_patch_tokens_pre_projection",
+    "description": "Final visual Transformer block, native final normalization, CLS removed, all patch tokens retained, visual retrieval projection not applied."
+  },
+  "readouts": {
+    "gap_linear": {
+      "description": "Mean over the exact patch-token surface followed by one linear classifier."
+    },
+    "gap_mlp": {
+      "description": "Mean over the exact patch-token surface followed by a two-layer GELU MLP; hidden width is selected to match the Transformer readout parameter count."
+    },
+    "transformer": {
+      "description": "Low-rank projector, one learned CLS token, two pre-norm Transformer encoder layers, and a linear classifier.",
+      "projector_rank": 128,
+      "hidden_dim": 512,
+      "num_layers": 2,
+      "num_heads": 8,
+      "ffn_ratio": 4,
+      "dropout": 0.0,
+      "positional_encoding": "none; tokenizer token values already contain native visual positional information"
+    }
+  },
+  "training": {
+    "optimizer": "AdamW",
+    "learning_rate": 0.0003,
+    "weight_decay": 0.05,
+    "betas": [0.9, 0.999],
+    "global_batch_size": 256,
+    "default_micro_batch_size": 32,
+    "default_eval_batch_size": 64,
+    "max_updates": 8000,
+    "eval_steps": [0, 500, 2000, 8000],
+    "warmup_updates": 100,
+    "min_lr_ratio": 0.01,
+    "gradient_clip_norm": 1.0,
+    "loss": "cross_entropy",
+    "label_smoothing": 0.0,
+    "amp_dtype": "bfloat16",
+    "seeds": [0, 1, 2]
+  }
+}
+
