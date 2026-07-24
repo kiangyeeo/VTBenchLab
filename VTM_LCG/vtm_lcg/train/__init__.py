@@ -1,2 +1,2 @@
-"""Reserved for Phase 1 predictor training."""
+"""Phase 1 masked-predictor training."""
 

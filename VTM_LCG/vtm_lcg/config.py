@@ -63,9 +63,41 @@ def load_config(path: str | Path) -> tuple[dict[str, Any], Path]:
     return config, project_root
 
 
-def torch_dtype_from_name(name: str):
+def load_phase1_config(path: str | Path) -> tuple[dict[str, Any], Path]:
+    config_path = Path(path).expanduser().resolve()
+    project_root = find_project_root(config_path)
+    with config_path.open("r", encoding="utf-8") as handle:
+        payload = yaml.safe_load(handle)
+    if not isinstance(payload, dict):
+        raise ValueError(f"Configuration must be a mapping: {config_path}")
+    config = deepcopy(payload)
+    for section in (
+        "phase0_summary",
+        "artifact_root",
+        "split",
+        "text",
+        "predictor",
+        "training",
+        "evaluation",
+    ):
+        if section not in config:
+            raise ValueError(f"Missing required Phase 1 config section: {section}")
+    config["phase0_summary"] = str(
+        resolve_project_path(project_root, config["phase0_summary"])
+    )
+    config["artifact_root"] = str(
+        resolve_project_path(project_root, config["artifact_root"])
+    )
+    text = config["text"]
+    text["checkpoint"] = str(resolve_project_path(project_root, text["checkpoint"]))
+    return config, project_root
+
+
+def torch_dtype_from_name(name):
     import torch
 
+    if isinstance(name, torch.dtype):
+        return name
     normalized = name.lower().replace("torch.", "")
     aliases = {
         "float16": torch.float16,
@@ -80,7 +112,6 @@ def torch_dtype_from_name(name: str):
     return aliases[normalized]
 
 
-def canonical_dtype_name(name: str) -> str:
+def canonical_dtype_name(name) -> str:
     dtype = torch_dtype_from_name(name)
     return str(dtype).removeprefix("torch.")
-
