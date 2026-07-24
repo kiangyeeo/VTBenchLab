@@ -1,0 +1,40 @@
+schema_version: 1
+
+dataset:
+  annotations: ../data/clip_benchmark/mscoco_captions/coco_test_karpathy.json
+  image_root: ../data/gvt/raw/coco/val2014
+  limit: null
+
+runtime:
+  artifact_root: artifacts/coco_karpathy_full/phase0/test
+  device: cuda
+  backbone_dtype: bfloat16
+  feature_dtype: float16
+  batch_size: 32
+  shard_size: 32
+  num_workers: 8
+  stats_epsilon: 1.0e-6
+
+preprocess:
+  input_size: 224
+  resize_size: 224
+  interpolation: bicubic
+  mean: [0.48145466, 0.4578275, 0.40821073]
+  std: [0.26862954, 0.26130258, 0.27577711]
+
+tokenizers:
+  - id: clip_openai__l14
+    adapter: openai_clip
+    checkpoint: ../TokBench/tokenizer_modelzoo/continuous/clip_openai__l14
+    expected_grid: [16, 16]
+    expected_hidden_dim: 1024
+    surface: final post-LayerNorm patch tokens before the OpenAI CLIP visual projection
+
+  - id: mc1_l14_224_2.5b
+    adapter: metaclip
+    checkpoint: ../TokBench/tokenizer_modelzoo/continuous/mc1_l14_224_2.5b/model.safetensors
+    model_name: vit_large_patch14_clip_224.metaclip_2pt5b
+    expected_grid: [16, 16]
+    expected_hidden_dim: 1024
+    surface: final normalized patch tokens before the MetaCLIP visual projection
+

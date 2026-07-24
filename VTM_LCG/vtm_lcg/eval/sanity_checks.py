@@ -62,6 +62,33 @@ def select_caption_ids(
     return selected
 
 
+def select_caption_texts(
+    records: list[dict[str, Any]],
+    record_indices: Sequence[int] | Tensor,
+    *,
+    seed: int,
+    epoch: int,
+    fixed_first: bool,
+) -> list[str]:
+    if isinstance(record_indices, Tensor):
+        indices = [int(value) for value in record_indices.tolist()]
+    else:
+        indices = [int(value) for value in record_indices]
+    selected: list[str] = []
+    for record_index in indices:
+        captions = records[record_index]["captions"]
+        if not captions:
+            raise ValueError(f"Record {record_index} has no captions")
+        if fixed_first:
+            caption_position = 0
+        else:
+            caption_position = (
+                int(seed) + int(epoch) * 104_729 + record_index * 17
+            ) % len(captions)
+        selected.append(str(captions[caption_position]))
+    return selected
+
+
 def caption_keep_mask(
     record_indices: Sequence[int] | Tensor,
     *,
@@ -125,4 +152,3 @@ def shuffled_caption_id_map(
         next_index = indices[(position + 1) % len(indices)]
         result[record_index] = int(records[next_index]["caption_ids"][0])
     return result
-

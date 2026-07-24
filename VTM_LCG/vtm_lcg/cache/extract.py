@@ -630,10 +630,11 @@ def main(argv: list[str] | None = None) -> int:
             )
         selected_tokenizers = [tokenizers_by_id[name] for name in args.tokenizer]
 
+    configured_limit = dataset_config.get("limit")
     records, dataset_metadata = load_coco_karpathy_records(
         Path(dataset_config["annotations"]),
         Path(dataset_config["image_root"]),
-        limit=int(dataset_config["limit"]),
+        limit=None if configured_limit is None else int(configured_limit),
     )
     device = resolve_device(str(runtime["device"]))
     preflight(config, selected_tokenizers, records, device)

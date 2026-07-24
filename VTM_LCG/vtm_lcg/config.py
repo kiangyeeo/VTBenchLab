@@ -93,6 +93,41 @@ def load_phase1_config(path: str | Path) -> tuple[dict[str, Any], Path]:
     return config, project_root
 
 
+def load_phase1_full_config(path: str | Path) -> tuple[dict[str, Any], Path]:
+    config_path = Path(path).expanduser().resolve()
+    project_root = find_project_root(config_path)
+    with config_path.open("r", encoding="utf-8") as handle:
+        payload = yaml.safe_load(handle)
+    if not isinstance(payload, dict):
+        raise ValueError(f"Configuration must be a mapping: {config_path}")
+    config = deepcopy(payload)
+    for section in (
+        "phase0_summaries",
+        "artifact_root",
+        "expected_counts",
+        "text",
+        "predictor",
+        "training",
+        "evaluation",
+    ):
+        if section not in config:
+            raise ValueError(f"Missing required full-COCO config section: {section}")
+    summaries = config["phase0_summaries"]
+    for split_name in ("train", "validation", "test"):
+        if split_name not in summaries:
+            raise ValueError(f"Missing Phase 0 summary for split: {split_name}")
+        summaries[split_name] = str(
+            resolve_project_path(project_root, summaries[split_name])
+        )
+    config["artifact_root"] = str(
+        resolve_project_path(project_root, config["artifact_root"])
+    )
+    config["text"]["checkpoint"] = str(
+        resolve_project_path(project_root, config["text"]["checkpoint"])
+    )
+    return config, project_root
+
+
 def torch_dtype_from_name(name):
     import torch
 

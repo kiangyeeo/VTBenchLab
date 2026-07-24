@@ -202,6 +202,80 @@ LCG 只有 \(10^{-5}\) 量级；OpenAI CLIP 的 true-caption 未优于 shuffled-
 因此当前只能说明 Phase 1 工程闭环跑通，不能声称 caption 提供了稳定、特异的视觉 token
 预测增益。下一步应优先增加 predictor 数据或训练 seeds，再决定是否扩大候选集合。
 
+## 完整 COCO Karpathy
+
+完整协议直接使用官方 Karpathy 三个 split：
+
+- train：82,783 张；
+- validation：5,000 张；
+- test：5,000 张。
+
+Train、validation 和 test 分别建立 Phase 0 cache。Phase 1 只使用 train cache 的
+per-channel mean/std，validation 选择最佳 epoch，test 只计算最终指标。
+
+完整视觉 cache 的理论大小约为：
+
+- train：40.42 GiB/tokenizer；
+- validation：2.44 GiB/tokenizer；
+- test：2.44 GiB/tokenizer；
+- 两个 tokenizer 合计约 90.61 GiB，建议至少预留 120 GiB 空间。
+
+完整 Phase 1 不会把全部视觉特征载入内存，而是按 Phase 0 SafeTensors shard 流式训练。
+Caption 也不再预计算约 55 GiB 的全量 embedding cache，而是在每个 batch 中由冻结 CLIP
+text tower 在线编码；text tower 不参与反向传播。
+
+### 分步启动
+
+第一步，提取三个 split 的完整视觉特征：
+
+```bash
+scripts/run_phase0_coco_karpathy_full.sh
+```
+
+如显存不足：
+
+```bash
+scripts/run_phase0_coco_karpathy_full.sh --batch-size 16
+```
+
+第二步，训练完整 COCO predictor：
+
+```bash
+scripts/run_phase1_coco_karpathy_full.sh
+```
+
+只训练一个 tokenizer：
+
+```bash
+PYTHONPATH=. python -m vtm_lcg.train.train_full_coco \
+  --config configs/coco_karpathy_full/phase1_predictor.yaml \
+  --tokenizer clip_openai__l14
+```
+
+### 一键启动
+
+```bash
+scripts/run_coco_karpathy_full.sh
+```
+
+Phase 0 会逐 shard 原子写入并断点续跑。完整 Phase 1 每个 epoch 保存模型、optimizer、
+scheduler、最佳 checkpoint 和历史，进程中断后使用相同命令会从下一个 epoch 继续。
+训练完成后，相同协议会直接校验并复用最终 checkpoint。
+
+输出位置：
+
+```text
+artifacts/coco_karpathy_full/
+├── phase0/
+│   ├── train/
+│   ├── validation/
+│   └── test/
+└── phase1/
+    ├── predictors/
+    ├── summary.json
+    └── summary.md
+```
+
 ## 后续
 
 `rank/` 预留给 Phase 2 之后的多 tokenizer seed stability、受控 MLLM ground truth 和
