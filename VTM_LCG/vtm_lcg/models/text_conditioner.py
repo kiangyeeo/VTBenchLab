@@ -50,7 +50,7 @@ class FrozenClipTextConditioner:
             local_files_only=True,
         )
 
-    @torch.inference_mode()
+    @torch.no_grad()
     def encode(self, captions: list[str]) -> tuple[Tensor, Tensor]:
         tokenized = self.tokenizer(
             captions,
@@ -72,4 +72,3 @@ class FrozenClipTextConditioner:
         if not bool(torch.isfinite(embeddings).all().item()):
             raise RuntimeError("Shared CLIP text tower produced non-finite embeddings")
         return embeddings, attention_mask
-
