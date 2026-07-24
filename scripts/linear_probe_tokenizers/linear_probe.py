@@ -33,6 +33,37 @@ from feature_extractors import FeatureBundle, load_feature_bundle
 
 LOGGER = logging.getLogger("dinov2")
 PROTOCOL_VERSION = "tokenizer_linear_probe_dinov2_single_surface_v2"
+MC2_MODEL_NAMES = (
+    "mc2_h14_378",
+    "mc2_g14_224",
+    "mc2_g14_378",
+    "mc2_s16_224",
+    "mc2_s16_384",
+    "mc2_s16_224_mt5",
+    "mc2_m16_224",
+    "mc2_m16_384",
+    "mc2_m16_224_mt5",
+    "mc2_b32_224",
+    "mc2_b32_384",
+    "mc2_b32_224_mt5",
+    "mc2_b16_224",
+    "mc2_b16_384",
+    "mc2_l14_224",
+)
+MC2_RAW_CHECKPOINT_FILENAMES = {
+    "mc2_s16_224": "metaclip2_s16_224px_worldwide.pt",
+    "mc2_s16_384": "metaclip2_s16_384px_worldwide.pt",
+    "mc2_s16_224_mt5": "metaclip2_s16_224px_mt5_worldwide.pt",
+    "mc2_m16_224": "metaclip2_m16_224px_worldwide.pt",
+    "mc2_m16_384": "metaclip2_m16_384px_worldwide.pt",
+    "mc2_m16_224_mt5": "metaclip2_m16_224px_mt5_worldwide.pt",
+    "mc2_b32_224": "metaclip2_b32_224px_worldwide.pt",
+    "mc2_b32_384": "metaclip2_b32_384px_worldwide.pt",
+    "mc2_b32_224_mt5": "metaclip2_b32_224px_mt5_worldwide.pt",
+    "mc2_b16_224": "metaclip2_b16_224px_worldwide.pt",
+    "mc2_b16_384": "metaclip2_b16_384px_worldwide.pt",
+    "mc2_l14_224": "metaclip2_l14_224px_worldwide.pt",
+}
 MODEL_NAMES = (
     "metaclip",
     "clip_openai__l14",
@@ -46,6 +77,7 @@ MODEL_NAMES = (
     "mc1_h14_224_2.5b",
     "mc1_g14_224_2.5b",
     "mc1_h14_224_v1.2",
+    *MC2_MODEL_NAMES,
     "toklip_s",
     "toklip_l",
     "unitok",
@@ -64,6 +96,7 @@ OUTPUT_NAMES = {
     "mc1_h14_224_2.5b": "mc1_h14_224_2.5b",
     "mc1_g14_224_2.5b": "mc1_g14_224_2.5b",
     "mc1_h14_224_v1.2": "mc1_h14_224_v1.2",
+    **{model_name: model_name for model_name in MC2_MODEL_NAMES},
     "toklip_s": "toklip_s_semantic_256",
     "toklip_l": "toklip_l_semantic_384",
     "unitok": "unitok",
@@ -248,6 +281,15 @@ def _parse_args():
         dest="mc1_h14_224_v1_2_checkpoint",
         default=str(continuous_model_zoo / "mc1_h14_224_v1.2"),
     )
+    for model_name in MC2_MODEL_NAMES:
+        checkpoint = continuous_model_zoo / model_name
+        filename = MC2_RAW_CHECKPOINT_FILENAMES.get(model_name)
+        if filename is not None:
+            checkpoint /= filename
+        parser.add_argument(
+            f"--{model_name.replace('_', '-')}-checkpoint",
+            default=str(checkpoint),
+        )
     parser.add_argument("--toklip-path", default=str(image_scripts / "TokLIP"))
     parser.add_argument("--toklip-s-checkpoint", default=str(model_zoo / "TokLIP" / "TokLIP_S_256.pt"))
     parser.add_argument("--toklip-l-checkpoint", default=str(model_zoo / "TokLIP" / "TokLIP_L_384.pt"))

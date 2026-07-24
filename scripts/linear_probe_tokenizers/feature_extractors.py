@@ -8,6 +8,7 @@ the evaluator does not perform DINOv2's multi-block or CLS/patch readout search.
 from contextlib import nullcontext
 from dataclasses import dataclass
 from functools import partial
+import math
 from pathlib import Path
 import sys
 from types import SimpleNamespace
@@ -21,6 +22,8 @@ from dinov2.data.transforms import make_classification_eval_transform, make_clas
 
 PM1_MEAN = (0.5, 0.5, 0.5)
 PM1_STD = (0.5, 0.5, 0.5)
+CLIP_MEAN = (0.48145466, 0.4578275, 0.40821073)
+CLIP_STD = (0.26862954, 0.26130258, 0.27577711)
 
 MC1_SPECS = {
     "mc1_b32_224_400m": (
@@ -70,6 +73,40 @@ MC1_SPECS = {
     ),
 }
 
+MC2_TIMM_SPECS = {
+    "mc2_h14_378": (
+        "vit_huge_patch14_clip_378.metaclip2_worldwide",
+        "mc2_h14_378_checkpoint",
+        "final normalized CLS before the MetaCLIP 2 1280-to-1024 projection",
+    ),
+    "mc2_g14_224": (
+        "vit_gigantic_patch14_clip_224.metaclip2_worldwide",
+        "mc2_g14_224_checkpoint",
+        "final normalized CLS before the MetaCLIP 2 1664-to-1280 projection",
+    ),
+    "mc2_g14_378": (
+        "vit_gigantic_patch14_clip_378.metaclip2_worldwide",
+        "mc2_g14_378_checkpoint",
+        "final normalized CLS before the MetaCLIP 2 1664-to-1280 projection",
+    ),
+}
+
+# checkpoint arg, image size, patch size, width, depth, projection output dim
+MC2_DISTILLED_SPECS = {
+    "mc2_s16_224": ("mc2_s16_224_checkpoint", 224, 16, 384, 12, 384),
+    "mc2_s16_384": ("mc2_s16_384_checkpoint", 384, 16, 384, 12, 384),
+    "mc2_s16_224_mt5": ("mc2_s16_224_mt5_checkpoint", 224, 16, 384, 12, 384),
+    "mc2_m16_224": ("mc2_m16_224_checkpoint", 224, 16, 512, 12, 512),
+    "mc2_m16_384": ("mc2_m16_384_checkpoint", 384, 16, 512, 12, 512),
+    "mc2_m16_224_mt5": ("mc2_m16_224_mt5_checkpoint", 224, 16, 512, 12, 512),
+    "mc2_b32_224": ("mc2_b32_224_checkpoint", 224, 32, 768, 12, 512),
+    "mc2_b32_384": ("mc2_b32_384_checkpoint", 384, 32, 768, 12, 512),
+    "mc2_b32_224_mt5": ("mc2_b32_224_mt5_checkpoint", 224, 32, 768, 12, 512),
+    "mc2_b16_224": ("mc2_b16_224_checkpoint", 224, 16, 768, 12, 512),
+    "mc2_b16_384": ("mc2_b16_384_checkpoint", 384, 16, 768, 12, 512),
+    "mc2_l14_224": ("mc2_l14_224_checkpoint", 224, 14, 1024, 24, 768),
+}
+
 
 @dataclass
 class FeatureBundle:
@@ -101,6 +138,22 @@ class MetaCLIPEncoder(nn.Module):
         if prefix_tokens.ndim != 3 or prefix_tokens.shape[1] < 1:
             raise RuntimeError(f"Unexpected MetaCLIP prefix-token shape: {tuple(prefix_tokens.shape)}")
         return prefix_tokens[:, 0].float()
+
+
+class MetaCLIP2DistilledEncoder(nn.Module):
+    """Final normalized CLS from an OpenAI-style MetaCLIP 2 visual tower."""
+
+    def __init__(self, visual: nn.Module):
+        super().__init__()
+        if visual.proj is not None:
+            raise ValueError("MetaCLIP 2 visual projection must be disabled for linear probing")
+        self.visual = visual
+
+    def forward(self, images: torch.Tensor) -> torch.Tensor:
+        features = self.visual(images)
+        if features.ndim != 2:
+            raise RuntimeError(f"Unexpected MetaCLIP 2 CLS shape: {tuple(features.shape)}")
+        return features.float()
 
 
 class OpenAIClipEncoder(nn.Module):
@@ -243,6 +296,108 @@ def _load_metaclip(
         transform_description=(
             f"train=RandomResizedCrop({image_size})+HorizontalFlip(0.5), "
             f"eval=timm deterministic native transform, mean={mean}, std={std}, no ColorJitter"
+        ),
+        backbone_precision="float32",
+        checkpoint_paths=[checkpoint],
+    )
+
+
+def _load_metaclip2_distilled(
+    checkpoint_path: str,
+    image_size: int,
+    patch_size: int,
+    width: int,
+    depth: int,
+    projection_dim: int,
+    device: torch.device,
+) -> FeatureBundle:
+    clip_root = Path(__file__).resolve().parents[2] / "CLIP"
+    if str(clip_root) not in sys.path:
+        sys.path.insert(0, str(clip_root))
+    from clip.model import VisionTransformer
+
+    checkpoint = _resolve_checkpoint(checkpoint_path)
+    payload = torch.load(checkpoint, map_location="cpu", weights_only=True, mmap=True)
+    if not isinstance(payload, dict) or not isinstance(payload.get("state_dict"), dict):
+        raise RuntimeError(f"Expected a MetaCLIP 2 state_dict checkpoint at {checkpoint}")
+    state_dict = payload["state_dict"]
+    visual_state = {
+        key.removeprefix("visual."): value
+        for key, value in state_dict.items()
+        if key.startswith("visual.")
+    }
+    required_keys = {"conv1.weight", "positional_embedding", "proj"}
+    missing_required = sorted(required_keys - visual_state.keys())
+    if missing_required:
+        raise RuntimeError(f"Missing MetaCLIP 2 visual keys: {missing_required}")
+
+    actual_width = int(visual_state["conv1.weight"].shape[0])
+    actual_patch_size = int(visual_state["conv1.weight"].shape[-1])
+    patch_tokens = int(visual_state["positional_embedding"].shape[0]) - 1
+    grid_size = math.isqrt(patch_tokens)
+    if grid_size * grid_size != patch_tokens:
+        raise RuntimeError(f"Non-square MetaCLIP 2 positional grid: {patch_tokens} tokens")
+    actual_image_size = grid_size * actual_patch_size
+    actual_depth = len(
+        {
+            key.split(".")[2]
+            for key in visual_state
+            if key.startswith("transformer.resblocks.") and key.endswith(".attn.in_proj_weight")
+        }
+    )
+    actual_projection_shape = tuple(visual_state["proj"].shape)
+    expected = (image_size, patch_size, width, depth, (width, projection_dim))
+    actual = (
+        actual_image_size,
+        actual_patch_size,
+        actual_width,
+        actual_depth,
+        actual_projection_shape,
+    )
+    if actual != expected:
+        raise RuntimeError(f"MetaCLIP 2 visual architecture mismatch: expected={expected}, actual={actual}")
+
+    visual = VisionTransformer(
+        input_resolution=image_size,
+        patch_size=patch_size,
+        width=width,
+        layers=depth,
+        heads=width // 64,
+        output_dim=projection_dim,
+    )
+    # The distilled MetaCLIP 2 model configs use standard GELU rather than
+    # the QuickGELU variants used by MetaCLIP 1.
+    for block in visual.transformer.resblocks:
+        block.mlp.gelu = nn.GELU()
+    visual.load_state_dict(visual_state, strict=True)
+    visual.proj = None
+    del payload, state_dict, visual_state
+
+    encoder = MetaCLIP2DistilledEncoder(visual).to(device).eval().requires_grad_(False)
+    train_transform = make_classification_train_transform(
+        crop_size=image_size,
+        hflip_prob=0.5,
+        mean=CLIP_MEAN,
+        std=CLIP_STD,
+    )
+    eval_transform = make_classification_eval_transform(
+        resize_size=image_size,
+        crop_size=image_size,
+        mean=CLIP_MEAN,
+        std=CLIP_STD,
+    )
+    return FeatureBundle(
+        encoder=encoder,
+        train_transform=train_transform,
+        eval_transform=eval_transform,
+        autocast_context=nullcontext,
+        representation=(
+            f"final normalized CLS before the MetaCLIP 2 {width}-to-{projection_dim} projection"
+        ),
+        transform_description=(
+            f"train=RandomResizedCrop({image_size})+HorizontalFlip(0.5), "
+            f"eval=Resize({image_size})+CenterCrop({image_size}), "
+            f"mean={CLIP_MEAN}, std={CLIP_STD}"
         ),
         backbone_precision="float32",
         checkpoint_paths=[checkpoint],
@@ -451,6 +606,27 @@ def load_feature_bundle(model_name: str, args, device: torch.device) -> FeatureB
             timm_model_name,
             getattr(args, checkpoint_arg),
             representation,
+            device,
+        )
+    if model_name in MC2_TIMM_SPECS:
+        timm_model_name, checkpoint_arg, representation = MC2_TIMM_SPECS[model_name]
+        return _load_metaclip(
+            timm_model_name,
+            getattr(args, checkpoint_arg),
+            representation,
+            device,
+        )
+    if model_name in MC2_DISTILLED_SPECS:
+        checkpoint_arg, image_size, patch_size, width, depth, projection_dim = (
+            MC2_DISTILLED_SPECS[model_name]
+        )
+        return _load_metaclip2_distilled(
+            getattr(args, checkpoint_arg),
+            image_size,
+            patch_size,
+            width,
+            depth,
+            projection_dim,
             device,
         )
     if model_name == "toklip_s":
