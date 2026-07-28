@@ -13,10 +13,6 @@ run_tokenizer_linear_probe() {
     local model="$1"
     shift
 
-    if [[ "${CONDA_DEFAULT_ENV:-}" != "dino" ]]; then
-        echo "!! expected conda environment 'dino'; current='${CONDA_DEFAULT_ENV:-none}'" >&2
-        exit 1
-    fi
     [[ -d "$DINO_REPO/dinov2" ]] || { echo "!! missing DINOv2 repository: $DINO_REPO" >&2; exit 1; }
     [[ -d "$DATA" ]] || { echo "!! missing ImageNet root: $DATA" >&2; exit 1; }
     [[ -d "$EXTRA" ]] || { echo "!! missing ImageNet extra directory: $EXTRA" >&2; exit 1; }
