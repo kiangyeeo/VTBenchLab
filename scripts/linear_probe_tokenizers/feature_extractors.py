@@ -8,6 +8,7 @@ the evaluator does not perform DINOv2's multi-block or CLS/patch readout search.
 from contextlib import nullcontext
 from dataclasses import dataclass
 from functools import partial
+import json
 import math
 from pathlib import Path
 import sys
@@ -107,6 +108,34 @@ MC2_DISTILLED_SPECS = {
     "mc2_l14_224": ("mc2_l14_224_checkpoint", 224, 14, 1024, 24, 768),
 }
 
+SIGLIP2_B_SPECS = {
+    "siglip2_b32_256": (
+        "vit_base_patch32_siglip_256",
+        "siglip2_b32_256_model_path",
+        256,
+    ),
+    "siglip2_b16_224": (
+        "vit_base_patch16_siglip_224",
+        "siglip2_b16_224_model_path",
+        224,
+    ),
+    "siglip2_b16_256": (
+        "vit_base_patch16_siglip_256",
+        "siglip2_b16_256_model_path",
+        256,
+    ),
+    "siglip2_b16_384": (
+        "vit_base_patch16_siglip_384",
+        "siglip2_b16_384_model_path",
+        384,
+    ),
+    "siglip2_b16_512": (
+        "vit_base_patch16_siglip_512",
+        "siglip2_b16_512_model_path",
+        512,
+    ),
+}
+
 
 @dataclass
 class FeatureBundle:
@@ -169,6 +198,20 @@ class OpenAIClipEncoder(nn.Module):
             shape = None if outputs.pooler_output is None else tuple(outputs.pooler_output.shape)
             raise RuntimeError(f"Unexpected OpenAI CLIP pooled-output shape: {shape}")
         return outputs.pooler_output.float()
+
+
+class SigLIP2MAPEncoder(nn.Module):
+    """Native SigLIP 2 MAP output returned directly by ``model(images)``."""
+
+    def __init__(self, model: nn.Module):
+        super().__init__()
+        self.model = model
+
+    def forward(self, images: torch.Tensor) -> torch.Tensor:
+        features = self.model(images)
+        if features.ndim != 2:
+            raise RuntimeError(f"Unexpected SigLIP 2 MAP shape: {tuple(features.shape)}")
+        return features.float()
 
 
 class TokLIPEncoder(nn.Module):
@@ -404,6 +447,91 @@ def _load_metaclip2_distilled(
     )
 
 
+def _load_siglip2_map(
+    model_path: str,
+    expected_architecture: str,
+    expected_image_size: int,
+    device: torch.device,
+) -> FeatureBundle:
+    import timm
+    from timm.data import create_transform, resolve_model_data_config
+    from timm.models import load_checkpoint
+
+    model_dir = Path(model_path).expanduser().resolve()
+    if not model_dir.is_dir():
+        raise FileNotFoundError(f"Missing SigLIP 2 model directory: {model_dir}")
+    config_path = model_dir / "config.json"
+    if not config_path.is_file():
+        raise FileNotFoundError(f"Missing SigLIP 2 config: {config_path}")
+    with config_path.open("r", encoding="utf-8") as handle:
+        config = json.load(handle)
+
+    expected_config = {
+        "architecture": expected_architecture,
+        "num_classes": 0,
+        "num_features": 768,
+        "global_pool": "map",
+    }
+    actual_config = {key: config.get(key) for key in expected_config}
+    if actual_config != expected_config:
+        raise RuntimeError(
+            f"SigLIP 2 model config mismatch: expected={expected_config}, actual={actual_config}"
+        )
+    pretrained_cfg = config.get("pretrained_cfg")
+    if not isinstance(pretrained_cfg, dict):
+        raise RuntimeError(f"Missing pretrained_cfg object in {config_path}")
+    input_size = pretrained_cfg.get("input_size")
+    if input_size != [3, expected_image_size, expected_image_size]:
+        raise RuntimeError(
+            f"SigLIP 2 input-size mismatch: expected "
+            f"{[3, expected_image_size, expected_image_size]}, got {input_size}"
+        )
+
+    checkpoint = _resolve_checkpoint(str(model_dir))
+    model = timm.create_model(
+        expected_architecture,
+        pretrained=False,
+        pretrained_cfg=pretrained_cfg,
+        num_classes=0,
+        global_pool="map",
+    )
+    load_checkpoint(model, checkpoint, strict=True)
+    if getattr(model, "attn_pool", None) is None:
+        raise RuntimeError("SigLIP 2 model does not expose the expected MAP attention pool")
+
+    data_config = resolve_model_data_config(model)
+    image_size = int(data_config["input_size"][-1])
+    if image_size != expected_image_size:
+        raise RuntimeError(
+            f"Resolved SigLIP 2 input size {image_size} does not match {expected_image_size}"
+        )
+    mean = tuple(float(value) for value in data_config["mean"])
+    std = tuple(float(value) for value in data_config["std"])
+    train_transform = make_classification_train_transform(
+        crop_size=image_size,
+        hflip_prob=0.5,
+        mean=mean,
+        std=std,
+    )
+    eval_transform = create_transform(**data_config, is_training=False)
+    encoder = SigLIP2MAPEncoder(model).to(device).eval().requires_grad_(False)
+    return FeatureBundle(
+        encoder=encoder,
+        train_transform=train_transform,
+        eval_transform=eval_transform,
+        autocast_context=nullcontext,
+        representation=(
+            "native SigLIP 2 model(images) [B,D] output after MAP attention pooling"
+        ),
+        transform_description=(
+            f"train=RandomResizedCrop({image_size})+HorizontalFlip(0.5), "
+            f"eval=timm deterministic native transform, mean={mean}, std={std}, no ColorJitter"
+        ),
+        backbone_precision="float32",
+        checkpoint_paths=[checkpoint, str(config_path)],
+    )
+
+
 def _processor_square_size(value, name: str) -> int:
     if isinstance(value, int):
         return value
@@ -627,6 +755,14 @@ def load_feature_bundle(model_name: str, args, device: torch.device) -> FeatureB
             width,
             depth,
             projection_dim,
+            device,
+        )
+    if model_name in SIGLIP2_B_SPECS:
+        architecture, model_path_arg, image_size = SIGLIP2_B_SPECS[model_name]
+        return _load_siglip2_map(
+            getattr(args, model_path_arg),
+            architecture,
+            image_size,
             device,
         )
     if model_name == "toklip_s":
