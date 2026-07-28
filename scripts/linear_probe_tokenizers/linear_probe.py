@@ -64,6 +64,13 @@ MC2_RAW_CHECKPOINT_FILENAMES = {
     "mc2_b16_384": "metaclip2_b16_384px_worldwide.pt",
     "mc2_l14_224": "metaclip2_l14_224px_worldwide.pt",
 }
+SIGLIP2_B_MODEL_NAMES = (
+    "siglip2_b32_256",
+    "siglip2_b16_224",
+    "siglip2_b16_256",
+    "siglip2_b16_384",
+    "siglip2_b16_512",
+)
 MODEL_NAMES = (
     "metaclip",
     "clip_openai__l14",
@@ -78,6 +85,7 @@ MODEL_NAMES = (
     "mc1_g14_224_2.5b",
     "mc1_h14_224_v1.2",
     *MC2_MODEL_NAMES,
+    *SIGLIP2_B_MODEL_NAMES,
     "toklip_s",
     "toklip_l",
     "unitok",
@@ -97,6 +105,7 @@ OUTPUT_NAMES = {
     "mc1_g14_224_2.5b": "mc1_g14_224_2.5b",
     "mc1_h14_224_v1.2": "mc1_h14_224_v1.2",
     **{model_name: model_name for model_name in MC2_MODEL_NAMES},
+    **{model_name: model_name for model_name in SIGLIP2_B_MODEL_NAMES},
     "toklip_s": "toklip_s_semantic_256",
     "toklip_l": "toklip_l_semantic_384",
     "unitok": "unitok",
@@ -289,6 +298,11 @@ def _parse_args():
         parser.add_argument(
             f"--{model_name.replace('_', '-')}-checkpoint",
             default=str(checkpoint),
+        )
+    for model_name in SIGLIP2_B_MODEL_NAMES:
+        parser.add_argument(
+            f"--{model_name.replace('_', '-')}-model-path",
+            default=str(continuous_model_zoo / model_name),
         )
     parser.add_argument("--toklip-path", default=str(image_scripts / "TokLIP"))
     parser.add_argument("--toklip-s-checkpoint", default=str(model_zoo / "TokLIP" / "TokLIP_S_256.pt"))
