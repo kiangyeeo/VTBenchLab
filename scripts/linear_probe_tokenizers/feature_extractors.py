@@ -25,6 +25,10 @@ PM1_MEAN = (0.5, 0.5, 0.5)
 PM1_STD = (0.5, 0.5, 0.5)
 CLIP_MEAN = (0.48145466, 0.4578275, 0.40821073)
 CLIP_STD = (0.26862954, 0.26130258, 0.27577711)
+IMAGENET_MEAN = (0.485, 0.456, 0.406)
+IMAGENET_STD = (0.229, 0.224, 0.225)
+IDENTITY_MEAN = (0.0, 0.0, 0.0)
+IDENTITY_STD = (1.0, 1.0, 1.0)
 
 MC1_SPECS = {
     "mc1_b32_224_400m": (
@@ -136,6 +140,34 @@ SIGLIP2_B_SPECS = {
     ),
 }
 
+RAEV2_SPECS = {
+    "dinov3": {
+        "stats": "stage1/imagenet/dinov3l-k1/stats.pt",
+        "representation": (
+            "spatial mean of the normalized RAEv2 DINOv3-L/16 K=1 tokenizer latent"
+        ),
+    },
+    "raev2": {
+        "stats": "stage1/imagenet/dinov3l-k23/stats.pt",
+        "representation": (
+            "spatial mean of the normalized RAEv2 DINOv3-L/16 K=23 "
+            "multi-layer tokenizer latent"
+        ),
+    },
+    "ijepa": {
+        "stats": "stage1/imagenet/jepa-h-k1/stats.pt",
+        "representation": (
+            "spatial mean of the normalized RAEv2 I-JEPA-H/14 K=1 tokenizer latent"
+        ),
+    },
+}
+
+DINOV3_L_CHECKPOINT = (
+    "encoders/dinov3/dinov3_vitl16_pretrain_lvd1689m-8aa4cbdd.pth"
+)
+IJEPA_H_CHECKPOINT = "encoders/ijepa/ijepa_vith.pth"
+RAEV2_K23_LAYERS = tuple(range(1, 24))
+
 
 @dataclass
 class FeatureBundle:
@@ -212,6 +244,94 @@ class SigLIP2MAPEncoder(nn.Module):
         if features.ndim != 2:
             raise RuntimeError(f"Unexpected SigLIP 2 MAP shape: {tuple(features.shape)}")
         return features.float()
+
+
+class RAEv2LatentEncoder(nn.Module):
+    """Pool the exact normalized spatial latent consumed by an RAEv2 decoder."""
+
+    def __init__(
+        self,
+        model: nn.Module,
+        variant: str,
+        latent_mean: torch.Tensor,
+        latent_var: torch.Tensor,
+        eps: float = 1e-5,
+    ):
+        super().__init__()
+        if variant not in RAEV2_SPECS:
+            raise ValueError(f"Unsupported RAEv2 tokenizer variant: {variant}")
+        self.model = model
+        self.variant = variant
+        self.eps = float(eps)
+        self.register_buffer(
+            "pixel_mean",
+            torch.tensor(IMAGENET_MEAN, dtype=torch.float32).view(1, 3, 1, 1),
+            persistent=False,
+        )
+        self.register_buffer(
+            "pixel_std",
+            torch.tensor(IMAGENET_STD, dtype=torch.float32).view(1, 3, 1, 1),
+            persistent=False,
+        )
+        self.register_buffer("latent_mean", latent_mean.unsqueeze(0).float())
+        self.register_buffer("latent_var", latent_var.unsqueeze(0).float())
+
+    def _encode_tokens(self, images: torch.Tensor) -> torch.Tensor:
+        images = (images - self.pixel_mean) / self.pixel_std
+        if self.variant == "ijepa":
+            # Match RAEv2's JEPAEncoder: native RAE input is 256, while the
+            # I-JEPA backbone itself receives 224x224.
+            images = nn.functional.interpolate(images, 224, mode="bicubic")
+            return self.model(images)
+
+        # DINOv3's RAEv2 transform is a square resize to the native 256 input.
+        if images.shape[-2:] != (256, 256):
+            images = nn.functional.interpolate(
+                images,
+                size=(256, 256),
+                mode="bilinear",
+                align_corners=False,
+                antialias=True,
+            )
+        if self.variant == "dinov3":
+            return self.model.forward_features(images)["x_norm_patchtokens"]
+
+        outputs = self.model.get_intermediate_layers(
+            images,
+            n=RAEV2_K23_LAYERS,
+            reshape=False,
+            return_class_token=False,
+            norm=True,
+        )
+        patch_tokens = torch.stack(outputs, dim=0).mean(dim=0)
+        return patch_tokens + outputs[-1].mean(dim=1, keepdim=True)
+
+    def forward(self, images: torch.Tensor) -> torch.Tensor:
+        tokens = self._encode_tokens(images)
+        if tokens.ndim != 3:
+            raise RuntimeError(
+                f"Unexpected {self.variant} tokenizer-token shape: {tuple(tokens.shape)}"
+            )
+        batch_size, token_count, feature_dim = tokens.shape
+        grid_size = math.isqrt(token_count)
+        if grid_size * grid_size != token_count:
+            raise RuntimeError(
+                f"{self.variant} returned a non-square token grid: {token_count}"
+            )
+        latent = tokens.transpose(1, 2).reshape(
+            batch_size,
+            feature_dim,
+            grid_size,
+            grid_size,
+        )
+        expected_shape = tuple(self.latent_mean.shape[1:])
+        if tuple(latent.shape[1:]) != expected_shape:
+            raise RuntimeError(
+                f"{self.variant} latent shape mismatch: expected {expected_shape}, "
+                f"got {tuple(latent.shape[1:])}"
+            )
+        latent = (latent - self.latent_mean) / torch.sqrt(self.latent_var + self.eps)
+        return latent.mean(dim=(2, 3)).float()
 
 
 class TokLIPEncoder(nn.Module):
@@ -532,6 +652,150 @@ def _load_siglip2_map(
     )
 
 
+def _load_dinov3_l(
+    dinov3_path: Path,
+    checkpoint: Path,
+    device: torch.device,
+) -> nn.Module:
+    if not (dinov3_path / "hubconf.py").is_file():
+        raise FileNotFoundError(f"Missing local DINOv3 repository: {dinov3_path}")
+    model = torch.hub.load(
+        str(dinov3_path),
+        "dinov3_vitl16",
+        source="local",
+        trust_repo=True,
+        skip_validation=True,
+        weights=str(checkpoint),
+    )
+    if int(model.embed_dim) != 1024 or len(model.blocks) != 24:
+        raise RuntimeError(
+            "Unexpected DINOv3-L architecture: "
+            f"embed_dim={model.embed_dim}, depth={len(model.blocks)}"
+        )
+    # This is part of RAEv2's released representation: its DINOv3 wrapper
+    # deliberately removes the final norm's affine parameters.
+    model.norm = nn.LayerNorm(1024, elementwise_affine=False)
+    return model.to(device).eval().requires_grad_(False)
+
+
+def _load_ijepa_h(
+    raev2_path: Path,
+    checkpoint: Path,
+    device: torch.device,
+) -> nn.Module:
+    raev2_src = raev2_path / "src"
+    if not (raev2_src / "encoders" / "models" / "jepa.py").is_file():
+        raise FileNotFoundError(f"Missing RAEv2 I-JEPA source: {raev2_src}")
+    if str(raev2_src) not in sys.path:
+        sys.path.insert(0, str(raev2_src))
+    from encoders.models.jepa import vit_huge
+
+    model = vit_huge(img_size=[224, 224], patch_size=14)
+    payload = torch.load(
+        checkpoint,
+        map_location="cpu",
+        weights_only=True,
+        mmap=True,
+    )
+    encoder_state = payload.get("encoder") if isinstance(payload, dict) else None
+    if not isinstance(encoder_state, dict):
+        raise RuntimeError(f"Missing I-JEPA encoder state_dict in {checkpoint}")
+    if not encoder_state or any(not key.startswith("module.") for key in encoder_state):
+        raise RuntimeError(f"Unexpected I-JEPA encoder key layout in {checkpoint}")
+    encoder_state = {
+        key.removeprefix("module."): value
+        for key, value in encoder_state.items()
+    }
+    model.load_state_dict(encoder_state, strict=True)
+    del payload, encoder_state
+    if int(model.embed_dim) != 1280 or len(model.blocks) != 32:
+        raise RuntimeError(
+            "Unexpected I-JEPA-H architecture: "
+            f"embed_dim={model.embed_dim}, depth={len(model.blocks)}"
+        )
+    return model.to(device).eval().requires_grad_(False)
+
+
+def _load_raev2_variant(args, device: torch.device, variant: str) -> FeatureBundle:
+    spec = RAEV2_SPECS[variant]
+    model_root = Path(args.raev2_model_root).expanduser().resolve()
+    raev2_path = Path(args.raev2_path).expanduser().resolve()
+    dinov3_path = Path(args.dinov3_path).expanduser().resolve()
+    stats_path = model_root / spec["stats"]
+    if not stats_path.is_file():
+        raise FileNotFoundError(f"Missing {variant} normalization statistics: {stats_path}")
+
+    if variant in {"dinov3", "raev2"}:
+        checkpoint = model_root / DINOV3_L_CHECKPOINT
+        if not checkpoint.is_file():
+            raise FileNotFoundError(f"Missing DINOv3-L checkpoint: {checkpoint}")
+        model = _load_dinov3_l(dinov3_path, checkpoint, device)
+        expected_feature_dim = 1024
+    else:
+        checkpoint = model_root / IJEPA_H_CHECKPOINT
+        if not checkpoint.is_file():
+            raise FileNotFoundError(f"Missing I-JEPA-H checkpoint: {checkpoint}")
+        model = _load_ijepa_h(raev2_path, checkpoint, device)
+        expected_feature_dim = 1280
+
+    stats = torch.load(stats_path, map_location="cpu", weights_only=True)
+    latent_mean = stats.get("mean") if isinstance(stats, dict) else None
+    latent_var = stats.get("var") if isinstance(stats, dict) else None
+    expected_stats_shape = (expected_feature_dim, 16, 16)
+    if (
+        not torch.is_tensor(latent_mean)
+        or not torch.is_tensor(latent_var)
+        or tuple(latent_mean.shape) != expected_stats_shape
+        or tuple(latent_var.shape) != expected_stats_shape
+    ):
+        mean_shape = None if not torch.is_tensor(latent_mean) else tuple(latent_mean.shape)
+        var_shape = None if not torch.is_tensor(latent_var) else tuple(latent_var.shape)
+        raise RuntimeError(
+            f"{variant} normalization-stat shape mismatch: expected {expected_stats_shape}, "
+            f"got mean={mean_shape}, var={var_shape}"
+        )
+    if not torch.isfinite(latent_mean).all() or not torch.isfinite(latent_var).all():
+        raise RuntimeError(f"{variant} normalization statistics contain non-finite values")
+    if not torch.all(latent_var >= 0):
+        raise RuntimeError(f"{variant} normalization variance contains negative values")
+
+    encoder = RAEv2LatentEncoder(
+        model,
+        variant,
+        latent_mean,
+        latent_var,
+    ).to(device).eval().requires_grad_(False)
+    train_transform = make_classification_train_transform(
+        crop_size=256,
+        hflip_prob=0.5,
+        mean=IDENTITY_MEAN,
+        std=IDENTITY_STD,
+    )
+    eval_transform = make_classification_eval_transform(
+        resize_size=256,
+        crop_size=256,
+        mean=IDENTITY_MEAN,
+        std=IDENTITY_STD,
+    )
+    source_paths = [str(raev2_path)]
+    if variant in {"dinov3", "raev2"}:
+        source_paths.append(str(dinov3_path))
+    return FeatureBundle(
+        encoder=encoder,
+        train_transform=train_transform,
+        eval_transform=eval_transform,
+        autocast_context=nullcontext,
+        representation=spec["representation"],
+        transform_description=(
+            "train=RandomResizedCrop(256)+HorizontalFlip(0.5), "
+            "eval=Resize(256)+CenterCrop(256), transform output in [0,1]; "
+            f"encoder-internal normalization mean={IMAGENET_MEAN}, std={IMAGENET_STD}"
+        ),
+        backbone_precision="float32",
+        checkpoint_paths=[str(checkpoint), str(stats_path), *source_paths],
+    )
+
+
 def _processor_square_size(value, name: str) -> int:
     if isinstance(value, int):
         return value
@@ -765,6 +1029,8 @@ def load_feature_bundle(model_name: str, args, device: torch.device) -> FeatureB
             image_size,
             device,
         )
+    if model_name in RAEV2_SPECS:
+        return _load_raev2_variant(args, device, model_name)
     if model_name == "toklip_s":
         return _load_toklip(args, device, "s")
     if model_name == "toklip_l":
