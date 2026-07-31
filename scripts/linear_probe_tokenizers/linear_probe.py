@@ -64,12 +64,22 @@ MC2_RAW_CHECKPOINT_FILENAMES = {
     "mc2_b16_384": "metaclip2_b16_384px_worldwide.pt",
     "mc2_l14_224": "metaclip2_l14_224px_worldwide.pt",
 }
-SIGLIP2_B_MODEL_NAMES = (
+SIGLIP2_MODEL_NAMES = (
     "siglip2_b32_256",
     "siglip2_b16_224",
     "siglip2_b16_256",
     "siglip2_b16_384",
     "siglip2_b16_512",
+    "siglip2_l16_256",
+    "siglip2_l16_384",
+    "siglip2_l16_512",
+    "siglip2_sm14_224",
+    "siglip2_sm14_384",
+    "siglip2_sm16_256",
+    "siglip2_sm16_384",
+    "siglip2_sm16_512",
+    "siglip2_g16_256",
+    "siglip2_g16_384",
 )
 RAEV2_MODEL_NAMES = (
     "dinov3",
@@ -90,7 +100,7 @@ MODEL_NAMES = (
     "mc1_g14_224_2.5b",
     "mc1_h14_224_v1.2",
     *MC2_MODEL_NAMES,
-    *SIGLIP2_B_MODEL_NAMES,
+    *SIGLIP2_MODEL_NAMES,
     *RAEV2_MODEL_NAMES,
     "toklip_s",
     "toklip_l",
@@ -111,7 +121,7 @@ OUTPUT_NAMES = {
     "mc1_g14_224_2.5b": "mc1_g14_224_2.5b",
     "mc1_h14_224_v1.2": "mc1_h14_224_v1.2",
     **{model_name: model_name for model_name in MC2_MODEL_NAMES},
-    **{model_name: model_name for model_name in SIGLIP2_B_MODEL_NAMES},
+    **{model_name: model_name for model_name in SIGLIP2_MODEL_NAMES},
     **{model_name: model_name for model_name in RAEV2_MODEL_NAMES},
     "toklip_s": "toklip_s_semantic_256",
     "toklip_l": "toklip_l_semantic_384",
@@ -306,7 +316,7 @@ def _parse_args():
             f"--{model_name.replace('_', '-')}-checkpoint",
             default=str(checkpoint),
         )
-    for model_name in SIGLIP2_B_MODEL_NAMES:
+    for model_name in SIGLIP2_MODEL_NAMES:
         parser.add_argument(
             f"--{model_name.replace('_', '-')}-model-path",
             default=str(continuous_model_zoo / model_name),

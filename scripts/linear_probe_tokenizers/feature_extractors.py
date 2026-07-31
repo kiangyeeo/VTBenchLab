@@ -112,31 +112,98 @@ MC2_DISTILLED_SPECS = {
     "mc2_l14_224": ("mc2_l14_224_checkpoint", 224, 14, 1024, 24, 768),
 }
 
-SIGLIP2_B_SPECS = {
+SIGLIP2_SPECS = {
     "siglip2_b32_256": (
         "vit_base_patch32_siglip_256",
         "siglip2_b32_256_model_path",
         256,
+        768,
     ),
     "siglip2_b16_224": (
         "vit_base_patch16_siglip_224",
         "siglip2_b16_224_model_path",
         224,
+        768,
     ),
     "siglip2_b16_256": (
         "vit_base_patch16_siglip_256",
         "siglip2_b16_256_model_path",
         256,
+        768,
     ),
     "siglip2_b16_384": (
         "vit_base_patch16_siglip_384",
         "siglip2_b16_384_model_path",
         384,
+        768,
     ),
     "siglip2_b16_512": (
         "vit_base_patch16_siglip_512",
         "siglip2_b16_512_model_path",
         512,
+        768,
+    ),
+    "siglip2_l16_256": (
+        "vit_large_patch16_siglip_256",
+        "siglip2_l16_256_model_path",
+        256,
+        1024,
+    ),
+    "siglip2_l16_384": (
+        "vit_large_patch16_siglip_384",
+        "siglip2_l16_384_model_path",
+        384,
+        1024,
+    ),
+    "siglip2_l16_512": (
+        "vit_large_patch16_siglip_512",
+        "siglip2_l16_512_model_path",
+        512,
+        1024,
+    ),
+    "siglip2_sm14_224": (
+        "vit_so400m_patch14_siglip_224",
+        "siglip2_sm14_224_model_path",
+        224,
+        1152,
+    ),
+    # The official checkpoint is named "..._384", but its native grid is
+    # 27x27 with patch size 14, so the converted timm model uses 378x378.
+    "siglip2_sm14_384": (
+        "vit_so400m_patch14_siglip_378",
+        "siglip2_sm14_384_model_path",
+        378,
+        1152,
+    ),
+    "siglip2_sm16_256": (
+        "vit_so400m_patch16_siglip_256",
+        "siglip2_sm16_256_model_path",
+        256,
+        1152,
+    ),
+    "siglip2_sm16_384": (
+        "vit_so400m_patch16_siglip_384",
+        "siglip2_sm16_384_model_path",
+        384,
+        1152,
+    ),
+    "siglip2_sm16_512": (
+        "vit_so400m_patch16_siglip_512",
+        "siglip2_sm16_512_model_path",
+        512,
+        1152,
+    ),
+    "siglip2_g16_256": (
+        "vit_giantopt_patch16_siglip_256",
+        "siglip2_g16_256_model_path",
+        256,
+        1536,
+    ),
+    "siglip2_g16_384": (
+        "vit_giantopt_patch16_siglip_384",
+        "siglip2_g16_384_model_path",
+        384,
+        1536,
     ),
 }
 
@@ -571,6 +638,7 @@ def _load_siglip2_map(
     model_path: str,
     expected_architecture: str,
     expected_image_size: int,
+    expected_feature_dim: int,
     device: torch.device,
 ) -> FeatureBundle:
     import timm
@@ -589,7 +657,7 @@ def _load_siglip2_map(
     expected_config = {
         "architecture": expected_architecture,
         "num_classes": 0,
-        "num_features": 768,
+        "num_features": expected_feature_dim,
         "global_pool": "map",
     }
     actual_config = {key: config.get(key) for key in expected_config}
@@ -1021,12 +1089,13 @@ def load_feature_bundle(model_name: str, args, device: torch.device) -> FeatureB
             projection_dim,
             device,
         )
-    if model_name in SIGLIP2_B_SPECS:
-        architecture, model_path_arg, image_size = SIGLIP2_B_SPECS[model_name]
+    if model_name in SIGLIP2_SPECS:
+        architecture, model_path_arg, image_size, feature_dim = SIGLIP2_SPECS[model_name]
         return _load_siglip2_map(
             getattr(args, model_path_arg),
             architecture,
             image_size,
+            feature_dim,
             device,
         )
     if model_name in RAEV2_SPECS:
