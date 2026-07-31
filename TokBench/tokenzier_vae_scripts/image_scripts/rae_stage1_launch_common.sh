@@ -11,6 +11,11 @@ run_rae_stage1() {
     local decoder_rel="${DECODER_CKPT_REL:?DECODER_CKPT_REL is required}"
     local stats_rel="${STATS_CKPT_REL:?STATS_CKPT_REL is required}"
     local needs_dinov3="${NEEDS_DINOV3:?NEEDS_DINOV3 is required}"
+    local output_name="${OUTPUT_NAME:-$model_name}"
+    local -a python_extra_args=()
+    if declare -p PYTHON_EXTRA_ARGS >/dev/null 2>&1; then
+        python_extra_args=("${PYTHON_EXTRA_ARGS[@]}")
+    fi
 
     local repo_root
     repo_root="$(cd "$script_dir/../.." && pwd)"
@@ -98,10 +103,10 @@ run_rae_stage1() {
         local dataset="$2"
         local size="$3"
         local input_dir="$data_root/images/${category}_data/$dataset"
-        local output_base="$recon_root/$model_name/${category}_data/$dataset"
+        local output_base="$recon_root/$output_name/${category}_data/$dataset"
         require_dir "$input_dir" "$category dataset '$dataset'" || return 1
 
-        echo "[$model_name] padding=$size dataset=$dataset ($category)"
+        echo "[$output_name] padding=$size dataset=$dataset ($category)"
         local -a pids=()
         local idx
         for ((idx = 0; idx < chunks; idx++)); do
@@ -117,7 +122,8 @@ run_rae_stage1() {
                 --padding_size "$size" \
                 --batch_size "$batch_size" \
                 --num_chunks "$chunks" \
-                --chunk_idx "$idx" &
+                --chunk_idx "$idx" \
+                "${python_extra_args[@]}" &
             pids+=("$!")
         done
 
@@ -129,7 +135,7 @@ run_rae_stage1() {
             fi
         done
         if [ "$failed" -ne 0 ]; then
-            echo "[$model_name] reconstruction failed for $category/$dataset" >&2
+            echo "[$output_name] reconstruction failed for $category/$dataset" >&2
             return 1
         fi
     }
@@ -147,5 +153,5 @@ run_rae_stage1() {
         done
     done
 
-    echo "[$model_name] image reconstruction complete -> $recon_root/$model_name"
+    echo "[$output_name] image reconstruction complete -> $recon_root/$output_name"
 }

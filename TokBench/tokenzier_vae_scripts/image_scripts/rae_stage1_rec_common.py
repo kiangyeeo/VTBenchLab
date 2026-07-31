@@ -25,17 +25,35 @@ DEFAULT_RECON_ROOT = REPO_ROOT / "image_reconstruction_results"
 
 DINOV3_L_CKPT = "encoders/dinov3/dinov3_vitl16_pretrain_lvd1689m-8aa4cbdd.pth"
 
-TOKENIZER_CONFIGS = {
-    "raev2": {
+RAEV2_K_CONFIGS = {
+    # K=1 is the original final-layer RAE representation.
+    1: {
+        "encoder_name": "dinov3-vit-l16",
+        "decoder_checkpoint": "stage1/imagenet/dinov3l-k1/decoder.pt",
+        "stats_checkpoint": "stage1/imagenet/dinov3l-k1/stats.pt",
+    },
+    # Keep the exact layer selections from the official released configs.
+    7: {
+        "encoder_name": "dinov3mls-vit-l16[layers=11.13.15.17.19.21.23]",
+        "decoder_checkpoint": "stage1/imagenet/dinov3l-k7/decoder.pt",
+        "stats_checkpoint": "stage1/imagenet/dinov3l-k7/stats.pt",
+    },
+    23: {
         "encoder_name": (
             "dinov3mls-vit-l16"
             "[layers=1.2.3.4.5.6.7.8.9.10.11.12.13.14.15.16.17.18.19.20.21.22.23]"
         ),
+        "decoder_checkpoint": "stage1/imagenet/dinov3l-k23/decoder.pt",
+        "stats_checkpoint": "stage1/imagenet/dinov3l-k23/stats.pt",
+    },
+}
+
+TOKENIZER_CONFIGS = {
+    "raev2": {
+        **RAEV2_K_CONFIGS[23],
         "encoder_checkpoint": DINOV3_L_CKPT,
         "encoder_checkpoint_size": 1_213_050_671,
-        "decoder_checkpoint": "stage1/imagenet/dinov3l-k23/decoder.pt",
         "decoder_checkpoint_size": 1_662_766_063,
-        "stats_checkpoint": "stage1/imagenet/dinov3l-k23/stats.pt",
         "stats_checkpoint_size": 2_098_901,
         "uses_dinov3": True,
     },
@@ -62,6 +80,12 @@ TOKENIZER_CONFIGS = {
 }
 
 IMAGE_SUFFIXES = {".bmp", ".jpeg", ".jpg", ".png", ".webp"}
+
+
+def get_variant_name(args):
+    if args.model_name == "raev2":
+        return f"raev2_k{args.k}"
+    return args.model_name
 
 
 def get_args_parser(default_model_name):
@@ -98,6 +122,17 @@ def get_args_parser(default_model_name):
     parser.add_argument("--chunk_idx", type=int, default=0)
     parser.add_argument("--num_chunks", type=int, default=1)
     parser.add_argument("--batch_size", type=int, default=1)
+    if default_model_name == "raev2":
+        parser.add_argument(
+            "--k",
+            type=int,
+            default=23,
+            choices=sorted(RAEV2_K_CONFIGS),
+            help=(
+                "DINOv3-L representation variant. Each K uses its matching "
+                "official ImageNet decoder and normalization statistics."
+            ),
+        )
     return parser
 
 
@@ -133,7 +168,10 @@ def temporary_pretrained_layout(model_root):
 
 
 def resolve_model_files(args):
-    config = TOKENIZER_CONFIGS[args.model_name]
+    config = dict(TOKENIZER_CONFIGS[args.model_name])
+    if args.model_name == "raev2":
+        config.update(RAEV2_K_CONFIGS[args.k])
+
     model_root = Path(args.model_root).expanduser().resolve()
     encoder_checkpoint = model_root / config["encoder_checkpoint"]
     decoder_checkpoint = model_root / config["decoder_checkpoint"]
@@ -196,8 +234,9 @@ def load_tokenizer(args):
     tokenizer.to("cuda")
     tokenizer.requires_grad_(False)
     tokenizer.eval()
+    variant = get_variant_name(args)
     print(
-        f"[{args.model_name}] encoder={config['encoder_name']} "
+        f"[{variant}] encoder={config['encoder_name']} "
         f"decoder={decoder_checkpoint} stats={stats_checkpoint}"
     )
     return tokenizer
@@ -240,6 +279,7 @@ def list_images(image_dir):
 
 def main(args):
     validate_runtime_args(args)
+    variant = get_variant_name(args)
     image_dir = Path(args.image_path).expanduser().resolve()
     require_dir(image_dir, "TokBench input image directory")
 
@@ -248,17 +288,24 @@ def main(args):
         raise FileNotFoundError(f"No supported images found in {image_dir}")
 
     subset = np.array_split(all_names, args.num_chunks)[args.chunk_idx].tolist()
-    output_dir = Path(f"{args.save_path}_{args.padding_size}").expanduser().resolve()
+    save_path = Path(args.save_path).expanduser().resolve()
+    if args.model_name == "raev2":
+        default_save_path = (
+            DEFAULT_RECON_ROOT / "raev2" / "text_data" / "ic13"
+        ).resolve()
+        if save_path == default_save_path:
+            save_path = DEFAULT_RECON_ROOT / variant / "text_data" / "ic13"
+    output_dir = Path(f"{save_path}_{args.padding_size}").resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
 
     if not subset:
-        print(f"[{args.model_name}] chunk {args.chunk_idx} is empty; nothing to reconstruct")
+        print(f"[{variant}] chunk {args.chunk_idx} is empty; nothing to reconstruct")
         return
 
     tokenizer = load_tokenizer(args)
     chunks = split_list(subset, args.batch_size)
 
-    for names in tqdm(chunks, desc=f"{args.model_name} chunk {args.chunk_idx}"):
+    for names in tqdm(chunks, desc=f"{variant} chunk {args.chunk_idx}"):
         tensors = []
         metas = []
         for name in names:
@@ -277,6 +324,6 @@ def main(args):
             restored_image.save(output_dir / name)
 
     print(
-        f"[{args.model_name}] chunk {args.chunk_idx}/{args.num_chunks} complete "
+        f"[{variant}] chunk {args.chunk_idx}/{args.num_chunks} complete "
         f"-> {output_dir}"
     )
