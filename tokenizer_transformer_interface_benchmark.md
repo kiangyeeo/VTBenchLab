@@ -154,7 +154,56 @@ P_i(E_i(x))\in\mathbb{R}^{B\times N_0\times d}
 
 ---
 
-## 6. 评测指标
+## 6. 数据集设计
+
+与 ImageNet “一张图对应一个类别”不同，下面多数数据集为一张图提供多层结构化标注，例如物体框、像素 mask、文字转录、场景图或表格结构。Benchmark 将它们统一转换为：
+
+\[
+(x, q, y, m)
+\]
+
+其中 \(x\) 是图像，\(q\) 是固定格式的 query，\(y\) 是简短目标标签，\(m\) 保存原始框、mask 或生成程序等证据。数据预算按唯一图像或页面计算，而不是按 QA 数量计算。
+
+### 6.1 数据配比
+
+| 数据来源 | 数量 | 主要能力 |
+|---|---:|---|
+| [Open Images V7](https://storage.googleapis.com/openimages/web/factsfigures_v7.html) | 4k | 对象、属性、小目标、真实关系 |
+| [ADE20K](https://github.com/CSAILVision/ADE20K) | 2k | 场景区域、部件、密集空间结构 |
+| [HierText](https://github.com/google-research-datasets/hiertext) + 合成文字 | 4k | OCR、文字位置、局部细节 |
+| [CLEVR/CoGenT](https://web.eecs.umich.edu/~justincj/clevr/) + [CVR](https://github.com/serre-lab/CVR) | 4k | 计数、关系、组合泛化 |
+| [PlotQA](https://iitmnlp.github.io/PlotQA/) + [FigureQA](https://www.microsoft.com/en-us/research/project/figureqa-dataset/) | 3k | 图表元素、数值、坐标关系 |
+| [DocLayNet](https://github.com/DS4SD/DocLayNet) + [PubTables-1M](https://github.com/microsoft/table-transformer) | 3k | 文档布局、表格结构 |
+| **合计** | **20k** | |
+
+### 6.2 每个数据集的原始标签与评测目标
+
+| 数据集 | 一张图原本带有什么标注 | 转换成的样本示例 |
+|---|---|---|
+| Open Images V7 | 图像级多标签，例如 `{Person, Dog, Ball}`；物体类别和框；部分图像还有 mask 与 `(Person, holds, Ball)` 关系三元组 | `EXISTS(Dog) → yes`；`LOCATE(Ball) → grid_7`；`RELATION(Person, Ball) → holds` |
+| ADE20K | 每个像素的物体或 stuff 类别，例如 `wall/floor/chair/window`；对象实例、轮廓和部件层级 | `LABEL_AT(grid_6) → chair`；`PART_OF(backrest) → chair`；`AREA_COMPARE(window, door) → smaller` |
+| HierText | word、line、paragraph 三层 polygon，每个单词的真实转录和层级归属，例如某个框内是 `STOP` | `READ_WORD(region_3) → STOP`；`TEXT_LOCATE(STOP) → grid_2`；`READ_CHAR(region_3, 2) → T` |
+| 合成文字 | 渲染字符串、每个字符的内容与精确位置，以及字体、大小、透视和噪声参数 | `READ_WORD → A7K9`；`CHAR_AT(3) → K`；`COUNT_CHAR → 4` |
+| CLEVR/CoGenT | 完整场景图；每个物体的 `shape/color/size/material/3D position`，以及 `left/right/front/behind` 关系 | `COUNT(red cube) → 2`；`ATTRIBUTE(object_2) → metal`；`RELATION(a,b) → left` |
+| CVR | 四幅抽象图构成一道 odd-one-out 题，同时给出所属的组合规则 ID | 随机打乱四幅图后，`ODD_ONE_OUT → A/B/C/D`。原数据的异常项固定在第四位，因此打乱是必需的 |
+| PlotQA | plot 图像、底层数据表、标题/坐标轴/图例文字，以及基于数据表生成的问题和答案 | `VALUE(series_A, 2010) → 37`；`COMPARE(A_2010, B_2010) → greater`；`ARGMAX(series_A) → 2014` |
+| FigureQA | 合成图表的结构化元数据，以及图形关系陈述的 yes/no 标签 | `IS_ABOVE(red, blue) → yes`；`HAS_MAXIMUM(green) → no` |
+| DocLayNet | 页面中 11 类布局区域的框和类别，如 `Title/Text/Table/Picture/Formula/Caption` | `REGION_TYPE(grid_4) → Table`；`LOCATE(Title) → top`；`ORDER(Title, Text) → before` |
+| PubTables-1M | 表格框、行、列、单元格、列表头、投影行表头和跨行/跨列单元格的框 | `ROW_COUNT → 6`；`CELL_POSITION(region_5) → row_2_col_3`；`IS_COLUMN_HEADER(region_1) → yes` |
+
+因此，这里的直接类比是：ImageNet 的目标可能是 `cat`，而本 benchmark 中的目标依据任务可能是 `dog`、`yes`、`2`、`left`、`STOP`、`grid_7` 或 `Table`。目标仍然是明确的监督标签，只是由固定 query 指定当前需要读出图像的哪一部分信息。
+
+### 6.3 样本抽取约束
+
+- 4k HierText + 合成文字默认各占 2k；CLEVR/CoGenT 占 3k，CVR 占 1k。
+- PlotQA/FigureQA 和 DocLayNet/PubTables-1M 在各自 3k 预算内默认各占一半。
+- 每个唯一图像在一个预算子集中只计一次，并固定一个主 query，避免将同一张图的大量 QA 误当成大量独立样本。
+- \(1k/5k/20k\) 使用同一个分层排序 manifest 的前缀，保证 \(D_{1k}\subset D_{5k}\subset D_{20k}\)。
+- Open Images 仅在原标注明确时使用关系或属性标签；不从 caption 或外部模型猜测新标签。计数任务主要使用 CLEVR，避免真实图像漏标造成错误数量。
+
+---
+
+## 7. 评测指标
 
 不只比较最终准确率，还应比较 projector 的学习效率。
 
@@ -188,7 +237,7 @@ n\in\{1k, 5k, 20k\}
 
 ---
 
-## 7. 与完整 MLLM 的验证
+## 8. 与完整 MLLM 的验证
 
 Benchmark 的目标不是单独获得高分，而是预测完整 MLLM 下游表现。
 
@@ -234,7 +283,7 @@ flowchart TD
 
 ---
 
-## 8. 创新边界
+## 9. 创新边界
 
 “冻结视觉 encoder 和语言模型，只训练 projector”本身不是新结构。真正的贡献应放在：
 
@@ -246,6 +295,6 @@ flowchart TD
 
 ---
 
-## 9. 一句话定位
+## 10. 一句话定位
 
 > 冻结视觉 tokenizer 与 Transformer，仅训练统一规格的轻量 projector，通过标准化视觉证据任务测量 token 的 Transformer 可读性，并用其低成本预测完整 MLLM 的下游表现。
