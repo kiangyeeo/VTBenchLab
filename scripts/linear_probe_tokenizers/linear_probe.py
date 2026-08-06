@@ -373,6 +373,24 @@ def _atomic_json_dump(path: Path, payload) -> None:
     os.replace(temporary, path)
 
 
+def _metrics_history_has_iteration(path: Path, iteration: int) -> bool:
+    if not path.is_file():
+        return False
+    with path.open("r", encoding="utf-8") as handle:
+        for line_number, line in enumerate(handle, start=1):
+            if not line.strip():
+                continue
+            try:
+                payload = json.loads(line)
+            except json.JSONDecodeError as error:
+                raise RuntimeError(
+                    f"Invalid JSON in {path} at line {line_number}: {error}"
+                ) from error
+            if payload.get("iteration") == iteration:
+                return True
+    return False
+
+
 def _protocol_fingerprint(protocol: dict) -> str:
     encoded = json.dumps(protocol, sort_keys=True, separators=(",", ":")).encode("utf-8")
     return hashlib.sha256(encoded).hexdigest()
@@ -634,6 +652,19 @@ def main() -> int:
         BATCH_SIZE,
         FEATURE_MICROBATCH_SIZE,
     )
+    if (
+        0 < start_update < MAX_UPDATES
+        and start_update % EVAL_PERIOD_UPDATES == 0
+        and not _metrics_history_has_iteration(
+            output_dir / "metrics_history.jsonl", start_update
+        )
+    ):
+        LOGGER.info(
+            "Recovered checkpoint is missing validation at update %d; evaluating before training",
+            start_update,
+        )
+        _evaluate_heads(feature_model, head_grid, val_loader, start_update, output_dir)
+
     if start_update < MAX_UPDATES:
         metric_logger = MetricLogger(delimiter="  ")
         remaining_batches = itertools.islice(train_loader, MAX_UPDATES - start_update)
