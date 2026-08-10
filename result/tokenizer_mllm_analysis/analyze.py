@@ -1050,6 +1050,20 @@ def write_report(
         [record["epochs"][-1] for record in epoch_core],
         "epoch10-minus-epoch1-rho",
     )
+    epoch_spearman_lines = [
+        "| "
+        + " | ".join(
+            [
+                str(row["epoch"]),
+                f"{row['spearman_vs_qwen3_avg_n33']:.3f}",
+                f"{row['spearman_vs_qwen3_avg_matched_n29']:.3f}",
+                f"{row['spearman_vs_qwen25_avg_n29']:.3f}",
+                f"{row['spearman_vs_fair_mllm_avg_n29']:.3f}",
+            ]
+        )
+        + " |"
+        for row in epoch_metrics
+    ]
 
     family_lines = []
     for label in ["Within SigLIP2", "Within MetaCLIP1", "Within MetaCLIP2"]:
@@ -1154,6 +1168,14 @@ def write_report(
 完整数值、自助区间、p 值与 22 项检验的 Benjamini-Hochberg q 值见 [`data/task_correlations.csv`](data/task_correlations.csv)。Qwen3/ScienceQA 的最大覆盖分析保守排除了 I-JEPA，因为该行存在明确的 Avg/任务均值冲突；匹配 n=38 队列本来就不含 I-JEPA。Qwen3 Avg 最大覆盖的结果对此不敏感：含 I-JEPA 时 rho={q3_max['spearman_rho']:.3f}，排除后 rho={q3_max_without_ijepa['spearman_rho']:.3f}。
 
 ## 10 个 epoch：分数、排名与早停信号
+
+下表是每个 probing epoch 与下游 MLLM Avg 的 Spearman rho。“匹配”三列固定用同一批 n=29 continuous tokenizer，可公平比较两个 Qwen；Qwen3 最大覆盖列另外纳入 4 个缺 Qwen2.5 的 discrete tokenizer，n=33。
+
+| Epoch | Qwen3 Avg（最大覆盖 n=33） | Qwen3 Avg（匹配 n=29） | Qwen2.5 Avg（匹配 n=29） | 两 Qwen 公平 Avg（n=29） |
+|---:|---:|---:|---:|---:|
+{chr(10).join(epoch_spearman_lines)}
+
+对应的 p 值、每轮平均/中位准确率以及与 Epoch 10 的排名稳定性见 [`data/epoch_metrics.csv`](data/epoch_metrics.csv)。
 
 ![Epoch trajectories](figures/01_epoch_accuracy_trajectories.png)
 
@@ -1415,8 +1437,15 @@ def main() -> None:
     epoch_metrics = []
     for index in range(10):
         current = accuracy_matrix[:, index]
-        combined_current = [record["epochs"][index] for record in epoch_records if record["tokenizer"] in epoch_core_names]
-        combined_target = [record["mllm_avg_fair"] for record in epoch_records if record["tokenizer"] in epoch_core_names]
+        matched_records = [record for record in epoch_records if record["tokenizer"] in epoch_core_names]
+        matched_current = [record["epochs"][index] for record in matched_records]
+        matched_q3 = [record["qwen3_avg_reported"] for record in matched_records]
+        matched_q25 = [record["qwen25_avg_reported"] for record in matched_records]
+        matched_fair_avg = [record["mllm_avg_fair"] for record in matched_records]
+        q3_max_result = stats.spearmanr(current, q3_epoch)
+        q3_matched_result = stats.spearmanr(matched_current, matched_q3)
+        q25_matched_result = stats.spearmanr(matched_current, matched_q25)
+        fair_avg_result = stats.spearmanr(matched_current, matched_fair_avg)
         epoch_metrics.append(
             {
                 "epoch": index + 1,
@@ -1424,9 +1453,15 @@ def main() -> None:
                 "mean_accuracy": float(np.mean(current)),
                 "median_accuracy": float(np.median(current)),
                 "rank_stability_vs_epoch10_n33": float(stats.spearmanr(current, final_accuracy).statistic),
-                "spearman_vs_qwen3_avg_n33": float(stats.spearmanr(current, q3_epoch).statistic),
+                "spearman_vs_qwen3_avg_n33": float(q3_max_result.statistic),
+                "p_vs_qwen3_avg_n33": float(q3_max_result.pvalue),
                 "n_fair_mllm_avg": len(epoch_core),
-                "spearman_vs_fair_mllm_avg_n29": float(stats.spearmanr(combined_current, combined_target).statistic),
+                "spearman_vs_qwen3_avg_matched_n29": float(q3_matched_result.statistic),
+                "p_vs_qwen3_avg_matched_n29": float(q3_matched_result.pvalue),
+                "spearman_vs_qwen25_avg_n29": float(q25_matched_result.statistic),
+                "p_vs_qwen25_avg_n29": float(q25_matched_result.pvalue),
+                "spearman_vs_fair_mllm_avg_n29": float(fair_avg_result.statistic),
+                "p_vs_fair_mllm_avg_n29": float(fair_avg_result.pvalue),
             }
         )
 

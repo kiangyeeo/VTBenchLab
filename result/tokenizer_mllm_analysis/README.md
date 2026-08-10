@@ -66,6 +66,23 @@
 
 ## 10 个 epoch：分数、排名与早停信号
 
+下表是每个 probing epoch 与下游 MLLM Avg 的 Spearman rho。“匹配”三列固定用同一批 n=29 continuous tokenizer，可公平比较两个 Qwen；Qwen3 最大覆盖列另外纳入 4 个缺 Qwen2.5 的 discrete tokenizer，n=33。
+
+| Epoch | Qwen3 Avg（最大覆盖 n=33） | Qwen3 Avg（匹配 n=29） | Qwen2.5 Avg（匹配 n=29） | 两 Qwen 公平 Avg（n=29） |
+|---:|---:|---:|---:|---:|
+| 1 | 0.859 | 0.850 | 0.978 | 0.921 |
+| 2 | 0.861 | 0.861 | 0.982 | 0.930 |
+| 3 | 0.852 | 0.846 | 0.978 | 0.919 |
+| 4 | 0.849 | 0.856 | 0.980 | 0.926 |
+| 5 | 0.851 | 0.867 | 0.977 | 0.932 |
+| 6 | 0.839 | 0.861 | 0.980 | 0.929 |
+| 7 | 0.849 | 0.875 | 0.982 | 0.940 |
+| 8 | 0.836 | 0.859 | 0.978 | 0.927 |
+| 9 | 0.846 | 0.876 | 0.980 | 0.939 |
+| 10 | 0.841 | 0.874 | 0.978 | 0.937 |
+
+对应的 p 值、每轮平均/中位准确率以及与 Epoch 10 的排名稳定性见 [`data/epoch_metrics.csv`](data/epoch_metrics.csv)。
+
 ![Epoch trajectories](figures/01_epoch_accuracy_trajectories.png)
 
 下图按 10 轮平均准确率对同一批 33 个 tokenizer 排序，横轴隐去具体名称；每个 tokenizer 的 10 个细点分别对应 Epoch 1–10，浅色带表示 Epoch 1 到 Epoch 10 的增益范围。
