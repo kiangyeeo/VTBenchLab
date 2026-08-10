@@ -430,6 +430,35 @@ class UniTokEncoder(nn.Module):
         return self.model.fc_norm(tokens.mean(dim=1)).float()
 
 
+class VQGANEncoder(nn.Module):
+    """Mean-pooled quantized Taming VQGAN codebook embeddings."""
+
+    def __init__(
+        self,
+        encoder: nn.Module,
+        quant_conv: nn.Module,
+        quantize: nn.Module,
+        feature_dim: int,
+    ):
+        super().__init__()
+        self.encoder = encoder
+        self.quant_conv = quant_conv
+        # Keep the original VQModel attribute name so its state_dict keys load
+        # directly without rewriting checkpoint keys.
+        self.quantize = quantize
+        self.feature_dim = int(feature_dim)
+
+    def forward(self, images: torch.Tensor) -> torch.Tensor:
+        latent = self.quant_conv(self.encoder(images))
+        quantized, _embedding_loss, _info = self.quantize(latent)
+        if quantized.ndim != 4 or quantized.shape[1] != self.feature_dim:
+            raise RuntimeError(
+                "Unexpected VQGAN quantized-latent shape: "
+                f"expected [B,{self.feature_dim},H,W], got {tuple(quantized.shape)}"
+            )
+        return quantized.mean(dim=(2, 3)).float()
+
+
 def _encode_vilau_penultimate(model: nn.Module, images: torch.Tensor) -> torch.Tensor:
     vision_model = model.siglip_model.vision_model
     hidden_states = vision_model.embeddings(images)
@@ -1043,6 +1072,98 @@ def _load_vilau(args, device: torch.device) -> FeatureBundle:
     )
 
 
+def _load_vqgan(args, device: torch.device) -> FeatureBundle:
+    taming_path = Path(args.vqgan_path).expanduser().resolve()
+    config_path = Path(args.vqgan_config).expanduser().resolve()
+    checkpoint_path = Path(args.vqgan_checkpoint).expanduser().resolve()
+    if not taming_path.is_dir():
+        raise FileNotFoundError(f"Missing taming-transformers directory: {taming_path}")
+    if not config_path.is_file():
+        raise FileNotFoundError(f"Missing VQGAN config: {config_path}")
+    if not checkpoint_path.is_file():
+        raise FileNotFoundError(f"Missing VQGAN checkpoint: {checkpoint_path}")
+    if str(taming_path) not in sys.path:
+        sys.path.insert(0, str(taming_path))
+
+    from omegaconf import OmegaConf
+    from taming.modules.diffusionmodules.model import Encoder
+    from taming.modules.vqvae.quantize import VectorQuantizer2
+
+    config = OmegaConf.load(config_path)
+    if config.model.target != "taming.models.vqgan.VQModel":
+        raise ValueError(f"Unsupported VQGAN model target: {config.model.target}")
+    params = config.model.params
+    ddconfig = OmegaConf.to_container(params.ddconfig, resolve=True)
+    image_size = int(ddconfig["resolution"])
+    feature_dim = int(params.embed_dim)
+    n_embed = int(params.n_embed)
+
+    # Build exactly the three VQModel submodules used by encode().  Importing
+    # VQModel itself would require PyTorch Lightning and would also construct
+    # the unused decoder, discriminator, and LPIPS/VGG tower.
+    encoder = VQGANEncoder(
+        Encoder(**ddconfig),
+        nn.Conv2d(int(ddconfig["z_channels"]), feature_dim, kernel_size=1),
+        VectorQuantizer2(
+            n_embed,
+            feature_dim,
+            beta=0.25,
+            remap=params.get("remap"),
+            sane_index_shape=bool(params.get("sane_index_shape", False)),
+        ),
+        feature_dim,
+    )
+
+    # This legacy Lightning checkpoint contains one serialized ModelCheckpoint
+    # callback alongside its tensors.  A local inert stand-in lets PyTorch's
+    # restricted weights-only loader read it without installing Lightning or
+    # executing arbitrary pickle globals.
+    lightning_checkpoint_stub = type("ModelCheckpoint", (), {})
+    lightning_checkpoint_stub.__module__ = (
+        "pytorch_lightning.callbacks.model_checkpoint"
+    )
+    previous_safe_globals = list(torch.serialization.get_safe_globals())
+    torch.serialization.add_safe_globals([lightning_checkpoint_stub])
+    try:
+        payload = torch.load(
+            checkpoint_path,
+            map_location="cpu",
+            weights_only=True,
+            mmap=True,
+        )
+    finally:
+        torch.serialization.clear_safe_globals()
+        torch.serialization.add_safe_globals(previous_safe_globals)
+    if not isinstance(payload, dict) or not isinstance(payload.get("state_dict"), dict):
+        raise RuntimeError(f"VQGAN checkpoint has no state_dict: {checkpoint_path}")
+    encoder_state = {
+        key: value
+        for key, value in payload["state_dict"].items()
+        if key.startswith(("encoder.", "quant_conv.", "quantize."))
+    }
+    encoder.load_state_dict(encoder_state, strict=True)
+    del payload, encoder_state
+    encoder = encoder.to(device).eval().requires_grad_(False)
+    train_transform, eval_transform = _pm1_transforms(image_size)
+    return FeatureBundle(
+        encoder=encoder,
+        train_transform=train_transform,
+        eval_transform=eval_transform,
+        autocast_context=nullcontext,
+        representation=(
+            "spatial mean of quantized Taming VQGAN codebook embeddings, "
+            "before post_quant_conv"
+        ),
+        transform_description=(
+            f"train=RandomResizedCrop({image_size})+HorizontalFlip(0.5), "
+            f"eval=Resize({image_size})+CenterCrop({image_size}), "
+            f"mean={PM1_MEAN}, std={PM1_STD}"
+        ),
+        backbone_precision="float32",
+        checkpoint_paths=[str(config_path), str(checkpoint_path)],
+    )
+
+
 def load_feature_bundle(model_name: str, args, device: torch.device) -> FeatureBundle:
     if model_name == "metaclip":
         return _load_metaclip(
@@ -1108,4 +1229,6 @@ def load_feature_bundle(model_name: str, args, device: torch.device) -> FeatureB
         return _load_unitok(args, device)
     if model_name == "vilau":
         return _load_vilau(args, device)
+    if model_name == "vqgan":
+        return _load_vqgan(args, device)
     raise ValueError(f"Unsupported tokenizer model: {model_name}")

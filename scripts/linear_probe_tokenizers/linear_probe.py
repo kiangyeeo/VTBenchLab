@@ -106,6 +106,7 @@ MODEL_NAMES = (
     "toklip_l",
     "unitok",
     "vilau",
+    "vqgan",
 )
 OUTPUT_NAMES = {
     "metaclip": "metaclip_b16_2pt5b",
@@ -127,10 +128,13 @@ OUTPUT_NAMES = {
     "toklip_l": "toklip_l_semantic_384",
     "unitok": "unitok",
     "vilau": "vilau_7b_256_semantic_penultimate",
+    "vqgan": "vqgan_imagenet_f16_16384",
 }
 
-# Protocol-critical constants are intentionally not command-line options.
+# Optimization-protocol constants are intentionally not command-line options.
 BATCH_SIZE = 1024
+# Frozen feature extraction may be split into smaller chunks without changing
+# the optimization batch.  The default preserves all existing run protocols.
 FEATURE_MICROBATCH_SIZE = 1024
 EVAL_BATCH_SIZE = 1024
 EPOCHS = 10
@@ -245,6 +249,15 @@ def _parse_args():
     )
     parser.add_argument("--output-dir", default=None)
     parser.add_argument("--num-workers", type=int, default=8)
+    parser.add_argument(
+        "--feature-microbatch-size",
+        type=int,
+        default=FEATURE_MICROBATCH_SIZE,
+        help=(
+            "Frozen-backbone forward chunk size. The resulting FP32 features are "
+            "concatenated before the linear heads; the optimization batch remains 1024."
+        ),
+    )
     parser.add_argument("--no-resume", action="store_true")
 
     parser.add_argument("--image-scripts", type=Path, default=image_scripts)
@@ -348,6 +361,19 @@ def _parse_args():
         "--vilau-siglip-config",
         default=str(model_zoo / "VILA-U" / "siglip-large-patch16-256"),
     )
+    vqgan_dir = model_zoo / "taming_vqgan_imagenet_f16_16384"
+    parser.add_argument(
+        "--vqgan-path",
+        default=str(image_scripts / "taming-transformers"),
+    )
+    parser.add_argument(
+        "--vqgan-config",
+        default=str(vqgan_dir / "model.yaml"),
+    )
+    parser.add_argument(
+        "--vqgan-checkpoint",
+        default=str(vqgan_dir / "last.ckpt"),
+    )
     return parser.parse_args()
 
 
@@ -424,7 +450,7 @@ def _make_protocol(args, bundle: FeatureBundle, effective_lrs: list[float]) -> d
         "dataset": "ImageNet-1k",
         "single_gpu": True,
         "global_batch_size": BATCH_SIZE,
-        "feature_extraction_microbatch_size": FEATURE_MICROBATCH_SIZE,
+        "feature_extraction_microbatch_size": args.feature_microbatch_size,
         "feature_microbatch_semantics": (
             "frozen backbone only; concatenate one FP32 [global_batch,D] tensor before linear heads"
         ),
@@ -560,6 +586,8 @@ def main() -> int:
         )
     if args.num_workers < 0:
         raise ValueError("--num-workers must be non-negative")
+    if args.feature_microbatch_size <= 0:
+        raise ValueError("--feature-microbatch-size must be positive")
 
     distributed.enable(overwrite=True)
     if distributed.get_global_size() != 1:
@@ -585,7 +613,7 @@ def main() -> int:
     feature_model = FrozenFeatureModel(
         bundle,
         device=device,
-        microbatch_size=FEATURE_MICROBATCH_SIZE,
+        microbatch_size=args.feature_microbatch_size,
     ).to(device).eval()
 
     train_dataset = make_dataset(dataset_str=train_dataset_str, transform=bundle.train_transform)
@@ -650,7 +678,7 @@ def main() -> int:
         start_update,
         MAX_UPDATES,
         BATCH_SIZE,
-        FEATURE_MICROBATCH_SIZE,
+        args.feature_microbatch_size,
     )
     if (
         0 < start_update < MAX_UPDATES
