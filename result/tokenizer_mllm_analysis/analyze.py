@@ -3,8 +3,8 @@
 
 Inputs (kept untouched):
   ../Tokenizer Accuracy by Epoch.md
-  ../VisualTokenizer表现 - 主表.csv
-  ../VisualTokenizer表现 - MLLM详细结果.csv
+  ../VisualTokenizer表现 - 主表 (1).csv
+  ../VisualTokenizer表现 - MLLM详细结果 (1).csv
 
 Outputs are written next to this script under data/, figures/, and README.md.
 The analysis deliberately treats a missing Qwen score as NA, never as zero.
@@ -40,8 +40,8 @@ import matplotlib.pyplot as plt  # noqa: E402
 from matplotlib.lines import Line2D  # noqa: E402
 
 
-MAIN_CSV = RESULT_DIR / "VisualTokenizer表现 - 主表.csv"
-DETAIL_CSV = RESULT_DIR / "VisualTokenizer表现 - MLLM详细结果.csv"
+MAIN_CSV = RESULT_DIR / "VisualTokenizer表现 - 主表 (1).csv"
+DETAIL_CSV = RESULT_DIR / "VisualTokenizer表现 - MLLM详细结果 (1).csv"
 EPOCH_MD = RESULT_DIR / "Tokenizer Accuracy by Epoch.md"
 
 TASKS = [
@@ -73,6 +73,15 @@ FAMILY_COLORS = {
     "I-JEPA": "#7A5195",
     "RAE-v2": "#8C8C8C",
     "DINOv3": "#444444",
+}
+
+PLOT_GROUP_COLORS = {
+    "SigLIP2": "#0072B2",
+    "MetaCLIP1": "#D55E00",
+    "MetaCLIP2": "#009E73",
+    "OpenAI CLIP": "#CC79A7",
+    "Other continuous": "#666666",
+    "Discrete": "#E69F00",
 }
 
 
@@ -135,12 +144,40 @@ def short_name(name: str) -> str:
     return result.replace("_", " ")
 
 
+def plot_group(record: dict) -> str:
+    if record["model_family"] in {"SigLIP2", "MetaCLIP1", "MetaCLIP2", "OpenAI CLIP"}:
+        return record["model_family"]
+    if record["visual_token_type"] == "discrete":
+        return "Discrete"
+    return "Other continuous"
+
+
 def read_two_header_csv(path: Path) -> tuple[list[list[str]], list[list[str]]]:
     with path.open("r", encoding="utf-8-sig", newline="") as handle:
         rows = list(csv.reader(handle))
     if len(rows) < 3:
         raise ValueError(f"CSV has too few rows: {path}")
     return rows[:2], rows[2:]
+
+
+def header_column(headers: Sequence[Sequence[str]], group: str, field: str) -> int:
+    """Locate a two-row spreadsheet header, honoring merged cells exported as blanks."""
+    if len(headers) != 2:
+        raise ValueError("Expected exactly two CSV header rows")
+    top: list[str] = []
+    active = ""
+    for value in headers[0]:
+        if value.strip():
+            active = value.strip()
+        top.append(active)
+    matches = [
+        index
+        for index, (section, subfield) in enumerate(zip(top, headers[1]))
+        if section == group and subfield.strip() == field
+    ]
+    if len(matches) != 1:
+        raise ValueError(f"Expected one column for {group!r}/{field!r}, found {matches}")
+    return matches[0]
 
 
 def read_epochs(path: Path) -> dict[str, list[float]]:
@@ -162,9 +199,20 @@ def read_epochs(path: Path) -> dict[str, list[float]]:
 
 
 def load_records() -> tuple[list[dict], dict[str, list[float]], dict]:
-    _, main_rows = read_two_header_csv(MAIN_CSV)
-    _, detail_rows = read_two_header_csv(DETAIL_CSV)
+    main_headers, main_rows = read_two_header_csv(MAIN_CSV)
+    detail_headers, detail_rows = read_two_header_csv(DETAIL_CSV)
     epochs = read_epochs(EPOCH_MD)
+
+    main_columns = {
+        "probe": header_column(main_headers, "Probing", "ImageNet"),
+        "q3": header_column(main_headers, "MLLM Avg Performance", "qwen3 1.7B"),
+        "q25": header_column(main_headers, "MLLM Avg Performance", "qwen2.5 1.5B"),
+        "combined": header_column(main_headers, "MLLM Avg Performance", "Avg"),
+    }
+    detail_q3_columns = {task: header_column(detail_headers, "qwen3 1.7B", task) for task in TASKS}
+    detail_q25_columns = {task: header_column(detail_headers, "qwen2.5 1.5B", task) for task in TASKS}
+    detail_q3_avg = header_column(detail_headers, "qwen3 1.7B", "Avg")
+    detail_q25_avg = header_column(detail_headers, "qwen2.5 1.5B", "Avg")
 
     main_by_name = {row[0]: row for row in main_rows}
     detail_by_name = {row[0]: row for row in detail_rows}
@@ -184,19 +232,24 @@ def load_records() -> tuple[list[dict], dict[str, list[float]], dict]:
         if main[1] != detail[1]:
             raise ValueError(f"Family/type mismatch for {name}")
 
-        q3_tasks = [as_float(value) for value in detail[2:13]]
-        q25_tasks = [as_float(value) for value in detail[14:25]]
-        q3_reported = as_float(main[2])
-        q25_reported = as_float(main[3])
-        q3_detail_reported = as_float(detail[13])
-        q25_detail_reported = as_float(detail[25])
+        q3_tasks = [as_float(detail[detail_q3_columns[task]]) for task in TASKS]
+        q25_tasks = [as_float(detail[detail_q25_columns[task]]) for task in TASKS]
+        q3_reported = as_float(main[main_columns["q3"]])
+        q25_reported = as_float(main[main_columns["q25"]])
+        q3_detail_reported = as_float(detail[detail_q3_avg])
+        q25_detail_reported = as_float(detail[detail_q25_avg])
         q3_recomputed = mean_if_complete(q3_tasks)
         q25_recomputed = mean_if_complete(q25_tasks)
-        probe = as_float(main[5])
-        raw_combined = as_float(main[4])
+        probe = as_float(main[main_columns["probe"]])
+        raw_combined = as_float(main[main_columns["combined"]])
         fair_combined = (
             float(np.mean([q3_reported, q25_reported]))
             if is_finite(q3_reported) and is_finite(q25_reported)
+            else float("nan")
+        )
+        task_recomputed_combined = (
+            float(np.mean([q3_recomputed, q25_recomputed]))
+            if is_finite(q3_recomputed) and is_finite(q25_recomputed)
             else float("nan")
         )
 
@@ -210,15 +263,18 @@ def load_records() -> tuple[list[dict], dict[str, list[float]], dict]:
             avg_mismatches.append({"tokenizer": name, "field": "Qwen3 task mean", "difference": q3_reported - q3_recomputed})
         if is_finite(q25_recomputed) and is_finite(q25_reported) and abs(q25_recomputed - q25_reported) > 0.006:
             avg_mismatches.append({"tokenizer": name, "field": "Qwen2.5 task mean", "difference": q25_reported - q25_recomputed})
+        if is_finite(raw_combined) and is_finite(fair_combined) and abs(raw_combined - fair_combined) > 0.006:
+            avg_mismatches.append({"tokenizer": name, "field": "main-table combined Avg", "difference": raw_combined - fair_combined})
 
         history_status = "full_10_epoch" if name in epochs else ("final_only" if is_finite(probe) else "missing_probe")
-        mllm_status = (
-            "both_complete"
-            if is_finite(q3_reported) and is_finite(q25_reported)
-            else "qwen3_only"
-            if is_finite(q3_reported)
-            else "missing_both"
-        )
+        if is_finite(q3_reported) and is_finite(q25_reported):
+            mllm_status = "both_complete"
+        elif is_finite(q3_reported):
+            mllm_status = "qwen3_only"
+        elif is_finite(q25_reported):
+            mllm_status = "qwen25_only"
+        else:
+            mllm_status = "missing_both"
         record = {
             "tokenizer": name,
             "visual_token_type": main[1],
@@ -231,14 +287,16 @@ def load_records() -> tuple[list[dict], dict[str, list[float]], dict]:
             "qwen25_avg_recomputed": q25_recomputed,
             "mllm_avg_reported_raw": raw_combined,
             "mllm_avg_fair": fair_combined,
+            "mllm_avg_tasks_recomputed": task_recomputed_combined,
             "mllm_status": mllm_status,
             "qwen3_tasks": dict(zip(TASKS, q3_tasks)),
             "qwen25_tasks": dict(zip(TASKS, q25_tasks)),
             "epochs": epochs.get(name, [float("nan")] * 10),
         }
-        record["in_primary_n38"] = is_finite(probe) and is_finite(fair_combined)
-        record["in_qwen3_max_n44"] = is_finite(probe) and is_finite(q3_reported)
-        record["in_epoch_combined_n29"] = name in epochs and is_finite(fair_combined)
+        record["in_primary"] = is_finite(probe) and is_finite(fair_combined)
+        record["in_qwen3_max"] = is_finite(probe) and is_finite(q3_reported)
+        record["in_qwen25_max"] = is_finite(probe) and is_finite(q25_reported)
+        record["in_epoch_combined"] = name in epochs and is_finite(probe) and is_finite(fair_combined)
         records.append(record)
 
     audit = {
@@ -397,6 +455,7 @@ def family_adjusted_spearman(records: Sequence[dict]) -> dict:
             permuted[index] = rng.permutation(permuted[index])
         value = float(stats.pearsonr(x, permuted).statistic)
         exceed += abs(value) >= abs(observed)
+    singleton_families = sorted(family for family, count in grouped.items() if count < 2)
     return {
         "analysis": "Family-adjusted pooled rank association",
         "target": "mllm_avg_fair",
@@ -410,7 +469,7 @@ def family_adjusted_spearman(records: Sequence[dict]) -> dict:
         "pearson_p": float("nan"),
         "kendall_tau_b": float("nan"),
         "kendall_p": float("nan"),
-        "note": "Global ranks were centered within each family; singleton OpenAI CLIP contributes no within-family information.",
+        "note": "Global ranks were centered within replicated families; singleton families excluded: " + ", ".join(singleton_families),
     }
 
 
@@ -434,17 +493,24 @@ def cross_validated_predictions(records: Sequence[dict]) -> tuple[list[dict], li
         loo[index] = ols_predict(x[train, None], y[train], x[test, None])[0]
         loo_baseline[index] = float(np.mean(y[train]))
 
-    # A singleton is not a meaningful held-out "family".  Cross-family
-    # validation therefore evaluates the three replicated prefix families.
+    lofo_all = np.full(n, np.nan)
+    lofo_all_baseline = np.full(n, np.nan)
+    for family in sorted(set(families)):
+        test = families == family
+        train = ~test
+        lofo_all[test] = ols_predict(x[train, None], y[train], x[test, None])
+        lofo_all_baseline[test] = float(np.mean(y[train]))
+
+    # Retain a like-for-like stress test on the three large prefix families.
     major_families = {"SigLIP2", "MetaCLIP1", "MetaCLIP2"}
     major_mask = np.asarray([family in major_families for family in families])
-    lofo = np.full(n, np.nan)
-    lofo_baseline = np.full(n, np.nan)
+    lofo_major = np.full(n, np.nan)
+    lofo_major_baseline = np.full(n, np.nan)
     for family in sorted(major_families):
         test = families == family
         train = major_mask & ~test
-        lofo[test] = ols_predict(x[train, None], y[train], x[test, None])
-        lofo_baseline[test] = float(np.mean(y[train]))
+        lofo_major[test] = ols_predict(x[train, None], y[train], x[test, None])
+        lofo_major_baseline[test] = float(np.mean(y[train]))
 
     diagnostics = []
     for index, record in enumerate(records):
@@ -452,19 +518,23 @@ def cross_validated_predictions(records: Sequence[dict]) -> tuple[list[dict], li
             {
                 "tokenizer": record["tokenizer"],
                 "model_family": record["model_family"],
+                "visual_token_type": record["visual_token_type"],
                 "probe_final": x[index],
                 "mllm_avg_fair": y[index],
                 "loocv_prediction": loo[index],
                 "loocv_residual_observed_minus_predicted": y[index] - loo[index],
-                "leave_family_out_prediction": lofo[index],
-                "leave_family_out_residual_observed_minus_predicted": y[index] - lofo[index],
+                "leave_family_out_prediction": lofo_all[index],
+                "leave_family_out_residual_observed_minus_predicted": y[index] - lofo_all[index],
+                "leave_major_family_out_prediction": lofo_major[index],
+                "leave_major_family_out_residual_observed_minus_predicted": y[index] - lofo_major[index],
             }
         )
 
     metrics = []
     for label, prediction, baseline, mask in [
         ("Leave-one-tokenizer-out", loo, loo_baseline, np.ones(n, dtype=bool)),
-        ("Leave-one-family-out", lofo, lofo_baseline, major_mask),
+        ("Leave-one-family-out", lofo_all, lofo_all_baseline, np.ones(n, dtype=bool)),
+        ("Leave-one-major-prefix-family-out", lofo_major, lofo_major_baseline, major_mask),
     ]:
         target = y[mask]
         prediction_used = prediction[mask]
@@ -526,7 +596,12 @@ def csv_value(value):
 
 def write_csv(path: Path, fieldnames: Sequence[str], rows: Iterable[dict]) -> None:
     with path.open("w", encoding="utf-8", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=fieldnames, extrasaction="ignore")
+        writer = csv.DictWriter(
+            handle,
+            fieldnames=fieldnames,
+            extrasaction="ignore",
+            lineterminator="\n",
+        )
         writer.writeheader()
         for row in rows:
             writer.writerow({key: csv_value(row.get(key, "")) for key in fieldnames})
@@ -602,7 +677,7 @@ def plot_epoch_trajectories(epoch_records: Sequence[dict]) -> None:
     family_counts = Counter(record["model_family"] for record in epoch_records)
     info_lines = [
         "Coverage",
-        f"33 tokenizers with all 10 epochs",
+        f"{len(epoch_records)} tokenizers with all 10 epochs",
         f"Median E1→E10 gain: {np.median(gains):.2f} points",
         f"Range of gains: {np.min(gains):.2f} to {np.max(gains):.2f}",
         "",
@@ -690,7 +765,7 @@ def plot_epoch_rank_heatmap(epoch_records: Sequence[dict]) -> None:
         for column in range(ordered_ranks.shape[1]):
             value = ordered_ranks[row, column]
             text_value = f"{value:.0f}" if value.is_integer() else f"{value:.1f}"
-            color = "white" if value > 18 else "#101010"
+            color = "white" if value > len(epoch_records) / 2 else "#101010"
             axis.text(column, row, text_value, ha="center", va="center", fontsize=6.2, color=color)
     axis.set_xticks(range(10), [f"E{index}" for index in range(1, 11)])
     axis.set_yticks(range(len(sorted_records)), [record["tokenizer"] for record in sorted_records], fontsize=7.2)
@@ -708,9 +783,12 @@ def plot_epoch_rank_heatmap(epoch_records: Sequence[dict]) -> None:
 def plot_epoch_predictiveness(epoch_metrics: Sequence[dict], epoch_records: Sequence[dict]) -> None:
     fig, axes = plt.subplots(1, 2, figsize=(15, 5.6), gridspec_kw={"width_ratios": [1.15, 1]})
     epoch_numbers = [row["epoch"] for row in epoch_metrics]
-    axes[0].plot(epoch_numbers, [row["rank_stability_vs_epoch10_n33"] for row in epoch_metrics], marker="o", linewidth=2, label="Rank stability vs E10 (n=33)")
-    axes[0].plot(epoch_numbers, [row["spearman_vs_qwen3_avg_n33"] for row in epoch_metrics], marker="o", linewidth=2, label="Qwen3 Avg (n=33)")
-    axes[0].plot(epoch_numbers, [row["spearman_vs_fair_mllm_avg_n29"] for row in epoch_metrics], marker="o", linewidth=2, label="Two-Qwen fair Avg (n=29)")
+    n_history = epoch_metrics[0]["n_all_histories"]
+    n_mllm = epoch_metrics[0]["n_mllm_matched"]
+    axes[0].plot(epoch_numbers, [row["rank_stability_vs_epoch10"] for row in epoch_metrics], marker="o", linewidth=2, label=f"Rank stability vs E10 (n={n_history})")
+    axes[0].plot(epoch_numbers, [row["spearman_vs_qwen3_avg"] for row in epoch_metrics], marker="o", linewidth=2, label=f"Qwen3 Avg (n={n_mllm})")
+    axes[0].plot(epoch_numbers, [row["spearman_vs_qwen25_avg"] for row in epoch_metrics], marker="o", linewidth=2, label=f"Qwen2.5 Avg (n={n_mllm})")
+    axes[0].plot(epoch_numbers, [row["spearman_vs_fair_mllm_avg"] for row in epoch_metrics], marker="o", linewidth=2, label=f"Two-Qwen fair Avg (n={n_mllm})")
     axes[0].set_xticks(range(1, 11))
     axes[0].set_ylim(0, 1.02)
     axes[0].set_xlabel("Probe epoch")
@@ -757,8 +835,8 @@ def add_regression_line(axis, x: np.ndarray, y: np.ndarray) -> None:
 def plot_probe_vs_mllm(core_records: Sequence[dict], summary_by_label: dict[str, dict]) -> None:
     panels = [
         ("mllm_avg_fair", "Two-Qwen fair Avg", "Primary: fair two-backbone avg"),
-        ("qwen3_avg_reported", "Qwen3-1.7B Avg", "Qwen3 Avg (matched n=38)"),
-        ("qwen25_avg_reported", "Qwen2.5-1.5B Avg", "Qwen2.5 Avg (matched n=38)"),
+        ("qwen3_avg_reported", "Qwen3-1.7B Avg", "Qwen3 Avg (matched primary)"),
+        ("qwen25_avg_reported", "Qwen2.5-1.5B Avg", "Qwen2.5 Avg (matched primary)"),
     ]
     fig, axes = plt.subplots(1, 3, figsize=(17, 5.5), sharex=True)
     for axis, (target, y_label, summary_label) in zip(axes, panels):
@@ -766,12 +844,13 @@ def plot_probe_vs_mllm(core_records: Sequence[dict], summary_by_label: dict[str,
         y = np.asarray([record[target] for record in core_records])
         for record in core_records:
             full_history = record["probe_history_status"] == "full_10_epoch"
+            color = PLOT_GROUP_COLORS[plot_group(record)]
             axis.scatter(
                 record["probe_final"],
                 record[target],
                 s=48,
-                facecolor=FAMILY_COLORS[record["model_family"]] if full_history else "none",
-                edgecolor="white" if full_history else FAMILY_COLORS[record["model_family"]],
+                facecolor=color if full_history else "none",
+                edgecolor="white" if full_history else color,
                 linewidth=0.7 if full_history else 1.3,
                 alpha=0.92,
                 zorder=3,
@@ -804,18 +883,18 @@ def plot_probe_vs_mllm(core_records: Sequence[dict], summary_by_label: dict[str,
             arrowprops={"arrowstyle": "-", "color": "#777777", "linewidth": 0.5},
         )
 
-    legend_families = ["SigLIP2", "MetaCLIP1", "MetaCLIP2", "OpenAI CLIP"]
+    legend_families = list(PLOT_GROUP_COLORS)
     handles = [
-        Line2D([0], [0], marker="o", linestyle="", markersize=7, markerfacecolor=FAMILY_COLORS[family], markeredgecolor="white", label=family)
+        Line2D([0], [0], marker="o", linestyle="", markersize=7, markerfacecolor=PLOT_GROUP_COLORS[family], markeredgecolor="white", label=family)
         for family in legend_families
     ]
     handles.extend(
         [
-            Line2D([0], [0], marker="o", linestyle="", markersize=7, markerfacecolor="#777777", markeredgecolor="white", label="Full 10-epoch history"),
-            Line2D([0], [0], marker="o", linestyle="", markersize=7, markerfacecolor="none", markeredgecolor="#777777", label="Final probe only"),
+            Line2D([0], [0], marker="o", linestyle="", markersize=7, markerfacecolor="#111111", markeredgecolor="#111111", label="Full 10-epoch history"),
+            Line2D([0], [0], marker="o", linestyle="", markersize=7, markerfacecolor="none", markeredgecolor="#111111", label="Final probe only"),
         ]
     )
-    fig.legend(handles=handles, loc="lower center", ncol=6, frameon=False, bbox_to_anchor=(0.5, -0.01))
+    fig.legend(handles=handles, loc="lower center", ncol=4, frameon=False, bbox_to_anchor=(0.5, -0.055))
     fig.suptitle("Linear probing predicts MLLM ranking, but strength depends on the Qwen backbone", fontsize=14)
     fig.tight_layout(rect=(0, 0.06, 1, 0.96))
     fig.savefig(FIGURE_DIR / "04_probe_vs_mllm_avg.png", dpi=210, bbox_inches="tight")
@@ -832,11 +911,11 @@ def plot_task_heatmap(task_rows: Sequence[dict], summary_by_label: dict[str, dic
             row = next(item for item in task_rows if item["backbone"] == backbone and item["task"] == task)
             matrix[row_index, column_index] = row["matched_spearman_rho"]
             q_matrix[row_index, column_index] = row["matched_p"]
-    matrix[0, -1] = summary_by_label["Qwen3 Avg (matched n=38)"]["spearman_rho"]
-    matrix[1, -1] = summary_by_label["Qwen2.5 Avg (matched n=38)"]["spearman_rho"]
+    matrix[0, -1] = summary_by_label["Qwen3 Avg (matched primary)"]["spearman_rho"]
+    matrix[1, -1] = summary_by_label["Qwen2.5 Avg (matched primary)"]["spearman_rho"]
     matrix[2, -1] = summary_by_label["Primary: fair two-backbone avg"]["spearman_rho"]
-    q_matrix[0, -1] = summary_by_label["Qwen3 Avg (matched n=38)"]["spearman_p_asymptotic"]
-    q_matrix[1, -1] = summary_by_label["Qwen2.5 Avg (matched n=38)"]["spearman_p_asymptotic"]
+    q_matrix[0, -1] = summary_by_label["Qwen3 Avg (matched primary)"]["spearman_p_asymptotic"]
+    q_matrix[1, -1] = summary_by_label["Qwen2.5 Avg (matched primary)"]["spearman_p_asymptotic"]
     q_matrix[2, -1] = summary_by_label["Primary: fair two-backbone avg"]["spearman_p_asymptotic"]
 
     fig, axis = plt.subplots(figsize=(15, 3.8))
@@ -848,7 +927,9 @@ def plot_task_heatmap(task_rows: Sequence[dict], summary_by_label: dict[str, dic
             axis.text(column, row, f"{matrix[row, column]:.2f}{suffix}", ha="center", va="center", fontsize=8, color=color)
     axis.set_xticks(range(len(columns)), columns, rotation=35, ha="right")
     axis.set_yticks(range(3), plotted_backbones)
-    axis.set_title("Task-level Spearman correlation on the same 38-tokenizer cohort (* p < 0.05)")
+    matched_sizes = [row["matched_n"] for row in task_rows]
+    matched_text = str(min(matched_sizes)) if min(matched_sizes) == max(matched_sizes) else f"{min(matched_sizes)}–{max(matched_sizes)}"
+    axis.set_title(f"Task-level Spearman correlation on matched cohorts (n={matched_text}; * p < 0.05)")
     axis.grid(False)
     colorbar = fig.colorbar(image, ax=axis, fraction=0.025, pad=0.02)
     colorbar.set_label("Spearman rho")
@@ -858,7 +939,13 @@ def plot_task_heatmap(task_rows: Sequence[dict], summary_by_label: dict[str, dic
 
 
 def plot_robustness(rows: Sequence[dict]) -> None:
-    plotted = [row for row in rows if is_finite(row["spearman_ci_low"])]
+    # n<5 bootstrap intervals are essentially uninformative and would compress
+    # every other cohort; those exploratory results remain in the CSV/report.
+    plotted = [
+        row
+        for row in rows
+        if is_finite(row["spearman_ci_low"]) and row["n"] >= 5
+    ]
     labels = [f"{row['analysis']} (n={row['n']})" for row in plotted]
     rho = np.asarray([row["spearman_rho"] for row in plotted])
     low = np.asarray([row["spearman_ci_low"] for row in plotted])
@@ -871,9 +958,9 @@ def plot_robustness(rows: Sequence[dict]) -> None:
     axis.axvline(0, color="#333333", linewidth=0.8)
     axis.set_yticks(y, labels)
     axis.invert_yaxis()
-    axis.set_xlim(max(0, float(np.nanmin(low)) - 0.05), 1.02)
+    axis.set_xlim(max(-1.02, float(np.nanmin(low)) - 0.05), 1.02)
     axis.set_xlabel("Spearman rho with 95% tokenizer-bootstrap interval")
-    axis.set_title("The two-Qwen average result is stable across source and major families")
+    axis.set_title("Sensitivity of the probing–MLLM association across cohorts")
     fig.tight_layout()
     fig.savefig(FIGURE_DIR / "06_family_and_source_robustness.png", dpi=210, bbox_inches="tight")
     plt.close(fig)
@@ -896,7 +983,7 @@ def plot_prediction_validation(diagnostics: Sequence[dict], prediction_metrics: 
                 row[prediction_key],
                 row["mllm_avg_fair"],
                 s=48,
-                color=FAMILY_COLORS[row["model_family"]],
+                color=PLOT_GROUP_COLORS[plot_group(row)],
                 edgecolor="white",
                 linewidth=0.7,
                 alpha=0.92,
@@ -913,7 +1000,7 @@ def plot_prediction_validation(diagnostics: Sequence[dict], prediction_metrics: 
         for index in valid_indices[np.argsort(np.abs(residuals))[-3:]]:
             row = diagnostics[index]
             axis.annotate(short_name(row["tokenizer"]), (predicted[index], observed[index]), xytext=(4, 4), textcoords="offset points", fontsize=6.5)
-    fig.suptitle("A one-variable linear calibration retains useful out-of-sample accuracy", fontsize=14)
+    fig.suptitle("Out-of-sample calibration is weaker for unseen tokenizer families", fontsize=14)
     fig.tight_layout(rect=(0, 0, 1, 0.95))
     fig.savefig(FIGURE_DIR / "07_prediction_validation.png", dpi=210, bbox_inches="tight")
     plt.close(fig)
@@ -965,25 +1052,27 @@ def write_report(
     summary = {row["analysis"]: row for row in summary_rows}
     aggregation = {row["analysis"]: row for row in aggregation_rows}
     robust = {row["analysis"]: row for row in robustness_rows}
+
     primary = summary["Primary: fair two-backbone avg"]
-    q3_matched = summary["Qwen3 Avg (matched n=38)"]
-    q25_matched = summary["Qwen2.5 Avg (matched n=38)"]
-    q3_max = summary["Qwen3 Avg (maximum coverage)"]
-    q3_max_without_ijepa = summary["Qwen3 Avg (maximum coverage, excluding I-JEPA)"]
-    q3_cont = summary["Qwen3 Avg (continuous only)"]
-    q3_disc = summary["Qwen3 Avg (discrete only)"]
+    q3 = summary["Qwen3 Avg (matched primary)"]
+    q25 = summary["Qwen2.5 Avg (matched primary)"]
+    primary_no_ijepa = summary["Primary excluding I-JEPA"]
+    primary_task_mean = summary["Primary using task-recomputed averages"]
+    continuous = summary["Primary continuous only"]
+    discrete = summary["Primary discrete only"]
+    clip_like = summary["CLIP-like benchmark families"]
+    no_dino = summary["Primary excluding DINOv3"]
+    no_rae = summary["Primary excluding RAE-v2"]
     history = summary["Two-Qwen Avg (full 10-epoch histories)"]
     final_only = summary["Two-Qwen Avg (final-only probing)"]
 
-    core = [record for record in records if record["in_primary_n38"]]
+    core = [record for record in records if record["in_primary"]]
     epoch_records = [record for record in records if record["probe_history_status"] == "full_10_epoch"]
-    topk_lines = []
-    probe_order = sorted(core, key=lambda record: record["probe_final"], reverse=True)
-    mllm_order = sorted(core, key=lambda record: record["mllm_avg_fair"], reverse=True)
-    for k in [3, 5, 10]:
-        probe_top = {record["tokenizer"] for record in probe_order[:k]}
-        mllm_top = {record["tokenizer"] for record in mllm_order[:k]}
-        topk_lines.append(f"- Top-{k} 重合 {len(probe_top & mllm_top)}/{k}。")
+    epoch_core = [record for record in epoch_records if record["in_epoch_combined"]]
+    no_history = [record for record in records if record["probe_history_status"] == "final_only"]
+    no_probe = [record for record in records if record["probe_history_status"] == "missing_probe"]
+    q3_missing = [record for record in records if not is_finite(record["qwen3_avg_reported"])]
+    q25_missing = [record for record in records if not is_finite(record["qwen25_avg_reported"])]
 
     core_probe = np.asarray([record["probe_final"] for record in core])
     core_q3 = np.asarray([record["qwen3_avg_reported"] for record in core])
@@ -991,6 +1080,17 @@ def write_report(
     backbone_delta, backbone_delta_low, backbone_delta_high = bootstrap_spearman_difference(
         core_probe, core_q3, core_q25, "matched-backbone-rho"
     )
+
+    probe_order = sorted(core, key=lambda record: record["probe_final"], reverse=True)
+    mllm_order = sorted(core, key=lambda record: record["mllm_avg_fair"], reverse=True)
+    topk_rows = []
+    for k in [3, 5, 10]:
+        overlap = len(
+            {record["tokenizer"] for record in probe_order[:k]}
+            & {record["tokenizer"] for record in mllm_order[:k]}
+        )
+        topk_rows.append((k, overlap))
+
     concordant = discordant = tied = 0
     for first in range(len(core)):
         for second in range(first + 1, len(core)):
@@ -1004,26 +1104,37 @@ def write_report(
             else:
                 tied += 1
     pairwise_accuracy = concordant / (concordant + discordant)
+
     leave_one_rhos = []
     for index in range(len(core)):
         kept = [record for row, record in enumerate(core) if row != index]
         leave_one_rhos.append(
-            float(stats.spearmanr([record["probe_final"] for record in kept], [record["mllm_avg_fair"] for record in kept]).statistic)
+            float(
+                stats.spearmanr(
+                    [record["probe_final"] for record in kept],
+                    [record["mllm_avg_fair"] for record in kept],
+                ).statistic
+            )
         )
 
     task_by_backbone = defaultdict(list)
     for row in task_rows:
         task_by_backbone[row["backbone"]].append(row)
-    q3_best = max(task_by_backbone["Qwen3-1.7B"], key=lambda row: row["matched_spearman_rho"])
-    q3_worst = min(task_by_backbone["Qwen3-1.7B"], key=lambda row: row["matched_spearman_rho"])
-    q25_best = max(task_by_backbone["Qwen2.5-1.5B"], key=lambda row: row["matched_spearman_rho"])
-    q25_worst = min(task_by_backbone["Qwen2.5-1.5B"], key=lambda row: row["matched_spearman_rho"])
-    combined_best = max(task_by_backbone["Two-Qwen task mean"], key=lambda row: row["matched_spearman_rho"])
-    combined_worst = min(task_by_backbone["Two-Qwen task mean"], key=lambda row: row["matched_spearman_rho"])
-    q3_sig = sum(row["matched_p"] < 0.05 for row in task_by_backbone["Qwen3-1.7B"])
-    q25_sig = sum(row["matched_p"] < 0.05 for row in task_by_backbone["Qwen2.5-1.5B"])
+    task_summary = {}
+    for backbone in [*BACKBONES, "Two-Qwen task mean"]:
+        rows = task_by_backbone[backbone]
+        task_summary[backbone] = (
+            min(rows, key=lambda row: row["matched_spearman_rho"]),
+            max(rows, key=lambda row: row["matched_spearman_rho"]),
+        )
+    q3_sig = sum(row["matched_p"] < 0.05 for row in task_by_backbone[BACKBONES[0]])
+    q25_sig = sum(row["matched_p"] < 0.05 for row in task_by_backbone[BACKBONES[1]])
+    q25_stronger = sum(
+        q25_row["matched_spearman_rho"] > q3_row["matched_spearman_rho"]
+        for q3_row, q25_row in zip(task_by_backbone[BACKBONES[0]], task_by_backbone[BACKBONES[1]])
+    )
     bh_significant = sum(
-        row["max_q_bh_22"] < 0.05
+        row["max_q_bh"] < 0.05
         for row in task_rows
         if row["backbone"] in BACKBONES
     )
@@ -1035,15 +1146,6 @@ def write_report(
     epoch1 = epoch_metrics[0]
     epoch10 = epoch_metrics[-1]
     gains = np.asarray([record["epochs"][-1] - record["epochs"][0] for record in epoch_records])
-    rank_e1 = stats.rankdata(-np.asarray([record["epochs"][0] for record in epoch_records]), method="average")
-    rank_e10 = stats.rankdata(-np.asarray([record["epochs"][-1] for record in epoch_records]), method="average")
-    movement = np.asarray(rank_e1) - np.asarray(rank_e10)
-    biggest_movers = sorted(
-        zip(epoch_records, movement),
-        key=lambda item: abs(item[1]),
-        reverse=True,
-    )[:2]
-    epoch_core = [record for record in epoch_records if record["in_epoch_combined_n29"]]
     epoch_delta, epoch_delta_low, epoch_delta_high = bootstrap_spearman_difference(
         [record["mllm_avg_fair"] for record in epoch_core],
         [record["epochs"][0] for record in epoch_core],
@@ -1055,10 +1157,10 @@ def write_report(
         + " | ".join(
             [
                 str(row["epoch"]),
-                f"{row['spearman_vs_qwen3_avg_n33']:.3f}",
-                f"{row['spearman_vs_qwen3_avg_matched_n29']:.3f}",
-                f"{row['spearman_vs_qwen25_avg_n29']:.3f}",
-                f"{row['spearman_vs_fair_mllm_avg_n29']:.3f}",
+                f"{row['spearman_vs_qwen3_avg']:.3f}",
+                f"{row['spearman_vs_qwen25_avg']:.3f}",
+                f"{row['spearman_vs_fair_mllm_avg']:.3f}",
+                f"{row['rank_stability_vs_epoch10']:.3f}",
             ]
         )
         + " |"
@@ -1069,186 +1171,198 @@ def write_report(
     for label in ["Within SigLIP2", "Within MetaCLIP1", "Within MetaCLIP2"]:
         row = robust[label]
         family_lines.append(
-            f"| {label.replace('Within ', '')} | {row['n']} | {row['spearman_rho']:.3f} | [{row['spearman_ci_low']:.3f}, {row['spearman_ci_high']:.3f}] |"
+            f"| {label.replace('Within ', '')} | {row['n']} | {row['spearman_rho']:.3f} | "
+            f"[{row['spearman_ci_low']:.3f}, {row['spearman_ci_high']:.3f}] |"
         )
     adjusted = robust["Family-adjusted pooled rank association"]
+
     top_half = probe_order[: len(core) // 2]
     top_half_rho = float(
-        stats.spearmanr([record["probe_final"] for record in top_half], [record["mllm_avg_fair"] for record in top_half]).statistic
+        stats.spearmanr(
+            [record["probe_final"] for record in top_half],
+            [record["mllm_avg_fair"] for record in top_half],
+        ).statistic
     )
     high_probe = [record for record in core if record["probe_final"] >= 87]
     high_probe_result = stats.spearmanr(
-        [record["probe_final"] for record in high_probe], [record["mllm_avg_fair"] for record in high_probe]
+        [record["probe_final"] for record in high_probe],
+        [record["mllm_avg_fair"] for record in high_probe],
     )
 
     resolution_rows = [row for row in controlled_rows if row["comparison_type"] == "resolution"]
-    delta_x = [row["delta_probe"] for row in resolution_rows]
-    delta_y = [row["delta_mllm_avg"] for row in resolution_rows]
-    delta_rho = float(stats.spearmanr(delta_x, delta_y).statistic)
-    delta_p = float(stats.spearmanr(delta_x, delta_y).pvalue)
-    positive_both = sum(row["delta_probe"] > 0 and row["delta_mllm_avg"] > 0 for row in resolution_rows)
+    delta_result = stats.spearmanr(
+        [row["delta_probe"] for row in resolution_rows],
+        [row["delta_mllm_avg"] for row in resolution_rows],
+    )
+    positive_both = sum(
+        row["delta_probe"] > 0 and row["delta_mllm_avg"] > 0 for row in resolution_rows
+    )
 
-    loo = prediction_metrics[0]
-    lofo = prediction_metrics[1]
-    trajectory_metric = {row["validation"]: row for row in prediction_metrics[2:]}
-    epoch1_cv = trajectory_metric["Trajectory subset LOOCV: Epoch 1 only"]
-    epoch10_cv = trajectory_metric["Trajectory subset LOOCV: Epoch 10 only"]
-    gain_cv = trajectory_metric["Trajectory subset LOOCV: Epoch 10 + gain (E10-E1)"]
+    metrics = {row["validation"]: row for row in prediction_metrics}
+    loo = metrics["Leave-one-tokenizer-out"]
+    lofo_all = metrics["Leave-one-family-out"]
+    lofo_major = metrics["Leave-one-major-prefix-family-out"]
+    epoch1_cv = metrics["Trajectory subset LOOCV: Epoch 1 only"]
+    epoch10_cv = metrics["Trajectory subset LOOCV: Epoch 10 only"]
+    gain_cv = metrics["Trajectory subset LOOCV: Epoch 10 + gain (E10-E1)"]
 
-    no_history = [record for record in records if record["probe_history_status"] == "final_only"]
-    no_probe = [record for record in records if record["probe_history_status"] == "missing_probe"]
-    q25_missing = [record for record in records if not is_finite(record["qwen25_avg_reported"])]
-    names_markdown = lambda items: ", ".join(f"`{record['tokenizer']}`" for record in items)  # noqa: E731
-    q3_missing = [record for record in records if not is_finite(record["qwen3_avg_reported"])]
+    names = lambda items: ", ".join(record["tokenizer"] for record in items) if items else "无"
+    task_n_values = [row["matched_n"] for row in task_rows]
+    task_n_text = (
+        str(min(task_n_values))
+        if min(task_n_values) == max(task_n_values)
+        else f"{min(task_n_values)}–{max(task_n_values)}"
+    )
+    combined_mismatches = [
+        row for row in audit["avg_mismatches"] if row["field"] == "main-table combined Avg"
+    ]
+    ijepa_mismatches = [
+        row for row in audit["avg_mismatches"] if row["tokenizer"] == "I-JEPA"
+    ]
 
-    report = f"""# Linear probing 对 MLLM 表现的预测力
+    report = f"""# Linear probing 对 MLLM 表现的预测力（新版完整数据）
 
 ## 结论先行
 
-在公平的主队列上，ImageNet Epoch-10 linear probing 对两个 Qwen MLLM 的平均排名预测力很强：**n={primary['n']}，Spearman rho={primary['spearman_rho']:.3f}**（tokenizer 自助法 95% CI [{primary['spearman_ci_low']:.3f}, {primary['spearman_ci_high']:.3f}]），Pearson r={primary['pearson_r']:.3f}，Kendall tau-b={primary['kendall_tau_b']:.3f}，置换检验 p={p_text(primary['spearman_p_permutation'])}。这就是“约 0.94”的正确口径。
+新版公平主队列使用所有同时具备 ImageNet Epoch-10 probing、Qwen3 Avg 和 Qwen2.5 Avg 的 tokenizer。当前是 **n={primary['n']}，Spearman rho={primary['spearman_rho']:.3f}**（tokenizer bootstrap 95% CI [{primary['spearman_ci_low']:.3f}, {primary['spearman_ci_high']:.3f}]），Pearson r={primary['pearson_r']:.3f}，Kendall tau-b={primary['kendall_tau_b']:.3f}，置换检验 p={p_text(primary['spearman_p_permutation'])}。
 
-但结论需要加两个限定：
+这仍是很强的全局排序信号，但不再是旧版完整病例的 0.94。旧版对应的 CLIP-like 四类家族子集现在仍为 n={clip_like['n']}、rho={clip_like['spearman_rho']:.3f}；把新补齐的 discrete、I-JEPA、RAE-v2、DINOv3 纳入后，主结果变成 rho={primary['spearman_rho']:.3f}。所以变化主要说明 **跨新 tokenizer 家族的泛化比家族内排序难**，不是旧数据或计算突然失效。
 
-- 这 38 个点全是 **continuous tokenizer**；4 个 discrete tokenizer 都缺 Qwen2.5，因此 0.944 不能直接外推到 discrete。
-- 预测强度对 MLLM backbone 敏感：在完全相同的 38 个 tokenizer 上，Qwen3 rho={q3_matched['spearman_rho']:.3f}，Qwen2.5 rho={q25_matched['spearman_rho']:.3f}，差 {backbone_delta:.3f}（配对 bootstrap 95% CI [{backbone_delta_low:.3f}, {backbone_delta_high:.3f}]）。两者均为强相关，但 Qwen2.5 更贴合 probing 排名。
+- 同一 n={primary['n']} 队列上，Qwen3 rho={q3['spearman_rho']:.3f}，Qwen2.5 rho={q25['spearman_rho']:.3f}；后者高 {backbone_delta:.3f}，配对 bootstrap 95% CI [{backbone_delta_low:.3f}, {backbone_delta_high:.3f}]。
+- continuous tokenizer（n={continuous['n']}）rho={continuous['spearman_rho']:.3f}；discrete（n={discrete['n']}）rho={discrete['spearman_rho']:.3f}，但后者仅 4 点，只能描述，不能据此判定“没有关系”。
+- I-JEPA 的 Qwen3 Avg 存在行内不一致。排除它后 rho={primary_no_ijepa['spearman_rho']:.3f}；统一从 22 个任务重算双 Qwen Avg 后 rho={primary_task_mean['spearman_rho']:.3f}，主结论基本不变。
+- DINOv3 与 RAE-v2 是合法但明显的跨家族残差点；仅作敏感性诊断，分别删除时 rho={no_dino['spearman_rho']:.3f} 与 {no_rae['spearman_rho']:.3f}，不作为主分析排除规则。
 
 ![Probing vs MLLM](figures/04_probe_vs_mllm_avg.png)
 
-## 数据口径与样本数
+## 数据覆盖与公平口径
 
-| 用途 | 使用数 | 公平性口径 | 排除 |
-|---|---:|---|---|
-| 主分析：probing × 两 Qwen 公平 Avg | 38 | probing、Qwen3、Qwen2.5 都完整；Avg 为两个 backbone Avg 等权平均 | 2 个无 probing；6 个缺 Qwen2.5；DINOv3 缺两个 MLLM |
-| Qwen3 最大覆盖 | 44 | 仅要求 probing + Qwen3 | 2 个无 probing；DINOv3 无 MLLM |
-| Qwen2.5 分析 | 38 | 仅要求 probing + Qwen2.5 | 同主队列；现有 Qwen2.5 均为 continuous |
-| 10-epoch 轨迹可视化 | 33 | 必须 10 轮全齐 | {len(no_history)} 个只有最终 probing；{len(no_probe)} 个 probing 全缺 |
-| 10-epoch × 两 Qwen Avg | 29 | 轨迹和两 backbone 都完整 | 上述双重完整病例交集 |
+| 项目 | 可用数 | 说明 |
+|---|---:|---|
+| 原始 tokenizer | {len(records)} | 两个 CSV 名称集合与 Family 完全一致，按 tokenizer 名称关联 |
+| Qwen3 / Qwen2.5 全任务与 Avg | {len(records)} / {len(records)} | 两套 11 个任务均已补齐；Qwen3 缺失 {len(q3_missing)}，Qwen2.5 缺失 {len(q25_missing)} |
+| 最终 ImageNet probing | {sum(is_finite(record['probe_final']) for record in records)} | 仍有 {len(no_probe)} 个完全缺 probing |
+| 主分析：probing × 两 Qwen 公平 Avg | {len(core)} | 两个 backbone Avg 等权平均；只排除无 probing 的点 |
+| 完整 10-epoch 轨迹 | {len(epoch_records)} | 10 轮固定同一 tokenizer 队列 |
+| 10-epoch × 两 Qwen Avg | {len(epoch_core)} | 当前所有轨迹点都有两套 MLLM 数据 |
 
-主表有 47 个 tokenizer：45 个有最终 probing，33 个有全部 10 轮。完整排除列表在 [`data/exclusions.csv`](data/exclusions.csv)，逐 tokenizer 的合并审计表在 [`data/analysis_cohort.csv`](data/analysis_cohort.csv)。
+- probing 完全缺失：{names(no_probe)}。
+- 有最终 probing、但没有前 9 轮：{names(no_history)}。
+- 旧版因 MLLM 缺失排除的 UniTok、VILA-U、TokLIP、I-JEPA、RAE-v2、DINOv3 已全部补齐，不再排除。
+- 完整逐项口径见 [analysis_cohort.csv](data/analysis_cohort.csv)，排除原因见 [exclusions.csv](data/exclusions.csv)。
 
-- probing 完全缺失（2）：{names_markdown(no_probe)}。
-- 有最终 probing，但前 9 轮不在 epoch 文件（12）：{names_markdown(no_history)}。
-- Qwen2.5 整块缺失（7）：{names_markdown(q25_missing)}。
-- Qwen3 整块缺失（1）：{names_markdown(q3_missing)}。
-
-## 主相关性与稳健性
+## 总体相关性、分组与稳健性
 
 | 目标/子集 | n | Spearman rho | 95% CI | Pearson r | Kendall tau-b |
 |---|---:|---:|---:|---:|---:|
 | 两 Qwen 公平 Avg（主结果） | {primary['n']} | {primary['spearman_rho']:.3f} | [{primary['spearman_ci_low']:.3f}, {primary['spearman_ci_high']:.3f}] | {primary['pearson_r']:.3f} | {primary['kendall_tau_b']:.3f} |
-| Qwen3 Avg（同一主队列） | {q3_matched['n']} | {q3_matched['spearman_rho']:.3f} | [{q3_matched['spearman_ci_low']:.3f}, {q3_matched['spearman_ci_high']:.3f}] | {q3_matched['pearson_r']:.3f} | {q3_matched['kendall_tau_b']:.3f} |
-| Qwen2.5 Avg（同一主队列） | {q25_matched['n']} | {q25_matched['spearman_rho']:.3f} | [{q25_matched['spearman_ci_low']:.3f}, {q25_matched['spearman_ci_high']:.3f}] | {q25_matched['pearson_r']:.3f} | {q25_matched['kendall_tau_b']:.3f} |
-| Qwen3 Avg（最大覆盖） | {q3_max['n']} | {q3_max['spearman_rho']:.3f} | [{q3_max['spearman_ci_low']:.3f}, {q3_max['spearman_ci_high']:.3f}] | {q3_max['pearson_r']:.3f} | {q3_max['kendall_tau_b']:.3f} |
-| Qwen3 Avg（continuous only） | {q3_cont['n']} | {q3_cont['spearman_rho']:.3f} | [{q3_cont['spearman_ci_low']:.3f}, {q3_cont['spearman_ci_high']:.3f}] | {q3_cont['pearson_r']:.3f} | {q3_cont['kendall_tau_b']:.3f} |
-| Qwen3 Avg（discrete only） | {q3_disc['n']} | {q3_disc['spearman_rho']:.3f} | [{q3_disc['spearman_ci_low']:.3f}, {q3_disc['spearman_ci_high']:.3f}] | {q3_disc['pearson_r']:.3f} | {q3_disc['kendall_tau_b']:.3f} |
-| 两 Qwen Avg（10-epoch 子集） | {history['n']} | {history['spearman_rho']:.3f} | [{history['spearman_ci_low']:.3f}, {history['spearman_ci_high']:.3f}] | {history['pearson_r']:.3f} | {history['kendall_tau_b']:.3f} |
-| 两 Qwen Avg（只有最终 probing 的子集） | {final_only['n']} | {final_only['spearman_rho']:.3f} | [{final_only['spearman_ci_low']:.3f}, {final_only['spearman_ci_high']:.3f}] | {final_only['pearson_r']:.3f} | {final_only['kendall_tau_b']:.3f} |
+| Qwen3 Avg（同队列） | {q3['n']} | {q3['spearman_rho']:.3f} | [{q3['spearman_ci_low']:.3f}, {q3['spearman_ci_high']:.3f}] | {q3['pearson_r']:.3f} | {q3['kendall_tau_b']:.3f} |
+| Qwen2.5 Avg（同队列） | {q25['n']} | {q25['spearman_rho']:.3f} | [{q25['spearman_ci_low']:.3f}, {q25['spearman_ci_high']:.3f}] | {q25['pearson_r']:.3f} | {q25['kendall_tau_b']:.3f} |
+| continuous only | {continuous['n']} | {continuous['spearman_rho']:.3f} | [{continuous['spearman_ci_low']:.3f}, {continuous['spearman_ci_high']:.3f}] | {continuous['pearson_r']:.3f} | {continuous['kendall_tau_b']:.3f} |
+| discrete only（探索性） | {discrete['n']} | {discrete['spearman_rho']:.3f} | [{discrete['spearman_ci_low']:.3f}, {discrete['spearman_ci_high']:.3f}] | {discrete['pearson_r']:.3f} | {discrete['kendall_tau_b']:.3f} |
+| CLIP-like benchmark families | {clip_like['n']} | {clip_like['spearman_rho']:.3f} | [{clip_like['spearman_ci_low']:.3f}, {clip_like['spearman_ci_high']:.3f}] | {clip_like['pearson_r']:.3f} | {clip_like['kendall_tau_b']:.3f} |
+| 完整 10-epoch 来源 | {history['n']} | {history['spearman_rho']:.3f} | [{history['spearman_ci_low']:.3f}, {history['spearman_ci_high']:.3f}] | {history['pearson_r']:.3f} | {history['kendall_tau_b']:.3f} |
+| 只有最终 probing 来源 | {final_only['n']} | {final_only['spearman_rho']:.3f} | [{final_only['spearman_ci_low']:.3f}, {final_only['spearman_ci_high']:.3f}] | {final_only['pearson_r']:.3f} | {final_only['kendall_tau_b']:.3f} |
 
-“完整历史”子集 rho={history['spearman_rho']:.3f}，“只有最终分数”子集 rho={final_only['spearman_rho']:.3f}，说明 0.944 不是由两类 probing 数据源混合才人为造成的。但后者仅 n={final_only['n']}，区间会更不稳定。
+完整轨迹与 final-only 两组的家族组成不同，因此两者差异不能归因为“协作者数据质量”。它更像一个来源与模型家族共同变化的敏感性分析。
 
-高相关也不依赖任务的原始分数量纲：22 个任务单元直接平均 rho={aggregation['Raw mean across 22 task cells']['spearman_rho']:.3f}，先对每个任务 z-score 再平均为 {aggregation['Mean after per-task z-scoring']['spearman_rho']:.3f}，任务内 rank 再平均为 {aggregation['Mean of within-task ranks']['spearman_rho']:.3f}，z-score 中位数为 {aggregation['Median after per-task z-scoring']['spearman_rho']:.3f}。每次留掉 22 个任务中的一个，rho 只在 [{aggregation_leave_min:.3f}, {aggregation_leave_max:.3f}] 之间，因此不是某一个任务单独驱动。逐项结果见 [`data/task_aggregation_robustness.csv`](data/task_aggregation_robustness.csv)。
+从 22 个详细任务直接重算均值时，rho={aggregation['Raw mean across task cells']['spearman_rho']:.3f}；先逐任务 z-score 再平均为 {aggregation['Mean after per-task z-scoring']['spearman_rho']:.3f}；逐任务 rank 后平均为 {aggregation['Mean of within-task ranks']['spearman_rho']:.3f}；z-score 中位数为 {aggregation['Median after per-task z-scoring']['spearman_rho']:.3f}。每次留掉一个 backbone-task 单元，rho 范围 [{aggregation_leave_min:.3f}, {aggregation_leave_max:.3f}]，说明结果不是单一任务或量纲驱动。完整表见 [task_aggregation_robustness.csv](data/task_aggregation_robustness.csv)。
 
-再逐一删除 tokenizer，rho 范围为 [{min(leave_one_rhos):.3f}, {max(leave_one_rhos):.3f}]，主结果不由任何单点驱动。
+逐一删除 tokenizer 后，主 rho 范围为 [{min(leave_one_rhos):.3f}, {max(leave_one_rhos):.3f}]。上界来自删除强跨家族残差点，说明新版结论比旧版更依赖“是否要求跨家族泛化”，应保留这个限定。
 
 ![Robustness](figures/06_family_and_source_robustness.png)
 
-## 具体 Qwen backbone 与任务
+## 具体 backbone 与任务
 
-为了直接比较两个 Qwen，热图固定用同一批 n=38 tokenizer；CSV 表另外保留 Qwen3 的最大覆盖口径（通常 n=44）。
+逐任务热图尽量使用全部 probing 可用点：通常 n={len(core)}；Qwen3 ScienceQA 及其双模型任务均值因 I-JEPA 疑似复制单元保守用 n={min(task_n_values)}。因此热图的任务级 n 范围为 {task_n_text}，每个格子的精确 n 在 [task_correlations.csv](data/task_correlations.csv)。
 
-- Qwen3：任务级 rho 从 {q3_worst['task']}={q3_worst['matched_spearman_rho']:.3f} 到 {q3_best['task']}={q3_best['matched_spearman_rho']:.3f}，11 项中 {q3_sig}/11 在未校正 p<0.05。
-- Qwen2.5：从 {q25_worst['task']}={q25_worst['matched_spearman_rho']:.3f} 到 {q25_best['task']}={q25_best['matched_spearman_rho']:.3f}，11/11 在未校正 p<0.05。
-- 两 backbone 的同名任务先平均后，从 {combined_worst['task']}={combined_worst['matched_spearman_rho']:.3f} 到 {combined_best['task']}={combined_best['matched_spearman_rho']:.3f}。
-- 同队列下，Qwen2.5 在 11/11 个任务上的 rho 都高于 Qwen3。Flickr、COCO、TextVQA/VQAv2 等任务与视觉 tokenizer 表征质量的相关性最高；MMMU 最弱，说明多学科推理能力的瓶颈不只是视觉表征。这是相关性解释，不是因果结论。
-
-按各 backbone 的最大可用队列对 22 个任务检验统一做 Benjamini-Hochberg 校正后，{bh_significant}/22 仍显著。
+- Qwen3：从 {task_summary[BACKBONES[0]][0]['task']}={task_summary[BACKBONES[0]][0]['matched_spearman_rho']:.3f} 到 {task_summary[BACKBONES[0]][1]['task']}={task_summary[BACKBONES[0]][1]['matched_spearman_rho']:.3f}；{q3_sig}/11 个任务未经多重校正时 p<0.05。
+- Qwen2.5：从 {task_summary[BACKBONES[1]][0]['task']}={task_summary[BACKBONES[1]][0]['matched_spearman_rho']:.3f} 到 {task_summary[BACKBONES[1]][1]['task']}={task_summary[BACKBONES[1]][1]['matched_spearman_rho']:.3f}；{q25_sig}/11 个任务未经多重校正时 p<0.05。
+- 两 backbone 同名任务等权平均后，从 {task_summary['Two-Qwen task mean'][0]['task']}={task_summary['Two-Qwen task mean'][0]['matched_spearman_rho']:.3f} 到 {task_summary['Two-Qwen task mean'][1]['task']}={task_summary['Two-Qwen task mean'][1]['matched_spearman_rho']:.3f}。
+- Qwen2.5 在 {q25_stronger}/11 个任务上的 rho 高于 Qwen3。对 22 个 backbone-task 检验统一做 Benjamini-Hochberg 校正后，{bh_significant}/22 仍显著。
+- Flickr、COCO 等任务与 probing 关联最强，MMMU 最弱。合理解释是多学科推理还受语言与推理瓶颈限制；这只是相关性解释，不是因果证明。
 
 ![Task correlations](figures/05_task_correlation_heatmap.png)
 
-完整数值、自助区间、p 值与 22 项检验的 Benjamini-Hochberg q 值见 [`data/task_correlations.csv`](data/task_correlations.csv)。Qwen3/ScienceQA 的最大覆盖分析保守排除了 I-JEPA，因为该行存在明确的 Avg/任务均值冲突；匹配 n=38 队列本来就不含 I-JEPA。Qwen3 Avg 最大覆盖的结果对此不敏感：含 I-JEPA 时 rho={q3_max['spearman_rho']:.3f}，排除后 rho={q3_max_without_ijepa['spearman_rho']:.3f}。
+## 10 个 epoch：逐轮 Spearman 表
 
-## 10 个 epoch：分数、排名与早停信号
+以下每一轮都固定使用同一批 n={len(epoch_core)} tokenizer，同时计算 Qwen3、Qwen2.5 和两者公平平均，因此跨 epoch 和跨 backbone 可直接比较。
 
-下表是每个 probing epoch 与下游 MLLM Avg 的 Spearman rho。“匹配”三列固定用同一批 n=29 continuous tokenizer，可公平比较两个 Qwen；Qwen3 最大覆盖列另外纳入 4 个缺 Qwen2.5 的 discrete tokenizer，n=33。
-
-| Epoch | Qwen3 Avg（最大覆盖 n=33） | Qwen3 Avg（匹配 n=29） | Qwen2.5 Avg（匹配 n=29） | 两 Qwen 公平 Avg（n=29） |
+| Epoch | Qwen3 Avg rho | Qwen2.5 Avg rho | 两 Qwen公平 Avg rho | 与 Epoch-10 probing 排名 rho |
 |---:|---:|---:|---:|---:|
 {chr(10).join(epoch_spearman_lines)}
 
-对应的 p 值、每轮平均/中位准确率以及与 Epoch 10 的排名稳定性见 [`data/epoch_metrics.csv`](data/epoch_metrics.csv)。
+完整 p 值、每轮均值/中位准确率和样本数见 [epoch_metrics.csv](data/epoch_metrics.csv)。
 
 ![Epoch trajectories](figures/01_epoch_accuracy_trajectories.png)
 
-下图按 10 轮平均准确率对同一批 33 个 tokenizer 排序，横轴隐去具体名称；每个 tokenizer 的 10 个细点分别对应 Epoch 1–10，浅色带表示 Epoch 1 到 Epoch 10 的增益范围。
+下图按同一批 tokenizer 的 10 轮平均准确率排序，横轴不写 tokenizer 名；每条细线上的 10 个小点就是 Epoch 1–10。
 
 ![Epochs by tokenizer](figures/01b_epoch_by_tokenizer_overview.png)
 
 ![Epoch rank heatmap](figures/02_epoch_rank_heatmap.png)
 
-33 条完整轨迹中，E1→E10 提升的中位数是 {np.median(gains):.2f} 个点。Epoch 1 与 Epoch 10 排名已有 rho={epoch1['rank_stability_vs_epoch10_n33']:.3f}，到 Epoch 9 为 {epoch_metrics[8]['rank_stability_vs_epoch10_n33']:.3f}。对完整两-Qwen 子集，Epoch 1 对 MLLM Avg 的 rho={epoch1['spearman_vs_fair_mllm_avg_n29']:.3f}，Epoch 10 为 {epoch10['spearman_vs_fair_mllm_avg_n29']:.3f}，差 {epoch_delta:.3f}（配对 bootstrap 95% CI [{epoch_delta_low:.3f}, {epoch_delta_high:.3f}]）。区间跨 0，没有证据说 10 轮比 1 轮更能预测 MLLM；且相关不随 epoch 单调提升。
+E1→E10 的 probing 增益中位数为 {np.median(gains):.2f} pp；E1 与 E10 的全体排名 rho={epoch1['rank_stability_vs_epoch10']:.3f}。对 MLLM 公平 Avg，E1 rho={epoch1['spearman_vs_fair_mllm_avg']:.3f}，E10 rho={epoch10['spearman_vs_fair_mllm_avg']:.3f}，变化 {epoch_delta:+.3f}（配对 bootstrap 95% CI [{epoch_delta_low:.3f}, {epoch_delta_high:.3f}]）。区间跨 0，不能声称训练到第 10 轮会显著提高对 MLLM 的排序预测；当前数据中 E1 数值反而略高。
 
-这表明：在当前 continuous 模型范围内，**1 个 epoch 已经可以做粗筛排名**；但不能用它替代最终分数。{biggest_movers[0][0]['tokenizer']} 和 {biggest_movers[1][0]['tokenizer']} 从 E1 到 E10 都上升了 {abs(biggest_movers[0][1]):.0f} 个名次，且 TokLIP 的 E1→E10 增益分别约 8.3 点；早停对这类收敛慢的 discrete tokenizer 不公平。
+这不等于 E1 可以替代 E10：TokLIP 等慢收敛 discrete tokenizer 的绝对 probing 会继续大幅上升。轨迹 LOOCV 中 E1-only MAE={epoch1_cv['mae']:.2f}，E10-only MAE={epoch10_cv['mae']:.2f}，E10+gain MAE={gain_cv['mae']:.2f}。gain 与 MLLM Avg 的 rho={gain_vs_target:.3f}，与 E10-only 线性拟合残差的 rho={gain_vs_residual:.3f}；目前没有稳定的额外动力学预测收益。
 
 ![Epoch predictiveness](figures/03_epoch_predictiveness.png)
 
-轨迹的“增益”本身与 MLLM Avg 负相关（rho={gain_vs_target:.3f}），主要因为低起点模型可上升空间更大；gain 与 E10-only 全样本线性拟合所得 MLLM 残差的 rho={gain_vs_residual:.3f}，几乎无关。LOOCV 也一致：E1-only MAE={epoch1_cv['mae']:.2f}，E10-only MAE={epoch10_cv['mae']:.2f}，E10+增益 MAE={gain_cv['mae']:.2f}；目前没证据说 10 轮动力学比单个准确率能额外预测 MLLM。
-
-## 家族内部与受控对比
+## 家族内部、局部选型和受控对比
 
 | 家族 | n | 家族内 Spearman rho | 95% CI |
 |---|---:|---:|---:|
 {chr(10).join(family_lines)}
 
-把全局秩在家族内去均值后，pooled family-adjusted 关联仍为 rho={adjusted['spearman_rho']:.3f}（n={adjusted['n']}，家族内置换 p={p_text(adjusted['spearman_p_permutation'])}）。所以整体高相关不只是 SigLIP2/MetaCLIP 家族均值之间的差异。OpenAI CLIP 只有 1 个点，不能算家族内相关。
+三大主家族内部仍分别很强。把全局秩在所有至少有 2 点的家族内中心化后，pooled family-adjusted rho={adjusted['spearman_rho']:.3f}（n={adjusted['n']}，家族内置换 p={p_text(adjusted['spearman_p_permutation'])}）。单点家族不能贡献家族内证据，这正是 RAE-v2、DINOv3 等新家族外推仍不确定的原因。
 
-不过，当只在高分段做精细选型时，关系会因取值范围收窄而变弱：probing 排名前半 n={len(top_half)} 的 rho={top_half_rho:.3f}；probing≥87 的 n={len(high_probe)} 个点中 rho={float(high_probe_result.statistic):.3f}，p={p_text(float(high_probe_result.pvalue))}。所以 0.944 更适合解读为跨较广质量范围的排名 proxy，不是顶尖模型之间细微差异的完美判别器。
+在 probing 排名前半 n={len(top_half)} 中 rho={top_half_rho:.3f}；probing≥87 的 n={len(high_probe)} 中 rho={float(high_probe_result.statistic):.3f}（p={p_text(float(high_probe_result.pvalue))}）。范围收窄后区分力下降，不能把全局 rho 直接理解成顶尖模型之间细微差值的精确预测。
 
-更严格地固定架构、只比较分辨率升级时，{positive_both}/{len(resolution_rows)} 对都同时提高 probing 和 MLLM Avg；但两种增益幅度的 Spearman 只有 {delta_rho:.3f}（n={len(resolution_rows)}，p={p_text(delta_p)}）。因此 probing 对“方向”很好，却不宜解读为局部改动的精确增益估计器。n={len(resolution_rows)} 且对比对来自两个家族，这一点应视为探索性结论。
+固定架构、只比较分辨率时，{positive_both}/{len(resolution_rows)} 对的 probing 与 MLLM Avg 同方向增加；但增益幅度的 rho={float(delta_result.statistic):.3f}（p={p_text(float(delta_result.pvalue))}）。因此 probing 更适合判断整体方向，不适合把局部 probing 增益一比一换算成 MLLM 增益。
 
 ![Controlled deltas](figures/08_controlled_resolution_deltas.png)
 
-## “预测”而不只是同样本相关
+## 真正的样本外预测
 
-用一元线性校准 `MLLM Avg ~ probing`：
+一元线性校准 MLLM Avg ~ probing 的结果：
 
-- leave-one-tokenizer-out（n={loo['n']}）：MAE={loo['mae']:.2f}，RMSE={loo['rmse']:.2f}，R²cv={loo['r2_cv']:.3f}；不用 probing 的训练集均值 baseline MAE={loo['baseline_mae']:.2f}。
-- leave-one-family-out（只评估三个有重复样本的主家族，n={lofo['n']}）：MAE={lofo['mae']:.2f}，RMSE={lofo['rmse']:.2f}，R²cv={lofo['r2_cv']:.3f}；baseline MAE={lofo['baseline_mae']:.2f}。
+| 验证方式 | n | MAE | RMSE | CV R² | 不用 probing 的 baseline MAE |
+|---|---:|---:|---:|---:|---:|
+| Leave-one-tokenizer-out | {loo['n']} | {loo['mae']:.2f} | {loo['rmse']:.2f} | {loo['r2_cv']:.3f} | {loo['baseline_mae']:.2f} |
+| Leave-one-family-out（全部家族） | {lofo_all['n']} | {lofo_all['mae']:.2f} | {lofo_all['rmse']:.2f} | {lofo_all['r2_cv']:.3f} | {lofo_all['baseline_mae']:.2f} |
+| Leave-one-major-prefix-family-out（三大主家族） | {lofo_major['n']} | {lofo_major['mae']:.2f} | {lofo_major['rmse']:.2f} | {lofo_major['r2_cv']:.3f} | {lofo_major['baseline_mae']:.2f} |
 
-这说明 probing 不只能在全样本上“拟合得好看”；对留出点、甚至留出整个家族仍有明显预测信号。但家族只有 SigLIP2、MetaCLIP1、MetaCLIP2 三个大组加一个单点 CLIP，leave-family-out 数字仍需要新家族验证。
+Leave-one-tokenizer-out 仍明显优于均值 baseline，但把整个家族留出后误差上升、R²下降。这和相关性部分一致：probing 是很好的表内排序 proxy，但遇到 RAE/DINO 一类新表征范式时，单变量校准不够。
 
-{chr(10).join(topk_lines)}
-
-全部 {concordant + discordant} 个非并列 tokenizer pair 中，{concordant} 对的 probing 与 MLLM 排序方向一致，即 {pairwise_accuracy * 100:.1f}%；另有 {tied} 对至少一边并列。
+- Top-3 重合 {topk_rows[0][1]}/3，Top-5 重合 {topk_rows[1][1]}/5，Top-10 重合 {topk_rows[2][1]}/10。
+- 全部非并列 pair 中，{concordant}/{concordant + discordant} 方向一致，即 {pairwise_accuracy * 100:.1f}%；另有 {tied} 对并列。
 
 ![Prediction validation](figures/07_prediction_validation.png)
 
-## 数据质量问题与不可越过的边界
+## 数据质量与边界
 
-1. **不能直接用主表 `Avg` 列的缺失行。** 6 个只有 Qwen3 的 tokenizer 被写成 `Qwen3 Avg / 2`，DINOv3 两个 MLLM 都缺却写成 0.00。脚本已将这些值当 NA，只在两 backbone 都齐时重算公平 Avg。
-2. **I-JEPA 行内不一致。** 11 个 Qwen3 任务的算术均值是 35.09，CSV Avg 是 36.56，差 1.47；其 VQAv2 和 ScienceQA 又恰好都为 47.08，建议回查原始日志。主 n=38 分析不含 I-JEPA，因此不受影响。
-3. **完整 epoch 与最终分数来源。** 33 个 epoch 表的 E10 与主表逐项完全一致；另有 {len(no_history)} 个只有主表最终分数，以及 {len(no_probe)} 个完全没有 probing。脚本不伪造前 9 轮，轨迹分析只用真实 33 个点。
-4. **不是因果证明。** 容量、预训练数据、分辨率和 tokenizer 家族同时影响 probing 与 MLLM；家族内分析能缓解，不能消除所有混杂。
-5. **相关性不代表差值可直接换算。** 整体排名很强，但局部分辨率增益的幅度相关很弱，且个别残差可超过 4 个 MLLM 分数点。
+1. 新主表总 Avg 已修复：47/47 都等于两个 backbone Avg 的等权平均（仅有两位小数舍入），检测到异常行数 {len(combined_mismatches)}。
+2. I-JEPA/Qwen3 仍不一致：11 个任务均值 35.09，而 reported Avg 36.56，差 1.47；VQAv2 与 ScienceQA 又同为 47.08。当前检测到相关异常 {len(ijepa_mismatches)} 条。主分析保留 reported Avg，并同时给出排除与任务重算敏感性；Qwen3 ScienceQA 单格分析保守排除 I-JEPA。
+3. 33 条完整轨迹的 E10 与主表逐项一致；12 个 tokenizer 只有最终 probing，2 个完全缺 probing。脚本不补造前 9 轮。
+4. 相关性不是因果证明。预训练数据、容量、分辨率和 tokenizer 范式会同时影响 probing 与 MLLM。
+5. discrete 只有 4 点，I-JEPA/RAE-v2/DINOv3 等多个家族只有单点，跨家族结论仍需更多同类 tokenizer 验证。
 
-## 文件索引与复现
+## 文件与复现
 
-- [`analyze.py`](analyze.py)：唯一分析脚本；解析、审计、统计、画图和报告生成都在这里。
-- [`data/analysis_cohort.csv`](data/analysis_cohort.csv) 与 [`data/exclusions.csv`](data/exclusions.csv)：47 个 tokenizer 的合并口径、入选标记与逐项排除原因。
-- [`data/correlation_summary.csv`](data/correlation_summary.csv)：主相关性与不同队列。
-- [`data/task_aggregation_robustness.csv`](data/task_aggregation_robustness.csv)：任务标准化、rank 聚合与 leave-one-task-out。
-- [`data/task_correlations.csv`](data/task_correlations.csv)：两个 Qwen 的逐任务结果。
-- [`data/family_robustness.csv`](data/family_robustness.csv)：家族内、留一家族和来源敏感性。
-- [`data/epoch_metrics.csv`](data/epoch_metrics.csv)：逐 epoch 排名稳定性与 MLLM 相关性。
-- [`data/prediction_metrics.csv`](data/prediction_metrics.csv) 与 [`data/prediction_diagnostics.csv`](data/prediction_diagnostics.csv)：样本外误差及逐 tokenizer 残差。
-- [`data/controlled_comparisons.csv`](data/controlled_comparisons.csv)：分辨率、预训练规模和 MT5 的成对对比。
+- [analyze.py](analyze.py)：唯一分析脚本，按双行表头解析字段并按 tokenizer 名称关联。
+- [correlation_summary.csv](data/correlation_summary.csv)：总体、连续/离散、旧 CLIP-like 子集和异常点敏感性。
+- [task_correlations.csv](data/task_correlations.csv)：逐 backbone、逐任务结果与 BH 校正。
+- [epoch_metrics.csv](data/epoch_metrics.csv)：10 个 epoch 各自与下游 MLLM 的 Spearman 和 p 值。
+- [family_robustness.csv](data/family_robustness.csv)：家族内、留一家族和来源敏感性。
+- [prediction_metrics.csv](data/prediction_metrics.csv)：LOOCV 与两种 leave-family-out 预测误差。
+- [analysis_cohort.csv](data/analysis_cohort.csv) / [exclusions.csv](data/exclusions.csv)：逐 tokenizer 入选与排除口径。
+- 其余结构化结果均在 data/，九张图均在 figures/。
 
-复现命令（需 NumPy、SciPy、Matplotlib）：
+复现命令：
 
-```bash
-conda run -n TokBench python result/tokenizer_mllm_analysis/analyze.py
-```
+    conda run -n TokBench python result/tokenizer_mllm_analysis/analyze.py
 
-所有 bootstrap/permutation 都使用固定种子 {SEED}，重跑可得到相同结果。
+所有 bootstrap/permutation 使用固定种子 {SEED}。
 """
     (HERE / "README.md").write_text(report, encoding="utf-8")
 
@@ -1257,101 +1371,189 @@ def main() -> None:
     set_plot_style()
     records, _epochs, audit = load_records()
     by_name = {record["tokenizer"]: record for record in records}
-    core = [record for record in records if record["in_primary_n38"]]
-    q3_max = [record for record in records if record["in_qwen3_max_n44"]]
-    epoch_records = [record for record in records if record["probe_history_status"] == "full_10_epoch"]
-    epoch_core = [record for record in records if record["in_epoch_combined_n29"]]
-    final_only_core = [record for record in core if record["probe_history_status"] == "final_only"]
 
-    if len(records) != 47 or len(core) != 38 or len(q3_max) != 44 or len(epoch_records) != 33 or len(epoch_core) != 29:
-        raise ValueError("Unexpected cohort size; inspect the inputs before interpreting regenerated results")
+    core = [record for record in records if record["in_primary"]]
+    q3_max = [record for record in records if record["in_qwen3_max"]]
+    q25_max = [record for record in records if record["in_qwen25_max"]]
+    epoch_records = [
+        record for record in records if record["probe_history_status"] == "full_10_epoch"
+    ]
+    epoch_core = [record for record in records if record["in_epoch_combined"]]
+    final_only_core = [
+        record for record in core if record["probe_history_status"] == "final_only"
+    ]
+
+    if not records or len(by_name) != len(records):
+        raise ValueError("No records or duplicate tokenizer names after loading")
+    if len(core) < 3 or len(epoch_records) < 3 or len(epoch_core) < 3:
+        raise ValueError("Too few complete records for the requested correlations")
     if audit["epoch10_mismatches"]:
-        raise ValueError(f"Epoch-10 values disagree with main table: {audit['epoch10_mismatches']}")
+        raise ValueError(
+            f"Epoch-10 values disagree with main table: {audit['epoch10_mismatches']}"
+        )
 
-    # Test whether the headline result depends on raw task scales.  The four
-    # aggregate targets use exactly the same 38 x 22 complete task matrix.
-    core_task_matrix = np.asarray(
+    complete_task_records = [
+        record
+        for record in core
+        if all(
+            is_finite(record[key][task])
+            for key in ["qwen3_tasks", "qwen25_tasks"]
+            for task in TASKS
+        )
+    ]
+    if len(complete_task_records) < 3:
+        raise ValueError("Too few complete 22-task records for aggregation robustness")
+    task_matrix = np.asarray(
         [
             [record["qwen3_tasks"][task] for task in TASKS]
             + [record["qwen25_tasks"][task] for task in TASKS]
-            for record in core
+            for record in complete_task_records
         ],
         dtype=float,
     )
-    task_z = (core_task_matrix - np.mean(core_task_matrix, axis=0)) / np.std(core_task_matrix, axis=0)
+    task_z = (task_matrix - np.mean(task_matrix, axis=0)) / np.std(task_matrix, axis=0)
     task_rank = np.column_stack(
-        [stats.rankdata(core_task_matrix[:, index], method="average") for index in range(core_task_matrix.shape[1])]
+        [
+            stats.rankdata(task_matrix[:, index], method="average")
+            for index in range(task_matrix.shape[1])
+        ]
     )
     aggregate_values = {
-        "_agg_raw_22_task_mean": np.mean(core_task_matrix, axis=1),
+        "_agg_raw_task_mean": np.mean(task_matrix, axis=1),
         "_agg_mean_task_z": np.mean(task_z, axis=1),
         "_agg_mean_task_rank": np.mean(task_rank, axis=1),
         "_agg_median_task_z": np.median(task_z, axis=1),
     }
     for key, values in aggregate_values.items():
-        for record, value in zip(core, values):
+        for record, value in zip(complete_task_records, values):
             record[key] = float(value)
+
     aggregation_rows = [
-        correlation_row("Raw mean across 22 task cells", core, "_agg_raw_22_task_mean", "Same cohort; recomputed from detailed task cells."),
-        correlation_row("Mean after per-task z-scoring", core, "_agg_mean_task_z", "Removes task scale and variance differences."),
-        correlation_row("Mean of within-task ranks", core, "_agg_mean_task_rank", "Uses only each task's tokenizer ordering."),
-        correlation_row("Median after per-task z-scoring", core, "_agg_median_task_z", "Robust aggregation across the 22 task cells."),
+        correlation_row(
+            "Raw mean across task cells",
+            complete_task_records,
+            "_agg_raw_task_mean",
+            f"Same n={len(complete_task_records)} cohort; recomputed from {task_matrix.shape[1]} detailed cells.",
+        ),
+        correlation_row(
+            "Mean after per-task z-scoring",
+            complete_task_records,
+            "_agg_mean_task_z",
+            "Removes task scale and variance differences.",
+        ),
+        correlation_row(
+            "Mean of within-task ranks",
+            complete_task_records,
+            "_agg_mean_task_rank",
+            "Uses only each task's tokenizer ordering.",
+        ),
+        correlation_row(
+            "Median after per-task z-scoring",
+            complete_task_records,
+            "_agg_median_task_z",
+            "Robust aggregation across all task cells.",
+        ),
     ]
-    for column in range(core_task_matrix.shape[1]):
+    for column in range(task_matrix.shape[1]):
         backbone = "Qwen3" if column < len(TASKS) else "Qwen2.5"
         task = TASKS[column % len(TASKS)]
-        key = "_agg_leave_one_task_out"
-        values = np.mean(np.delete(core_task_matrix, column, axis=1), axis=1)
-        for record, value in zip(core, values):
+        values = np.mean(np.delete(task_matrix, column, axis=1), axis=1)
+        key = f"_agg_leave_{column}"
+        for record, value in zip(complete_task_records, values):
             record[key] = float(value)
         aggregation_rows.append(
-            correlation_row(f"Leave out {backbone}/{task}", core, key, "One of 22 task cells removed before averaging.")
+            correlation_row(
+                f"Leave out {backbone}/{task}",
+                complete_task_records,
+                key,
+                f"One of {task_matrix.shape[1]} task cells removed.",
+            )
         )
 
+    clip_like_families = {"SigLIP2", "MetaCLIP1", "MetaCLIP2", "OpenAI CLIP"}
     summary_rows = [
         correlation_row(
             "Primary: fair two-backbone avg",
             core,
             "mllm_avg_fair",
-            "Complete-case intersection: ImageNet probe plus both Qwen backbone averages; all 38 are continuous.",
-        ),
-        correlation_row("Qwen3 Avg (matched n=38)", core, "qwen3_avg_reported", "Same tokenizer cohort as the primary result."),
-        correlation_row("Qwen2.5 Avg (matched n=38)", core, "qwen25_avg_reported", "Same tokenizer cohort as the primary result."),
-        correlation_row(
-            "Qwen3 Avg (maximum coverage)",
-            q3_max,
-            "qwen3_avg_reported",
-            "Maximum coverage: 40 continuous plus 4 discrete tokenizers; I-JEPA uses its reported Avg and is checked by exclusion sensitivity.",
+            "Maximum fair coverage: probe plus both reported backbone averages.",
         ),
         correlation_row(
-            "Qwen3 Avg (maximum coverage, excluding I-JEPA)",
-            [record for record in q3_max if record["tokenizer"] != "I-JEPA"],
+            "Qwen3 Avg (matched primary)",
+            core,
             "qwen3_avg_reported",
-            "Sensitivity to I-JEPA's inconsistent task mean versus reported Avg.",
+            "Same tokenizer cohort as the primary result.",
         ),
         correlation_row(
-            "Qwen3 Avg (continuous only)",
-            [record for record in q3_max if record["visual_token_type"] == "continuous"],
-            "qwen3_avg_reported",
-            "Maximum continuous-only coverage.",
+            "Qwen2.5 Avg (matched primary)",
+            core,
+            "qwen25_avg_reported",
+            "Same tokenizer cohort as the primary result.",
         ),
         correlation_row(
-            "Qwen3 Avg (discrete only)",
-            [record for record in q3_max if record["visual_token_type"] == "discrete"],
-            "qwen3_avg_reported",
-            "Exploratory only: four tokenizers and no Qwen2.5 results.",
+            "Primary excluding I-JEPA",
+            [record for record in core if record["tokenizer"] != "I-JEPA"],
+            "mllm_avg_fair",
+            "Sensitivity to I-JEPA's reported Avg/task-mean inconsistency.",
+        ),
+        correlation_row(
+            "Primary using task-recomputed averages",
+            core,
+            "mllm_avg_tasks_recomputed",
+            "Both backbone averages recomputed from their 11 detailed task cells.",
+        ),
+        correlation_row(
+            "Primary continuous only",
+            [record for record in core if record["visual_token_type"] == "continuous"],
+            "mllm_avg_fair",
+        ),
+        correlation_row(
+            "Primary discrete only",
+            [record for record in core if record["visual_token_type"] == "discrete"],
+            "mllm_avg_fair",
+            "Exploratory: only four discrete tokenizers.",
+        ),
+        correlation_row(
+            "CLIP-like benchmark families",
+            [record for record in core if record["model_family"] in clip_like_families],
+            "mllm_avg_fair",
+            "Like-for-like sensitivity matching the families represented in the former n=38 complete-case cohort.",
+        ),
+        correlation_row(
+            "Primary excluding DINOv3",
+            [record for record in core if record["tokenizer"] != "dinov3"],
+            "mllm_avg_fair",
+            "Diagnostic only; DINOv3 is valid and remains in the primary analysis.",
+        ),
+        correlation_row(
+            "Primary excluding RAE-v2",
+            [record for record in core if record["tokenizer"] != "raev2"],
+            "mllm_avg_fair",
+            "Diagnostic only; RAE-v2 is valid and remains in the primary analysis.",
         ),
         correlation_row(
             "Two-Qwen Avg (full 10-epoch histories)",
             epoch_core,
             "mllm_avg_fair",
-            "Restricts the primary analysis to tokenizers with all ten probing epochs.",
+            "All tokenizers with complete ten-epoch histories and both MLLM averages.",
         ),
         correlation_row(
             "Two-Qwen Avg (final-only probing)",
             final_only_core,
             "mllm_avg_fair",
-            "Tokenizers with a final probe in the main table but no earlier epochs in the Markdown file.",
+            "Final probe exists in the main table but earlier epochs are unavailable.",
+        ),
+        correlation_row(
+            "Qwen3 Avg (discrete only)",
+            [record for record in q3_max if record["visual_token_type"] == "discrete"],
+            "qwen3_avg_reported",
+            "Exploratory.",
+        ),
+        correlation_row(
+            "Qwen2.5 Avg (discrete only)",
+            [record for record in q25_max if record["visual_token_type"] == "discrete"],
+            "qwen25_avg_reported",
+            "Exploratory.",
         ),
     ]
     summary_by_label = {row["analysis"]: row for row in summary_rows}
@@ -1359,36 +1561,76 @@ def main() -> None:
     robustness_rows = []
     for source_label, robustness_label in [
         ("Primary: fair two-backbone avg", "Primary overall"),
-        ("Two-Qwen Avg (full 10-epoch histories)", "Full 10-epoch source only"),
-        ("Two-Qwen Avg (final-only probing)", "Final-only source only"),
+        ("Primary continuous only", "Continuous only"),
+        ("Primary discrete only", "Discrete only"),
+        ("CLIP-like benchmark families", "CLIP-like families"),
+        ("Two-Qwen Avg (full 10-epoch histories)", "Full 10-epoch source"),
+        ("Two-Qwen Avg (final-only probing)", "Final-only source"),
+        ("Primary excluding DINOv3", "Exclude DINOv3 (diagnostic)"),
+        ("Primary excluding RAE-v2", "Exclude RAE-v2 (diagnostic)"),
     ]:
         reused = dict(summary_by_label[source_label])
         reused["analysis"] = robustness_label
         robustness_rows.append(reused)
     for family in ["SigLIP2", "MetaCLIP1", "MetaCLIP2"]:
-        robustness_rows.append(correlation_row(f"Within {family}", [record for record in core if record["model_family"] == family], "mllm_avg_fair"))
-    for family in ["SigLIP2", "MetaCLIP1", "MetaCLIP2", "OpenAI CLIP"]:
-        robustness_rows.append(correlation_row(f"Leave {family} out", [record for record in core if record["model_family"] != family], "mllm_avg_fair"))
+        robustness_rows.append(
+            correlation_row(
+                f"Within {family}",
+                [record for record in core if record["model_family"] == family],
+                "mllm_avg_fair",
+            )
+        )
+    for family in ["SigLIP2", "MetaCLIP1", "MetaCLIP2"]:
+        robustness_rows.append(
+            correlation_row(
+                f"Leave {family} out",
+                [record for record in core if record["model_family"] != family],
+                "mllm_avg_fair",
+            )
+        )
     robustness_rows.append(family_adjusted_spearman(core))
 
+    ijepa_q3_anomaly = any(
+        row["tokenizer"] == "I-JEPA" and row["field"] == "Qwen3 task mean"
+        for row in audit["avg_mismatches"]
+    )
+
+    def valid_task_cell(record: dict, backbone: str, task: str) -> bool:
+        return not (
+            ijepa_q3_anomaly
+            and record["tokenizer"] == "I-JEPA"
+            and backbone == BACKBONES[0]
+            and task == "ScienceQA"
+        )
+
     task_rows = []
-    for backbone, task_key in [("Qwen3-1.7B", "qwen3_tasks"), ("Qwen2.5-1.5B", "qwen25_tasks")]:
+    for backbone, task_key in [
+        (BACKBONES[0], "qwen3_tasks"),
+        (BACKBONES[1], "qwen25_tasks"),
+    ]:
         for task in TASKS:
             maximum = [
                 record
                 for record in records
                 if is_finite(record["probe_final"])
                 and is_finite(record[task_key][task])
-                and not (backbone == "Qwen3-1.7B" and task == "ScienceQA" and record["tokenizer"] == "I-JEPA")
+                and valid_task_cell(record, backbone, task)
             ]
-            matched = [record for record in core if is_finite(record[task_key][task])]
+            matched = [
+                record
+                for record in core
+                if is_finite(record[task_key][task])
+                and valid_task_cell(record, backbone, task)
+            ]
             max_x = [record["probe_final"] for record in maximum]
             max_y = [record[task_key][task] for record in maximum]
             matched_x = [record["probe_final"] for record in matched]
             matched_y = [record[task_key][task] for record in matched]
             max_result = stats.spearmanr(max_x, max_y)
             matched_result = stats.spearmanr(matched_x, matched_y)
-            ci_low, ci_high = bootstrap_corr_ci(max_x, max_y, "spearman", f"task-{backbone}-{task}")
+            ci_low, ci_high = bootstrap_corr_ci(
+                max_x, max_y, "spearman", f"task-{backbone}-{task}"
+            )
             task_rows.append(
                 {
                     "backbone": backbone,
@@ -1398,70 +1640,102 @@ def main() -> None:
                     "max_ci_low": ci_low,
                     "max_ci_high": ci_high,
                     "max_p": float(max_result.pvalue),
-                    "max_q_bh_22": float("nan"),
+                    "max_q_bh": float("nan"),
                     "matched_n": len(matched),
                     "matched_spearman_rho": float(matched_result.statistic),
                     "matched_p": float(matched_result.pvalue),
-                    "note": "I-JEPA excluded due row inconsistency" if backbone == "Qwen3-1.7B" and task == "ScienceQA" else "",
+                    "note": (
+                        "I-JEPA excluded because its Qwen3 task mean conflicts with the reported Avg and ScienceQA duplicates VQAv2"
+                        if backbone == BACKBONES[0]
+                        and task == "ScienceQA"
+                        and ijepa_q3_anomaly
+                        else ""
+                    ),
                 }
             )
     qvalues = benjamini_hochberg([row["max_p"] for row in task_rows])
     for row, qvalue in zip(task_rows, qvalues):
-        row["max_q_bh_22"] = qvalue
+        row["max_q_bh"] = qvalue
+
     for task in TASKS:
-        x = [record["probe_final"] for record in core]
-        y = [float(np.mean([record["qwen3_tasks"][task], record["qwen25_tasks"][task]])) for record in core]
+        matched = [
+            record
+            for record in core
+            if is_finite(record["qwen3_tasks"][task])
+            and is_finite(record["qwen25_tasks"][task])
+            and valid_task_cell(record, BACKBONES[0], task)
+        ]
+        x = [record["probe_final"] for record in matched]
+        y = [
+            float(
+                np.mean(
+                    [record["qwen3_tasks"][task], record["qwen25_tasks"][task]]
+                )
+            )
+            for record in matched
+        ]
         result = stats.spearmanr(x, y)
-        ci_low, ci_high = bootstrap_corr_ci(x, y, "spearman", f"task-combined-{task}")
+        ci_low, ci_high = bootstrap_corr_ci(
+            x, y, "spearman", f"task-combined-{task}"
+        )
         task_rows.append(
             {
                 "backbone": "Two-Qwen task mean",
                 "task": task,
-                "max_n": len(core),
+                "max_n": len(matched),
                 "max_spearman_rho": float(result.statistic),
                 "max_ci_low": ci_low,
                 "max_ci_high": ci_high,
                 "max_p": float(result.pvalue),
-                "max_q_bh_22": float("nan"),
-                "matched_n": len(core),
+                "max_q_bh": float("nan"),
+                "matched_n": len(matched),
                 "matched_spearman_rho": float(result.statistic),
                 "matched_p": float(result.pvalue),
-                "note": "Matched descriptive aggregate; excluded from the 22 backbone-specific BH tests.",
+                "note": (
+                    "I-JEPA excluded because the Qwen3 ScienceQA cell is under QC"
+                    if task == "ScienceQA" and ijepa_q3_anomaly
+                    else "Descriptive aggregate; excluded from backbone-specific BH tests."
+                ),
             }
         )
 
-    accuracy_matrix = np.asarray([record["epochs"] for record in epoch_records], dtype=float)
+    accuracy_matrix = np.asarray(
+        [record["epochs"] for record in epoch_records], dtype=float
+    )
     final_accuracy = accuracy_matrix[:, -1]
-    q3_epoch = np.asarray([record["qwen3_avg_reported"] for record in epoch_records])
-    epoch_core_names = {record["tokenizer"] for record in epoch_core}
     epoch_metrics = []
     for index in range(10):
-        current = accuracy_matrix[:, index]
-        matched_records = [record for record in epoch_records if record["tokenizer"] in epoch_core_names]
-        matched_current = [record["epochs"][index] for record in matched_records]
-        matched_q3 = [record["qwen3_avg_reported"] for record in matched_records]
-        matched_q25 = [record["qwen25_avg_reported"] for record in matched_records]
-        matched_fair_avg = [record["mllm_avg_fair"] for record in matched_records]
-        q3_max_result = stats.spearmanr(current, q3_epoch)
-        q3_matched_result = stats.spearmanr(matched_current, matched_q3)
-        q25_matched_result = stats.spearmanr(matched_current, matched_q25)
-        fair_avg_result = stats.spearmanr(matched_current, matched_fair_avg)
+        matched = [
+            record
+            for record in epoch_core
+            if is_finite(record["epochs"][index])
+            and is_finite(record["qwen3_avg_reported"])
+            and is_finite(record["qwen25_avg_reported"])
+        ]
+        current = np.asarray([record["epochs"][index] for record in matched])
+        q3_values = np.asarray([record["qwen3_avg_reported"] for record in matched])
+        q25_values = np.asarray([record["qwen25_avg_reported"] for record in matched])
+        fair_values = np.asarray([record["mllm_avg_fair"] for record in matched])
+        q3_result = stats.spearmanr(current, q3_values)
+        q25_result = stats.spearmanr(current, q25_values)
+        fair_result = stats.spearmanr(current, fair_values)
+        all_current = accuracy_matrix[:, index]
         epoch_metrics.append(
             {
                 "epoch": index + 1,
                 "n_all_histories": len(epoch_records),
-                "mean_accuracy": float(np.mean(current)),
-                "median_accuracy": float(np.median(current)),
-                "rank_stability_vs_epoch10_n33": float(stats.spearmanr(current, final_accuracy).statistic),
-                "spearman_vs_qwen3_avg_n33": float(q3_max_result.statistic),
-                "p_vs_qwen3_avg_n33": float(q3_max_result.pvalue),
-                "n_fair_mllm_avg": len(epoch_core),
-                "spearman_vs_qwen3_avg_matched_n29": float(q3_matched_result.statistic),
-                "p_vs_qwen3_avg_matched_n29": float(q3_matched_result.pvalue),
-                "spearman_vs_qwen25_avg_n29": float(q25_matched_result.statistic),
-                "p_vs_qwen25_avg_n29": float(q25_matched_result.pvalue),
-                "spearman_vs_fair_mllm_avg_n29": float(fair_avg_result.statistic),
-                "p_vs_fair_mllm_avg_n29": float(fair_avg_result.pvalue),
+                "mean_accuracy": float(np.mean(all_current)),
+                "median_accuracy": float(np.median(all_current)),
+                "rank_stability_vs_epoch10": float(
+                    stats.spearmanr(all_current, final_accuracy).statistic
+                ),
+                "n_mllm_matched": len(matched),
+                "spearman_vs_qwen3_avg": float(q3_result.statistic),
+                "p_vs_qwen3_avg": float(q3_result.pvalue),
+                "spearman_vs_qwen25_avg": float(q25_result.statistic),
+                "p_vs_qwen25_avg": float(q25_result.pvalue),
+                "spearman_vs_fair_mllm_avg": float(fair_result.statistic),
+                "p_vs_fair_mllm_avg": float(fair_result.pvalue),
             }
         )
 
@@ -1491,6 +1765,16 @@ def main() -> None:
     for comparison_type, label, baseline_name, changed_name in controlled_pairs:
         baseline = by_name[baseline_name]
         changed = by_name[changed_name]
+        if not all(
+            is_finite(value)
+            for value in [
+                baseline["probe_final"],
+                changed["probe_final"],
+                baseline["mllm_avg_fair"],
+                changed["mllm_avg_fair"],
+            ]
+        ):
+            continue
         controlled_rows.append(
             {
                 "comparison_type": comparison_type,
@@ -1503,7 +1787,8 @@ def main() -> None:
                 "delta_probe": changed["probe_final"] - baseline["probe_final"],
                 "baseline_mllm_avg": baseline["mllm_avg_fair"],
                 "changed_mllm_avg": changed["mllm_avg_fair"],
-                "delta_mllm_avg": changed["mllm_avg_fair"] - baseline["mllm_avg_fair"],
+                "delta_mllm_avg": changed["mllm_avg_fair"]
+                - baseline["mllm_avg_fair"],
             }
         )
 
@@ -1512,59 +1797,83 @@ def main() -> None:
         if not is_finite(record["probe_final"]):
             primary_reason = "missing ImageNet probe"
         elif not is_finite(record["qwen3_avg_reported"]):
-            primary_reason = "missing Qwen3 and Qwen2.5"
+            primary_reason = "missing Qwen3"
         elif not is_finite(record["qwen25_avg_reported"]):
             primary_reason = "missing Qwen2.5"
         else:
             primary_reason = "included"
-        row = {
-            "tokenizer": record["tokenizer"],
-            "visual_token_type": record["visual_token_type"],
-            "model_family": record["model_family"],
-            "probe_final": record["probe_final"],
-            "probe_history_status": record["probe_history_status"],
-            **{f"epoch_{index + 1}": value for index, value in enumerate(record["epochs"])},
-            "qwen3_avg_reported": record["qwen3_avg_reported"],
-            "qwen3_avg_recomputed_from_tasks": record["qwen3_avg_recomputed"],
-            "qwen25_avg_reported": record["qwen25_avg_reported"],
-            "qwen25_avg_recomputed_from_tasks": record["qwen25_avg_recomputed"],
-            "mllm_avg_reported_raw": record["mllm_avg_reported_raw"],
-            "mllm_avg_fair": record["mllm_avg_fair"],
-            "mllm_status": record["mllm_status"],
-            "in_primary_n38": record["in_primary_n38"],
-            "in_qwen3_max_n44": record["in_qwen3_max_n44"],
-            "in_epoch_combined_n29": record["in_epoch_combined_n29"],
-            "primary_status_or_exclusion": primary_reason,
-        }
-        cohort_rows.append(row)
+        cohort_rows.append(
+            {
+                "tokenizer": record["tokenizer"],
+                "visual_token_type": record["visual_token_type"],
+                "model_family": record["model_family"],
+                "probe_final": record["probe_final"],
+                "probe_history_status": record["probe_history_status"],
+                **{
+                    f"epoch_{index + 1}": value
+                    for index, value in enumerate(record["epochs"])
+                },
+                "qwen3_avg_reported": record["qwen3_avg_reported"],
+                "qwen3_avg_recomputed_from_tasks": record["qwen3_avg_recomputed"],
+                "qwen25_avg_reported": record["qwen25_avg_reported"],
+                "qwen25_avg_recomputed_from_tasks": record["qwen25_avg_recomputed"],
+                "mllm_avg_reported_raw": record["mllm_avg_reported_raw"],
+                "mllm_avg_fair": record["mllm_avg_fair"],
+                "mllm_avg_tasks_recomputed": record["mllm_avg_tasks_recomputed"],
+                "mllm_status": record["mllm_status"],
+                "in_primary": record["in_primary"],
+                "in_qwen3_max": record["in_qwen3_max"],
+                "in_qwen25_max": record["in_qwen25_max"],
+                "in_epoch_combined": record["in_epoch_combined"],
+                "primary_status_or_exclusion": primary_reason,
+            }
+        )
 
     exclusions = []
     for record in records:
-        if not record["in_primary_n38"]:
+        if not record["in_primary"]:
             if not is_finite(record["probe_final"]):
                 reason = "ImageNet linear probe missing"
             elif not is_finite(record["qwen3_avg_reported"]):
-                reason = "Both Qwen3 and Qwen2.5 MLLM results missing"
+                reason = "Qwen3 MLLM result missing"
             else:
-                reason = "Qwen2.5 MLLM result missing; raw main-table Avg is not a fair two-backbone average"
-            exclusions.append({"analysis": "Primary two-Qwen average (n=38)", "tokenizer": record["tokenizer"], "reason": reason})
+                reason = "Qwen2.5 MLLM result missing"
+            exclusions.append(
+                {
+                    "analysis": "Primary two-Qwen average",
+                    "analysis_n": len(core),
+                    "tokenizer": record["tokenizer"],
+                    "reason": reason,
+                }
+            )
         if record["probe_history_status"] != "full_10_epoch":
             reason = (
                 "Final probing exists, but Epochs 1-9 are absent from the epoch Markdown"
                 if record["probe_history_status"] == "final_only"
-                else "ImageNet probing was not run / is entirely missing"
+                else "ImageNet probing is entirely missing"
             )
-            exclusions.append({"analysis": "Ten-epoch trajectory (n=33)", "tokenizer": record["tokenizer"], "reason": reason})
-        if not record["in_qwen3_max_n44"]:
-            reason = "ImageNet linear probe missing" if not is_finite(record["probe_final"]) else "Qwen3 MLLM result missing"
-            exclusions.append({"analysis": "Qwen3 maximum coverage (n=44)", "tokenizer": record["tokenizer"], "reason": reason})
-    exclusions.append(
-        {
-            "analysis": "Qwen3 ScienceQA maximum coverage (n=43)",
-            "tokenizer": "I-JEPA",
-            "reason": "Conservative exclusion: Qwen3 task mean (35.09) conflicts with reported Avg (36.56), and ScienceQA duplicates VQAv2 at 47.08",
-        }
-    )
+            exclusions.append(
+                {
+                    "analysis": "Ten-epoch trajectory",
+                    "analysis_n": len(epoch_records),
+                    "tokenizer": record["tokenizer"],
+                    "reason": reason,
+                }
+            )
+    if ijepa_q3_anomaly:
+        exclusions.append(
+            {
+                "analysis": "Qwen3 ScienceQA task correlation",
+                "analysis_n": next(
+                    row["matched_n"]
+                    for row in task_rows
+                    if row["backbone"] == BACKBONES[0]
+                    and row["task"] == "ScienceQA"
+                ),
+                "tokenizer": "I-JEPA",
+                "reason": "Conservative cell-level QC exclusion: Qwen3 task mean conflicts with reported Avg and ScienceQA duplicates VQAv2",
+            }
+        )
 
     cohort_fields = [
         "tokenizer",
@@ -1579,10 +1888,12 @@ def main() -> None:
         "qwen25_avg_recomputed_from_tasks",
         "mllm_avg_reported_raw",
         "mllm_avg_fair",
+        "mllm_avg_tasks_recomputed",
         "mllm_status",
-        "in_primary_n38",
-        "in_qwen3_max_n44",
-        "in_epoch_combined_n29",
+        "in_primary",
+        "in_qwen3_max",
+        "in_qwen25_max",
+        "in_epoch_combined",
         "primary_status_or_exclusion",
     ]
     corr_fields = [
@@ -1608,27 +1919,47 @@ def main() -> None:
         "max_ci_low",
         "max_ci_high",
         "max_p",
-        "max_q_bh_22",
+        "max_q_bh",
         "matched_n",
         "matched_spearman_rho",
         "matched_p",
         "note",
     ]
-    epoch_fields = list(epoch_metrics[0])
-    prediction_fields = list(diagnostics[0])
-    prediction_metric_fields = list(prediction_metrics[0])
-    controlled_fields = list(controlled_rows[0])
 
     write_csv(DATA_DIR / "analysis_cohort.csv", cohort_fields, cohort_rows)
-    write_csv(DATA_DIR / "exclusions.csv", ["analysis", "tokenizer", "reason"], exclusions)
+    write_csv(
+        DATA_DIR / "exclusions.csv",
+        ["analysis", "analysis_n", "tokenizer", "reason"],
+        exclusions,
+    )
     write_csv(DATA_DIR / "correlation_summary.csv", corr_fields, summary_rows)
-    write_csv(DATA_DIR / "task_aggregation_robustness.csv", corr_fields, aggregation_rows)
+    write_csv(
+        DATA_DIR / "task_aggregation_robustness.csv",
+        corr_fields,
+        aggregation_rows,
+    )
     write_csv(DATA_DIR / "family_robustness.csv", corr_fields, robustness_rows)
     write_csv(DATA_DIR / "task_correlations.csv", task_fields, task_rows)
-    write_csv(DATA_DIR / "epoch_metrics.csv", epoch_fields, epoch_metrics)
-    write_csv(DATA_DIR / "prediction_diagnostics.csv", prediction_fields, diagnostics)
-    write_csv(DATA_DIR / "prediction_metrics.csv", prediction_metric_fields, prediction_metrics)
-    write_csv(DATA_DIR / "controlled_comparisons.csv", controlled_fields, controlled_rows)
+    write_csv(
+        DATA_DIR / "epoch_metrics.csv",
+        list(epoch_metrics[0]),
+        epoch_metrics,
+    )
+    write_csv(
+        DATA_DIR / "prediction_diagnostics.csv",
+        list(diagnostics[0]),
+        diagnostics,
+    )
+    write_csv(
+        DATA_DIR / "prediction_metrics.csv",
+        list(prediction_metrics[0]),
+        prediction_metrics,
+    )
+    write_csv(
+        DATA_DIR / "controlled_comparisons.csv",
+        list(controlled_rows[0]),
+        controlled_rows,
+    )
 
     plot_epoch_trajectories(epoch_records)
     plot_epochs_by_tokenizer(epoch_records)
@@ -1636,7 +1967,7 @@ def main() -> None:
     plot_epoch_predictiveness(epoch_metrics, epoch_records)
     plot_probe_vs_mllm(core, summary_by_label)
     plot_task_heatmap(task_rows, summary_by_label)
-    plot_robustness(robustness_rows[:-1])
+    plot_robustness(robustness_rows)
     plot_prediction_validation(diagnostics, prediction_metrics)
     plot_controlled_deltas(controlled_rows)
     write_report(
@@ -1654,7 +1985,10 @@ def main() -> None:
     )
 
     print(f"Wrote analysis to {HERE}")
-    print(f"Primary n={len(core)}, Spearman rho={summary_by_label['Primary: fair two-backbone avg']['spearman_rho']:.6f}")
+    print(
+        f"Primary n={len(core)}, "
+        f"Spearman rho={summary_by_label['Primary: fair two-backbone avg']['spearman_rho']:.6f}"
+    )
 
 
 if __name__ == "__main__":

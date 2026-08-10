@@ -1,12 +1,16 @@
 analysis,target,n,spearman_rho,spearman_ci_low,spearman_ci_high,spearman_p_asymptotic,spearman_p_permutation,pearson_r,pearson_p,kendall_tau_b,kendall_p,note
-Primary overall,mllm_avg_fair,38,0.94429854,0.86640214,0.97548154,5.8562253e-19,1.99996e-05,0.92181135,2.1752663e-16,0.82193816,4.0125893e-13,Complete-case intersection: ImageNet probe plus both Qwen backbone averages; all 38 are continuous.
-Full 10-epoch source only,mllm_avg_fair,29,0.93656855,0.80831998,0.98368366,8.2163775e-14,1.99996e-05,0.92336611,9.7460305e-13,0.8261412,3.2773435e-10,Restricts the primary analysis to tokenizers with all ten probing epochs.
-Final-only source only,mllm_avg_fair,9,0.97908807,0.81651376,1,4.2663224e-06,3.99992e-05,0.94122549,0.00015297389,0.92966968,0.00054150097,Tokenizers with a final probe in the main table but no earlier epochs in the Markdown file.
+Primary overall,mllm_avg_fair,45,0.81112063,0.60894935,0.93136159,1.4208377e-11,1.99996e-05,0.72092311,2.3345736e-08,0.66936334,9.3864995e-11,Maximum fair coverage: probe plus both reported backbone averages.
+Continuous only,mllm_avg_fair,41,0.83387055,0.63764573,0.95360743,1.2953726e-11,1.99996e-05,0.73047779,5.915843e-08,0.70818124,7.2522238e-11,
+Discrete only,mllm_avg_fair,4,0.2,-1,1,0.8,0.91686166,-0.11464525,0.88535475,0,1,Exploratory: only four discrete tokenizers.
+CLIP-like families,mllm_avg_fair,38,0.94429854,0.86826184,0.97607058,5.8562253e-19,1.99996e-05,0.92181135,2.1752663e-16,0.82193816,4.0125893e-13,Like-for-like sensitivity matching the families represented in the former n=38 complete-case cohort.
+Full 10-epoch source,mllm_avg_fair,33,0.90348459,0.78549784,0.96078448,6.1402229e-13,1.99996e-05,0.87036273,4.6892104e-11,0.75639844,6.288957e-10,All tokenizers with complete ten-epoch histories and both MLLM averages.
+Final-only source,mllm_avg_fair,12,0.61296066,-0.057765121,0.97849462,0.034067332,0.037579248,0.55131527,0.063163207,0.50383147,0.023314996,Final probe exists in the main table but earlier epochs are unavailable.
+Exclude DINOv3 (diagnostic),mllm_avg_fair,44,0.86616393,0.71165648,0.94660579,3.1252427e-14,1.99996e-05,0.80676405,3.7897571e-11,0.71746072,6.9747521e-12,Diagnostic only; DINOv3 is valid and remains in the primary analysis.
+Exclude RAE-v2 (diagnostic),mllm_avg_fair,44,0.85756572,0.69048897,0.945359,1.05855e-13,1.99996e-05,0.78245049,3.5343525e-10,0.71322791,9.250296e-12,Diagnostic only; RAE-v2 is valid and remains in the primary analysis.
 Within SigLIP2,mllm_avg_fair,13,0.91208791,0.6440678,1,1.3975553e-05,3.99992e-05,0.92843302,4.6554822e-06,0.79487179,3.1929233e-05,
 Within MetaCLIP1,mllm_avg_fair,9,0.98333333,0.81651376,1,1.9361963e-06,1.99996e-05,0.96370199,2.8953441e-05,0.94444444,4.9603175e-05,
 Within MetaCLIP2,mllm_avg_fair,15,0.92761431,0.68846747,0.9963638,6.383232e-07,1.99996e-05,0.89452904,6.7946282e-06,0.82297593,2.0340756e-05,
-Leave SigLIP2 out,mllm_avg_fair,25,0.926332,0.81203796,0.97291048,3.1251765e-11,1.99996e-05,0.90296354,6.6074357e-10,0.79131997,3.0833346e-08,
-Leave MetaCLIP1 out,mllm_avg_fair,29,0.9406258,0.84553037,0.97583395,3.4488547e-14,1.99996e-05,0.91469083,3.9342117e-12,0.8148173,5.927764e-10,
-Leave MetaCLIP2 out,mllm_avg_fair,23,0.96343874,0.87966036,0.99103586,1.7329804e-13,1.99996e-05,0.9617389,2.7718581e-13,0.86561265,2.8219652e-12,
-Leave OpenAI CLIP out,mllm_avg_fair,37,0.9475993,0.87667102,0.9766978,6.360598e-19,1.99996e-05,0.92171813,5.8048442e-16,0.8270686,6.2637049e-13,
-Family-adjusted pooled rank association,mllm_avg_fair,37,0.93500774,,,,1.99996e-05,,,,,Global ranks were centered within each family; singleton OpenAI CLIP contributes no within-family information.
+Leave SigLIP2 out,mllm_avg_fair,32,0.63788837,0.29856117,0.88135005,8.5881871e-05,0.0002199956,0.55539229,0.00096796924,0.51463195,3.5381357e-05,
+Leave MetaCLIP1 out,mllm_avg_fair,36,0.77950831,0.53530312,0.91952641,2.1206513e-08,1.99996e-05,0.68005725,5.0595616e-06,0.62639189,7.9778786e-08,
+Leave MetaCLIP2 out,mllm_avg_fair,30,0.81979978,0.5497965,0.96648812,2.9844656e-08,1.99996e-05,0.71552492,8.8132218e-06,0.69655172,2.2681066e-09,
+Family-adjusted pooled rank association,mllm_avg_fair,39,0.93116289,,,,1.99996e-05,,,,,"Global ranks were centered within replicated families; singleton families excluded: DINOv3, I-JEPA, OpenAI CLIP, RAE-v2, UniTok, VILA-U"

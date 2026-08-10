@@ -1,105 +1,101 @@
-# Linear probing 对 MLLM 表现的预测力
+# Linear probing 对 MLLM 表现的预测力（新版完整数据）
 
 ## 结论先行
 
-在公平的主队列上，ImageNet Epoch-10 linear probing 对两个 Qwen MLLM 的平均排名预测力很强：**n=38，Spearman rho=0.944**（tokenizer 自助法 95% CI [0.866, 0.975]），Pearson r=0.922，Kendall tau-b=0.822，置换检验 p=2.0e-05。这就是“约 0.94”的正确口径。
+新版公平主队列使用所有同时具备 ImageNet Epoch-10 probing、Qwen3 Avg 和 Qwen2.5 Avg 的 tokenizer。当前是 **n=45，Spearman rho=0.811**（tokenizer bootstrap 95% CI [0.609, 0.931]），Pearson r=0.721，Kendall tau-b=0.669，置换检验 p=2.0e-05。
 
-但结论需要加两个限定：
+这仍是很强的全局排序信号，但不再是旧版完整病例的 0.94。旧版对应的 CLIP-like 四类家族子集现在仍为 n=38、rho=0.944；把新补齐的 discrete、I-JEPA、RAE-v2、DINOv3 纳入后，主结果变成 rho=0.811。所以变化主要说明 **跨新 tokenizer 家族的泛化比家族内排序难**，不是旧数据或计算突然失效。
 
-- 这 38 个点全是 **continuous tokenizer**；4 个 discrete tokenizer 都缺 Qwen2.5，因此 0.944 不能直接外推到 discrete。
-- 预测强度对 MLLM backbone 敏感：在完全相同的 38 个 tokenizer 上，Qwen3 rho=0.863，Qwen2.5 rho=0.980，差 0.116（配对 bootstrap 95% CI [0.025, 0.269]）。两者均为强相关，但 Qwen2.5 更贴合 probing 排名。
+- 同一 n=45 队列上，Qwen3 rho=0.739，Qwen2.5 rho=0.833；后者高 0.094，配对 bootstrap 95% CI [0.002, 0.221]。
+- continuous tokenizer（n=41）rho=0.834；discrete（n=4）rho=0.200，但后者仅 4 点，只能描述，不能据此判定“没有关系”。
+- I-JEPA 的 Qwen3 Avg 存在行内不一致。排除它后 rho=0.813；统一从 22 个任务重算双 Qwen Avg 后 rho=0.810，主结论基本不变。
+- DINOv3 与 RAE-v2 是合法但明显的跨家族残差点；仅作敏感性诊断，分别删除时 rho=0.866 与 0.858，不作为主分析排除规则。
 
 ![Probing vs MLLM](figures/04_probe_vs_mllm_avg.png)
 
-## 数据口径与样本数
+## 数据覆盖与公平口径
 
-| 用途 | 使用数 | 公平性口径 | 排除 |
-|---|---:|---|---|
-| 主分析：probing × 两 Qwen 公平 Avg | 38 | probing、Qwen3、Qwen2.5 都完整；Avg 为两个 backbone Avg 等权平均 | 2 个无 probing；6 个缺 Qwen2.5；DINOv3 缺两个 MLLM |
-| Qwen3 最大覆盖 | 44 | 仅要求 probing + Qwen3 | 2 个无 probing；DINOv3 无 MLLM |
-| Qwen2.5 分析 | 38 | 仅要求 probing + Qwen2.5 | 同主队列；现有 Qwen2.5 均为 continuous |
-| 10-epoch 轨迹可视化 | 33 | 必须 10 轮全齐 | 12 个只有最终 probing；2 个 probing 全缺 |
-| 10-epoch × 两 Qwen Avg | 29 | 轨迹和两 backbone 都完整 | 上述双重完整病例交集 |
+| 项目 | 可用数 | 说明 |
+|---|---:|---|
+| 原始 tokenizer | 47 | 两个 CSV 名称集合与 Family 完全一致，按 tokenizer 名称关联 |
+| Qwen3 / Qwen2.5 全任务与 Avg | 47 / 47 | 两套 11 个任务均已补齐；Qwen3 缺失 0，Qwen2.5 缺失 0 |
+| 最终 ImageNet probing | 45 | 仍有 2 个完全缺 probing |
+| 主分析：probing × 两 Qwen 公平 Avg | 45 | 两个 backbone Avg 等权平均；只排除无 probing 的点 |
+| 完整 10-epoch 轨迹 | 33 | 10 轮固定同一 tokenizer 队列 |
+| 10-epoch × 两 Qwen Avg | 33 | 当前所有轨迹点都有两套 MLLM 数据 |
 
-主表有 47 个 tokenizer：45 个有最终 probing，33 个有全部 10 轮。完整排除列表在 [`data/exclusions.csv`](data/exclusions.csv)，逐 tokenizer 的合并审计表在 [`data/analysis_cohort.csv`](data/analysis_cohort.csv)。
+- probing 完全缺失：siglip2_sm16_512, siglip2_l16_512。
+- 有最终 probing、但没有前 9 轮：siglip2_g16_384, siglip2_g16_256, mc2_g14_378, mc2_b16_384, mc2_l14_224, mc2_b16_224, mc2_b32_384, mc2_b32_224, mc2_b32_224_mt5, I-JEPA, raev2, dinov3。
+- 旧版因 MLLM 缺失排除的 UniTok、VILA-U、TokLIP、I-JEPA、RAE-v2、DINOv3 已全部补齐，不再排除。
+- 完整逐项口径见 [analysis_cohort.csv](data/analysis_cohort.csv)，排除原因见 [exclusions.csv](data/exclusions.csv)。
 
-- probing 完全缺失（2）：`siglip2_sm16_512`, `siglip2_l16_512`。
-- 有最终 probing，但前 9 轮不在 epoch 文件（12）：`siglip2_g16_384`, `siglip2_g16_256`, `mc2_g14_378`, `mc2_b16_384`, `mc2_l14_224`, `mc2_b16_224`, `mc2_b32_384`, `mc2_b32_224`, `mc2_b32_224_mt5`, `I-JEPA`, `raev2`, `dinov3`。
-- Qwen2.5 整块缺失（7）：`unitok_attn`, `vilau_256`, `toklip_s_256`, `toklip_l_384`, `I-JEPA`, `raev2`, `dinov3`。
-- Qwen3 整块缺失（1）：`dinov3`。
-
-## 主相关性与稳健性
+## 总体相关性、分组与稳健性
 
 | 目标/子集 | n | Spearman rho | 95% CI | Pearson r | Kendall tau-b |
 |---|---:|---:|---:|---:|---:|
-| 两 Qwen 公平 Avg（主结果） | 38 | 0.944 | [0.866, 0.975] | 0.922 | 0.822 |
-| Qwen3 Avg（同一主队列） | 38 | 0.863 | [0.707, 0.950] | 0.831 | 0.724 |
-| Qwen2.5 Avg（同一主队列） | 38 | 0.980 | [0.947, 0.989] | 0.960 | 0.890 |
-| Qwen3 Avg（最大覆盖） | 44 | 0.792 | [0.604, 0.907] | 0.739 | 0.638 |
-| Qwen3 Avg（continuous only） | 40 | 0.818 | [0.638, 0.929] | 0.756 | 0.674 |
-| Qwen3 Avg（discrete only） | 4 | 0.000 | [-1.000, 1.000] | -0.337 | 0.000 |
-| 两 Qwen Avg（10-epoch 子集） | 29 | 0.937 | [0.808, 0.984] | 0.923 | 0.826 |
-| 两 Qwen Avg（只有最终 probing 的子集） | 9 | 0.979 | [0.817, 1.000] | 0.941 | 0.930 |
+| 两 Qwen 公平 Avg（主结果） | 45 | 0.811 | [0.609, 0.931] | 0.721 | 0.669 |
+| Qwen3 Avg（同队列） | 45 | 0.739 | [0.522, 0.883] | 0.638 | 0.594 |
+| Qwen2.5 Avg（同队列） | 45 | 0.833 | [0.633, 0.956] | 0.774 | 0.713 |
+| continuous only | 41 | 0.834 | [0.638, 0.954] | 0.730 | 0.708 |
+| discrete only（探索性） | 4 | 0.200 | [-1.000, 1.000] | -0.115 | 0.000 |
+| CLIP-like benchmark families | 38 | 0.944 | [0.868, 0.976] | 0.922 | 0.822 |
+| 完整 10-epoch 来源 | 33 | 0.903 | [0.785, 0.961] | 0.870 | 0.756 |
+| 只有最终 probing 来源 | 12 | 0.613 | [-0.058, 0.978] | 0.551 | 0.504 |
 
-“完整历史”子集 rho=0.937，“只有最终分数”子集 rho=0.979，说明 0.944 不是由两类 probing 数据源混合才人为造成的。但后者仅 n=9，区间会更不稳定。
+完整轨迹与 final-only 两组的家族组成不同，因此两者差异不能归因为“协作者数据质量”。它更像一个来源与模型家族共同变化的敏感性分析。
 
-高相关也不依赖任务的原始分数量纲：22 个任务单元直接平均 rho=0.944，先对每个任务 z-score 再平均为 0.943，任务内 rank 再平均为 0.937，z-score 中位数为 0.941。每次留掉 22 个任务中的一个，rho 只在 [0.932, 0.950] 之间，因此不是某一个任务单独驱动。逐项结果见 [`data/task_aggregation_robustness.csv`](data/task_aggregation_robustness.csv)。
+从 22 个详细任务直接重算均值时，rho=0.810；先逐任务 z-score 再平均为 0.817；逐任务 rank 后平均为 0.807；z-score 中位数为 0.800。每次留掉一个 backbone-task 单元，rho 范围 [0.799, 0.817]，说明结果不是单一任务或量纲驱动。完整表见 [task_aggregation_robustness.csv](data/task_aggregation_robustness.csv)。
 
-再逐一删除 tokenizer，rho 范围为 [0.940, 0.960]，主结果不由任何单点驱动。
+逐一删除 tokenizer 后，主 rho 范围为 [0.798, 0.866]。上界来自删除强跨家族残差点，说明新版结论比旧版更依赖“是否要求跨家族泛化”，应保留这个限定。
 
 ![Robustness](figures/06_family_and_source_robustness.png)
 
-## 具体 Qwen backbone 与任务
+## 具体 backbone 与任务
 
-为了直接比较两个 Qwen，热图固定用同一批 n=38 tokenizer；CSV 表另外保留 Qwen3 的最大覆盖口径（通常 n=44）。
+逐任务热图尽量使用全部 probing 可用点：通常 n=45；Qwen3 ScienceQA 及其双模型任务均值因 I-JEPA 疑似复制单元保守用 n=44。因此热图的任务级 n 范围为 44–45，每个格子的精确 n 在 [task_correlations.csv](data/task_correlations.csv)。
 
-- Qwen3：任务级 rho 从 MMMU=0.201 到 Flickr=0.884，11 项中 10/11 在未校正 p<0.05。
-- Qwen2.5：从 MMMU=0.379 到 Flickr=0.975，11/11 在未校正 p<0.05。
-- 两 backbone 的同名任务先平均后，从 MMMU=0.456 到 Flickr=0.955。
-- 同队列下，Qwen2.5 在 11/11 个任务上的 rho 都高于 Qwen3。Flickr、COCO、TextVQA/VQAv2 等任务与视觉 tokenizer 表征质量的相关性最高；MMMU 最弱，说明多学科推理能力的瓶颈不只是视觉表征。这是相关性解释，不是因果结论。
-
-按各 backbone 的最大可用队列对 22 个任务检验统一做 Benjamini-Hochberg 校正后，21/22 仍显著。
+- Qwen3：从 MMMU=0.196 到 Flickr=0.762；10/11 个任务未经多重校正时 p<0.05。
+- Qwen2.5：从 MMMU=0.330 到 Flickr=0.847；11/11 个任务未经多重校正时 p<0.05。
+- 两 backbone 同名任务等权平均后，从 MMMU=0.401 到 Flickr=0.824。
+- Qwen2.5 在 11/11 个任务上的 rho 高于 Qwen3。对 22 个 backbone-task 检验统一做 Benjamini-Hochberg 校正后，21/22 仍显著。
+- Flickr、COCO 等任务与 probing 关联最强，MMMU 最弱。合理解释是多学科推理还受语言与推理瓶颈限制；这只是相关性解释，不是因果证明。
 
 ![Task correlations](figures/05_task_correlation_heatmap.png)
 
-完整数值、自助区间、p 值与 22 项检验的 Benjamini-Hochberg q 值见 [`data/task_correlations.csv`](data/task_correlations.csv)。Qwen3/ScienceQA 的最大覆盖分析保守排除了 I-JEPA，因为该行存在明确的 Avg/任务均值冲突；匹配 n=38 队列本来就不含 I-JEPA。Qwen3 Avg 最大覆盖的结果对此不敏感：含 I-JEPA 时 rho=0.792，排除后 rho=0.788。
+## 10 个 epoch：逐轮 Spearman 表
 
-## 10 个 epoch：分数、排名与早停信号
+以下每一轮都固定使用同一批 n=33 tokenizer，同时计算 Qwen3、Qwen2.5 和两者公平平均，因此跨 epoch 和跨 backbone 可直接比较。
 
-下表是每个 probing epoch 与下游 MLLM Avg 的 Spearman rho。“匹配”三列固定用同一批 n=29 continuous tokenizer，可公平比较两个 Qwen；Qwen3 最大覆盖列另外纳入 4 个缺 Qwen2.5 的 discrete tokenizer，n=33。
-
-| Epoch | Qwen3 Avg（最大覆盖 n=33） | Qwen3 Avg（匹配 n=29） | Qwen2.5 Avg（匹配 n=29） | 两 Qwen 公平 Avg（n=29） |
+| Epoch | Qwen3 Avg rho | Qwen2.5 Avg rho | 两 Qwen公平 Avg rho | 与 Epoch-10 probing 排名 rho |
 |---:|---:|---:|---:|---:|
-| 1 | 0.859 | 0.850 | 0.978 | 0.921 |
-| 2 | 0.861 | 0.861 | 0.982 | 0.930 |
-| 3 | 0.852 | 0.846 | 0.978 | 0.919 |
-| 4 | 0.849 | 0.856 | 0.980 | 0.926 |
-| 5 | 0.851 | 0.867 | 0.977 | 0.932 |
-| 6 | 0.839 | 0.861 | 0.980 | 0.929 |
-| 7 | 0.849 | 0.875 | 0.982 | 0.940 |
-| 8 | 0.836 | 0.859 | 0.978 | 0.927 |
-| 9 | 0.846 | 0.876 | 0.980 | 0.939 |
-| 10 | 0.841 | 0.874 | 0.978 | 0.937 |
+| 1 | 0.859 | 0.945 | 0.917 | 0.975 |
+| 2 | 0.861 | 0.947 | 0.920 | 0.983 |
+| 3 | 0.852 | 0.945 | 0.913 | 0.984 |
+| 4 | 0.849 | 0.945 | 0.914 | 0.992 |
+| 5 | 0.851 | 0.941 | 0.914 | 0.996 |
+| 6 | 0.839 | 0.944 | 0.909 | 0.996 |
+| 7 | 0.849 | 0.941 | 0.913 | 0.998 |
+| 8 | 0.836 | 0.938 | 0.904 | 0.998 |
+| 9 | 0.846 | 0.936 | 0.909 | 0.999 |
+| 10 | 0.841 | 0.930 | 0.903 | 1.000 |
 
-对应的 p 值、每轮平均/中位准确率以及与 Epoch 10 的排名稳定性见 [`data/epoch_metrics.csv`](data/epoch_metrics.csv)。
+完整 p 值、每轮均值/中位准确率和样本数见 [epoch_metrics.csv](data/epoch_metrics.csv)。
 
 ![Epoch trajectories](figures/01_epoch_accuracy_trajectories.png)
 
-下图按 10 轮平均准确率对同一批 33 个 tokenizer 排序，横轴隐去具体名称；每个 tokenizer 的 10 个细点分别对应 Epoch 1–10，浅色带表示 Epoch 1 到 Epoch 10 的增益范围。
+下图按同一批 tokenizer 的 10 轮平均准确率排序，横轴不写 tokenizer 名；每条细线上的 10 个小点就是 Epoch 1–10。
 
 ![Epochs by tokenizer](figures/01b_epoch_by_tokenizer_overview.png)
 
 ![Epoch rank heatmap](figures/02_epoch_rank_heatmap.png)
 
-33 条完整轨迹中，E1→E10 提升的中位数是 2.42 个点。Epoch 1 与 Epoch 10 排名已有 rho=0.975，到 Epoch 9 为 0.999。对完整两-Qwen 子集，Epoch 1 对 MLLM Avg 的 rho=0.921，Epoch 10 为 0.937，差 0.016（配对 bootstrap 95% CI [-0.015, 0.068]）。区间跨 0，没有证据说 10 轮比 1 轮更能预测 MLLM；且相关不随 epoch 单调提升。
+E1→E10 的 probing 增益中位数为 2.42 pp；E1 与 E10 的全体排名 rho=0.975。对 MLLM 公平 Avg，E1 rho=0.917，E10 rho=0.903，变化 -0.014（配对 bootstrap 95% CI [-0.076, 0.039]）。区间跨 0，不能声称训练到第 10 轮会显著提高对 MLLM 的排序预测；当前数据中 E1 数值反而略高。
 
-这表明：在当前 continuous 模型范围内，**1 个 epoch 已经可以做粗筛排名**；但不能用它替代最终分数。toklip_s_256 和 toklip_l_384 从 E1 到 E10 都上升了 7 个名次，且 TokLIP 的 E1→E10 增益分别约 8.3 点；早停对这类收敛慢的 discrete tokenizer 不公平。
+这不等于 E1 可以替代 E10：TokLIP 等慢收敛 discrete tokenizer 的绝对 probing 会继续大幅上升。轨迹 LOOCV 中 E1-only MAE=1.41，E10-only MAE=1.75，E10+gain MAE=1.48。gain 与 MLLM Avg 的 rho=-0.843，与 E10-only 线性拟合残差的 rho=-0.221；目前没有稳定的额外动力学预测收益。
 
 ![Epoch predictiveness](figures/03_epoch_predictiveness.png)
 
-轨迹的“增益”本身与 MLLM Avg 负相关（rho=-0.811），主要因为低起点模型可上升空间更大；gain 与 E10-only 全样本线性拟合所得 MLLM 残差的 rho=-0.001，几乎无关。LOOCV 也一致：E1-only MAE=1.31，E10-only MAE=1.30，E10+增益 MAE=1.38；目前没证据说 10 轮动力学比单个准确率能额外预测 MLLM。
-
-## 家族内部与受控对比
+## 家族内部、局部选型和受控对比
 
 | 家族 | n | 家族内 Spearman rho | 95% CI |
 |---|---:|---:|---:|
@@ -107,55 +103,52 @@
 | MetaCLIP1 | 9 | 0.983 | [0.817, 1.000] |
 | MetaCLIP2 | 15 | 0.928 | [0.688, 0.996] |
 
-把全局秩在家族内去均值后，pooled family-adjusted 关联仍为 rho=0.935（n=37，家族内置换 p=2.0e-05）。所以整体高相关不只是 SigLIP2/MetaCLIP 家族均值之间的差异。OpenAI CLIP 只有 1 个点，不能算家族内相关。
+三大主家族内部仍分别很强。把全局秩在所有至少有 2 点的家族内中心化后，pooled family-adjusted rho=0.931（n=39，家族内置换 p=2.0e-05）。单点家族不能贡献家族内证据，这正是 RAE-v2、DINOv3 等新家族外推仍不确定的原因。
 
-不过，当只在高分段做精细选型时，关系会因取值范围收窄而变弱：probing 排名前半 n=19 的 rho=0.770；probing≥87 的 n=11 个点中 rho=0.592，p=0.055。所以 0.944 更适合解读为跨较广质量范围的排名 proxy，不是顶尖模型之间细微差异的完美判别器。
+在 probing 排名前半 n=22 中 rho=0.760；probing≥87 的 n=11 中 rho=0.592（p=0.055）。范围收窄后区分力下降，不能把全局 rho 直接理解成顶尖模型之间细微差值的精确预测。
 
-更严格地固定架构、只比较分辨率升级时，10/10 对都同时提高 probing 和 MLLM Avg；但两种增益幅度的 Spearman 只有 0.164（n=10，p=0.650）。因此 probing 对“方向”很好，却不宜解读为局部改动的精确增益估计器。n=10 且对比对来自两个家族，这一点应视为探索性结论。
+固定架构、只比较分辨率时，10/10 对的 probing 与 MLLM Avg 同方向增加；但增益幅度的 rho=0.164（p=0.650）。因此 probing 更适合判断整体方向，不适合把局部 probing 增益一比一换算成 MLLM 增益。
 
 ![Controlled deltas](figures/08_controlled_resolution_deltas.png)
 
-## “预测”而不只是同样本相关
+## 真正的样本外预测
 
-用一元线性校准 `MLLM Avg ~ probing`：
+一元线性校准 MLLM Avg ~ probing 的结果：
 
-- leave-one-tokenizer-out（n=38）：MAE=1.39，RMSE=1.93，R²cv=0.824；不用 probing 的训练集均值 baseline MAE=3.94。
-- leave-one-family-out（只评估三个有重复样本的主家族，n=37）：MAE=2.04，RMSE=2.67，R²cv=0.669；baseline MAE=5.07。
+| 验证方式 | n | MAE | RMSE | CV R² | 不用 probing 的 baseline MAE |
+|---|---:|---:|---:|---:|---:|
+| Leave-one-tokenizer-out | 45 | 2.58 | 3.82 | 0.478 | 4.51 |
+| Leave-one-family-out（全部家族） | 45 | 3.62 | 4.69 | 0.211 | 5.13 |
+| Leave-one-major-prefix-family-out（三大主家族） | 37 | 2.04 | 2.67 | 0.669 | 5.07 |
 
-这说明 probing 不只能在全样本上“拟合得好看”；对留出点、甚至留出整个家族仍有明显预测信号。但家族只有 SigLIP2、MetaCLIP1、MetaCLIP2 三个大组加一个单点 CLIP，leave-family-out 数字仍需要新家族验证。
+Leave-one-tokenizer-out 仍明显优于均值 baseline，但把整个家族留出后误差上升、R²下降。这和相关性部分一致：probing 是很好的表内排序 proxy，但遇到 RAE/DINO 一类新表征范式时，单变量校准不够。
 
-- Top-3 重合 2/3。
-- Top-5 重合 4/5。
-- Top-10 重合 8/10。
-
-全部 701 个非并列 tokenizer pair 中，639 对的 probing 与 MLLM 排序方向一致，即 91.2%；另有 2 对至少一边并列。
+- Top-3 重合 2/3，Top-5 重合 4/5，Top-10 重合 8/10。
+- 全部非并列 pair 中，825/988 方向一致，即 83.5%；另有 2 对并列。
 
 ![Prediction validation](figures/07_prediction_validation.png)
 
-## 数据质量问题与不可越过的边界
+## 数据质量与边界
 
-1. **不能直接用主表 `Avg` 列的缺失行。** 6 个只有 Qwen3 的 tokenizer 被写成 `Qwen3 Avg / 2`，DINOv3 两个 MLLM 都缺却写成 0.00。脚本已将这些值当 NA，只在两 backbone 都齐时重算公平 Avg。
-2. **I-JEPA 行内不一致。** 11 个 Qwen3 任务的算术均值是 35.09，CSV Avg 是 36.56，差 1.47；其 VQAv2 和 ScienceQA 又恰好都为 47.08，建议回查原始日志。主 n=38 分析不含 I-JEPA，因此不受影响。
-3. **完整 epoch 与最终分数来源。** 33 个 epoch 表的 E10 与主表逐项完全一致；另有 12 个只有主表最终分数，以及 2 个完全没有 probing。脚本不伪造前 9 轮，轨迹分析只用真实 33 个点。
-4. **不是因果证明。** 容量、预训练数据、分辨率和 tokenizer 家族同时影响 probing 与 MLLM；家族内分析能缓解，不能消除所有混杂。
-5. **相关性不代表差值可直接换算。** 整体排名很强，但局部分辨率增益的幅度相关很弱，且个别残差可超过 4 个 MLLM 分数点。
+1. 新主表总 Avg 已修复：47/47 都等于两个 backbone Avg 的等权平均（仅有两位小数舍入），检测到异常行数 0。
+2. I-JEPA/Qwen3 仍不一致：11 个任务均值 35.09，而 reported Avg 36.56，差 1.47；VQAv2 与 ScienceQA 又同为 47.08。当前检测到相关异常 1 条。主分析保留 reported Avg，并同时给出排除与任务重算敏感性；Qwen3 ScienceQA 单格分析保守排除 I-JEPA。
+3. 33 条完整轨迹的 E10 与主表逐项一致；12 个 tokenizer 只有最终 probing，2 个完全缺 probing。脚本不补造前 9 轮。
+4. 相关性不是因果证明。预训练数据、容量、分辨率和 tokenizer 范式会同时影响 probing 与 MLLM。
+5. discrete 只有 4 点，I-JEPA/RAE-v2/DINOv3 等多个家族只有单点，跨家族结论仍需更多同类 tokenizer 验证。
 
-## 文件索引与复现
+## 文件与复现
 
-- [`analyze.py`](analyze.py)：唯一分析脚本；解析、审计、统计、画图和报告生成都在这里。
-- [`data/analysis_cohort.csv`](data/analysis_cohort.csv) 与 [`data/exclusions.csv`](data/exclusions.csv)：47 个 tokenizer 的合并口径、入选标记与逐项排除原因。
-- [`data/correlation_summary.csv`](data/correlation_summary.csv)：主相关性与不同队列。
-- [`data/task_aggregation_robustness.csv`](data/task_aggregation_robustness.csv)：任务标准化、rank 聚合与 leave-one-task-out。
-- [`data/task_correlations.csv`](data/task_correlations.csv)：两个 Qwen 的逐任务结果。
-- [`data/family_robustness.csv`](data/family_robustness.csv)：家族内、留一家族和来源敏感性。
-- [`data/epoch_metrics.csv`](data/epoch_metrics.csv)：逐 epoch 排名稳定性与 MLLM 相关性。
-- [`data/prediction_metrics.csv`](data/prediction_metrics.csv) 与 [`data/prediction_diagnostics.csv`](data/prediction_diagnostics.csv)：样本外误差及逐 tokenizer 残差。
-- [`data/controlled_comparisons.csv`](data/controlled_comparisons.csv)：分辨率、预训练规模和 MT5 的成对对比。
+- [analyze.py](analyze.py)：唯一分析脚本，按双行表头解析字段并按 tokenizer 名称关联。
+- [correlation_summary.csv](data/correlation_summary.csv)：总体、连续/离散、旧 CLIP-like 子集和异常点敏感性。
+- [task_correlations.csv](data/task_correlations.csv)：逐 backbone、逐任务结果与 BH 校正。
+- [epoch_metrics.csv](data/epoch_metrics.csv)：10 个 epoch 各自与下游 MLLM 的 Spearman 和 p 值。
+- [family_robustness.csv](data/family_robustness.csv)：家族内、留一家族和来源敏感性。
+- [prediction_metrics.csv](data/prediction_metrics.csv)：LOOCV 与两种 leave-family-out 预测误差。
+- [analysis_cohort.csv](data/analysis_cohort.csv) / [exclusions.csv](data/exclusions.csv)：逐 tokenizer 入选与排除口径。
+- 其余结构化结果均在 data/，九张图均在 figures/。
 
-复现命令（需 NumPy、SciPy、Matplotlib）：
+复现命令：
 
-```bash
-conda run -n TokBench python result/tokenizer_mllm_analysis/analyze.py
-```
+    conda run -n TokBench python result/tokenizer_mllm_analysis/analyze.py
 
-所有 bootstrap/permutation 都使用固定种子 20260810，重跑可得到相同结果。
+所有 bootstrap/permutation 使用固定种子 20260810。
