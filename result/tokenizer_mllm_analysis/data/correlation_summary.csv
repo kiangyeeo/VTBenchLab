@@ -1,0 +1,10 @@
+analysis,target,n,spearman_rho,spearman_ci_low,spearman_ci_high,spearman_p_asymptotic,spearman_p_permutation,pearson_r,pearson_p,kendall_tau_b,kendall_p,note
+Primary: fair two-backbone avg,mllm_avg_fair,38,0.94429854,0.86640214,0.97548154,5.8562253e-19,1.99996e-05,0.92181135,2.1752663e-16,0.82193816,4.0125893e-13,Complete-case intersection: ImageNet probe plus both Qwen backbone averages; all 38 are continuous.
+Qwen3 Avg (matched n=38),qwen3_avg_reported,38,0.86336525,0.70695344,0.9504293,3.063508e-12,1.99996e-05,0.83123081,1.0392657e-10,0.72416269,1.6802447e-10,Same tokenizer cohort as the primary result.
+Qwen2.5 Avg (matched n=38),qwen25_avg_reported,38,0.9798632,0.94680261,0.98909604,8.7175611e-27,1.99996e-05,0.9604174,1.4279315e-21,0.88952268,4.2703432e-15,Same tokenizer cohort as the primary result.
+Qwen3 Avg (maximum coverage),qwen3_avg_reported,44,0.79155654,0.60408592,0.9068181,1.585399e-10,1.99996e-05,0.73948175,9.8260639e-09,0.63843312,1.0617762e-09,Maximum coverage: 40 continuous plus 4 discrete tokenizers; I-JEPA uses its reported Avg and is checked by exclusion sensitivity.
+"Qwen3 Avg (maximum coverage, excluding I-JEPA)",qwen3_avg_reported,43,0.78837078,0.59676289,0.90645082,3.466525e-10,1.99996e-05,0.73071931,2.652018e-08,0.63893521,1.6490375e-09,Sensitivity to I-JEPA's inconsistent task mean versus reported Avg.
+Qwen3 Avg (continuous only),qwen3_avg_reported,40,0.81803256,0.63785736,0.92919137,1.1574793e-10,1.99996e-05,0.75589915,1.7069645e-08,0.67437393,9.4734503e-10,Maximum continuous-only coverage.
+Qwen3 Avg (discrete only),qwen3_avg_reported,4,0,-1,1,1,1,-0.33660323,0.66339677,0,1,Exploratory only: four tokenizers and no Qwen2.5 results.
+Two-Qwen Avg (full 10-epoch histories),mllm_avg_fair,29,0.93656855,0.80831998,0.98368366,8.2163775e-14,1.99996e-05,0.92336611,9.7460305e-13,0.8261412,3.2773435e-10,Restricts the primary analysis to tokenizers with all ten probing epochs.
+Two-Qwen Avg (final-only probing),mllm_avg_fair,9,0.97908807,0.81651376,1,4.2663224e-06,3.99992e-05,0.94122549,0.00015297389,0.92966968,0.00054150097,Tokenizers with a final probe in the main table but no earlier epochs in the Markdown file.
