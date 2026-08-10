@@ -617,6 +617,66 @@ def plot_epoch_trajectories(epoch_records: Sequence[dict]) -> None:
     plt.close(fig)
 
 
+def plot_epochs_by_tokenizer(epoch_records: Sequence[dict]) -> None:
+    """Show all ten epochs across tokenizers, matching the requested overview style."""
+    sorted_records = sorted(epoch_records, key=lambda record: np.mean(record["epochs"]), reverse=True)
+    accuracy = np.asarray([record["epochs"] for record in sorted_records], dtype=float)
+    x = np.arange(len(sorted_records))
+    cmap = plt.get_cmap("viridis")
+    colors = cmap(np.linspace(0.08, 0.92, 10))
+
+    fig, axis = plt.subplots(figsize=(15.5, 6.4))
+    axis.fill_between(
+        x,
+        accuracy[:, 0],
+        accuracy[:, -1],
+        color="#4C78A8",
+        alpha=0.12,
+        linewidth=0,
+        label="Epoch 1→10 gain band",
+        zorder=1,
+    )
+    for epoch_index in range(10):
+        endpoint = epoch_index in {0, 9}
+        axis.plot(
+            x,
+            accuracy[:, epoch_index],
+            color=colors[epoch_index],
+            marker="o",
+            markersize=2.25 if endpoint else 1.55,
+            markeredgewidth=0,
+            linewidth=1.05 if endpoint else 0.55,
+            alpha=0.95 if endpoint else 0.62,
+            zorder=3 if endpoint else 2,
+        )
+
+    norm = matplotlib.colors.Normalize(vmin=1, vmax=10)
+    colorbar = fig.colorbar(matplotlib.cm.ScalarMappable(norm=norm, cmap=cmap), ax=axis, pad=0.015)
+    colorbar.set_ticks(range(1, 11))
+    colorbar.set_label("Linear-probe epoch")
+    axis.set_xlim(-0.45, len(sorted_records) - 0.55)
+    axis.set_xticks(x)
+    axis.set_xticklabels([])
+    axis.tick_params(axis="x", length=2.2, width=0.6)
+    axis.grid(axis="x", visible=False)
+    axis.set_xlabel("Tokenizer (sorted by 10-epoch mean accuracy; labels hidden)")
+    axis.set_ylabel("ImageNet Top-1 accuracy (%)")
+    axis.set_title(f"Ten linear-probe epochs by tokenizer (n={len(sorted_records)})")
+    axis.text(
+        0.985,
+        0.965,
+        f"mean E1→E10 gain = {np.mean(accuracy[:, -1] - accuracy[:, 0]):+.2f} pp",
+        transform=axis.transAxes,
+        ha="right",
+        va="top",
+        fontsize=9,
+        bbox={"boxstyle": "round,pad=0.25", "facecolor": "white", "edgecolor": "#BBBBBB", "alpha": 0.9},
+    )
+    fig.tight_layout()
+    fig.savefig(FIGURE_DIR / "01b_epoch_by_tokenizer_overview.png", dpi=210, bbox_inches="tight")
+    plt.close(fig)
+
+
 def plot_epoch_rank_heatmap(epoch_records: Sequence[dict]) -> None:
     sorted_records = sorted(epoch_records, key=lambda record: record["epochs"][-1], reverse=True)
     accuracy = np.asarray([record["epochs"] for record in epoch_records], dtype=float)
@@ -1097,6 +1157,10 @@ def write_report(
 
 ![Epoch trajectories](figures/01_epoch_accuracy_trajectories.png)
 
+下图按 10 轮平均准确率对同一批 33 个 tokenizer 排序，横轴隐去具体名称；每个 tokenizer 的 10 个细点分别对应 Epoch 1–10，浅色带表示 Epoch 1 到 Epoch 10 的增益范围。
+
+![Epochs by tokenizer](figures/01b_epoch_by_tokenizer_overview.png)
+
 ![Epoch rank heatmap](figures/02_epoch_rank_heatmap.png)
 
 33 条完整轨迹中，E1→E10 提升的中位数是 {np.median(gains):.2f} 个点。Epoch 1 与 Epoch 10 排名已有 rho={epoch1['rank_stability_vs_epoch10_n33']:.3f}，到 Epoch 9 为 {epoch_metrics[8]['rank_stability_vs_epoch10_n33']:.3f}。对完整两-Qwen 子集，Epoch 1 对 MLLM Avg 的 rho={epoch1['spearman_vs_fair_mllm_avg_n29']:.3f}，Epoch 10 为 {epoch10['spearman_vs_fair_mllm_avg_n29']:.3f}，差 {epoch_delta:.3f}（配对 bootstrap 95% CI [{epoch_delta_low:.3f}, {epoch_delta_high:.3f}]）。区间跨 0，没有证据说 10 轮比 1 轮更能预测 MLLM；且相关不随 epoch 单调提升。
@@ -1532,6 +1596,7 @@ def main() -> None:
     write_csv(DATA_DIR / "controlled_comparisons.csv", controlled_fields, controlled_rows)
 
     plot_epoch_trajectories(epoch_records)
+    plot_epochs_by_tokenizer(epoch_records)
     plot_epoch_rank_heatmap(epoch_records)
     plot_epoch_predictiveness(epoch_metrics, epoch_records)
     plot_probe_vs_mllm(core, summary_by_label)

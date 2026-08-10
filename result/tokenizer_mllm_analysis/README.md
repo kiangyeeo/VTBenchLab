@@ -68,6 +68,10 @@
 
 ![Epoch trajectories](figures/01_epoch_accuracy_trajectories.png)
 
+下图按 10 轮平均准确率对同一批 33 个 tokenizer 排序，横轴隐去具体名称；每个 tokenizer 的 10 个细点分别对应 Epoch 1–10，浅色带表示 Epoch 1 到 Epoch 10 的增益范围。
+
+![Epochs by tokenizer](figures/01b_epoch_by_tokenizer_overview.png)
+
 ![Epoch rank heatmap](figures/02_epoch_rank_heatmap.png)
 
 33 条完整轨迹中，E1→E10 提升的中位数是 2.42 个点。Epoch 1 与 Epoch 10 排名已有 rho=0.975，到 Epoch 9 为 0.999。对完整两-Qwen 子集，Epoch 1 对 MLLM Avg 的 rho=0.921，Epoch 10 为 0.937，差 0.016（配对 bootstrap 95% CI [-0.015, 0.068]）。区间跨 0，没有证据说 10 轮比 1 轮更能预测 MLLM；且相关不随 epoch 单调提升。
