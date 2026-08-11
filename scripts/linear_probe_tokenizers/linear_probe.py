@@ -233,7 +233,7 @@ class LinearPostprocessor(nn.Module):
         return {"preds": self.head(features), "target": targets}
 
 
-def _parse_args():
+def _build_parser():
     model_zoo = WORKSPACE / "TokBench" / "tokenizer_modelzoo"
     continuous_model_zoo = model_zoo / "continuous"
     image_scripts = WORKSPACE / "TokBench" / "tokenzier_vae_scripts" / "image_scripts"
@@ -374,7 +374,11 @@ def _parse_args():
         "--vqgan-checkpoint",
         default=str(vqgan_dir / "last.ckpt"),
     )
-    return parser.parse_args()
+    return parser
+
+
+def _parse_args():
+    return _build_parser().parse_args()
 
 
 def _seed_everything(seed: int) -> None:
@@ -519,8 +523,10 @@ def _evaluate_heads(
     data_loader,
     iteration: int,
     output_dir: Path,
+    metric=None,
 ):
-    metric = build_metric(MetricType.MEAN_ACCURACY, num_classes=NUM_CLASSES)
+    if metric is None:
+        metric = build_metric(MetricType.MEAN_ACCURACY, num_classes=NUM_CLASSES)
     postprocessors = {name: LinearPostprocessor(head) for name, head in head_grid.heads.items()}
     metrics = {name: metric.clone() for name in head_grid.heads}
     _stats, raw_results = evaluate(
