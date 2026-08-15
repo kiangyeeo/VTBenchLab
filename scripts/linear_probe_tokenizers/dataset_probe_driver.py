@@ -35,6 +35,8 @@ SAFE_FEATURE_MICROBATCH_SIZES = {
     "unitok": 256,
     "vqgan": 16,
 }
+REQUIRE_CHECKPOINT_FINGERPRINT = False
+REQUIRE_EPOCH_CUTOFF = False
 
 if str(BASE_SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(BASE_SCRIPT_DIR))
@@ -48,6 +50,7 @@ _spec.loader.exec_module(base)
 
 def _parse_args():
     parser = base._build_parser()
+    parser.allow_abbrev = False
     parser.description = (
         f"{DATASET_DISPLAY_NAME} single-surface linear probing using the tokenizer "
         "ImageNet protocol"
@@ -67,6 +70,16 @@ def _parse_args():
         type=int,
         default=10,
         help="Training epochs; one epoch is ceil(train_size / 1024) updates.",
+    )
+    parser.add_argument(
+        "--stop-after-epoch",
+        type=int,
+        default=None,
+        help=(
+            "Operational cutoff for this invocation. The optimizer and cosine schedule "
+            "still use --epochs as their full horizon; an intermediate cutoff saves a "
+            "resumable checkpoint and validation result without running the test split."
+        ),
     )
     parser.add_argument(
         "--seed",
@@ -340,6 +353,12 @@ def main() -> int:
         )
     if args.epochs <= 0:
         raise ValueError("--epochs must be positive")
+    if args.stop_after_epoch is not None and not (
+        1 <= args.stop_after_epoch <= args.epochs
+    ):
+        raise ValueError("--stop-after-epoch must be in [1, --epochs]")
+    if REQUIRE_EPOCH_CUTOFF and args.stop_after_epoch is None:
+        raise ValueError("This protocol requires an explicit --stop-after-epoch cutoff")
     if args.num_workers < 0:
         raise ValueError("--num-workers must be non-negative")
     if args.feature_microbatch_size <= 0:
@@ -426,6 +445,8 @@ def main() -> int:
         epoch_length=epoch_length,
         seed=args.seed,
     )
+    stop_after_epoch = args.stop_after_epoch or args.epochs
+    stop_after_update = stop_after_epoch * base.EPOCH_LENGTH
 
     sample = train_dataset[0][0].unsqueeze(0).to(device)
     in_dim = base._validate_feature_model(feature_model, sample)
@@ -470,6 +491,38 @@ def main() -> int:
     start_update = int(checkpoint.get("iteration", -1)) + 1
     if start_update < 0 or start_update > base.MAX_UPDATES:
         raise RuntimeError(f"Invalid checkpoint update: {start_update}")
+    if start_update % base.EPOCH_LENGTH != 0:
+        raise RuntimeError(
+            f"Checkpoint update {start_update} is not an epoch boundary of "
+            f"{base.EPOCH_LENGTH} updates"
+        )
+    if start_update > 0:
+        checkpoint_fingerprint = checkpoint.get("protocol_fingerprint")
+        if checkpoint_fingerprint is None and REQUIRE_CHECKPOINT_FINGERPRINT:
+            raise RuntimeError("Checkpoint is missing its protocol fingerprint")
+        if (
+            checkpoint_fingerprint is not None
+            and checkpoint_fingerprint != protocol["fingerprint"]
+        ):
+            raise RuntimeError(
+                "Checkpoint protocol fingerprint does not match protocol.json: "
+                f"{checkpoint_fingerprint!r} != {protocol['fingerprint']!r}"
+            )
+        checkpoint_epoch = checkpoint.get("completed_epoch")
+        expected_checkpoint_epoch = start_update // base.EPOCH_LENGTH
+        if (
+            REQUIRE_CHECKPOINT_FINGERPRINT
+            and checkpoint_epoch != expected_checkpoint_epoch
+        ):
+            raise RuntimeError(
+                "Checkpoint completed_epoch does not match its iteration: "
+                f"{checkpoint_epoch!r} != {expected_checkpoint_epoch}"
+            )
+    if scheduler.last_epoch != start_update:
+        raise RuntimeError(
+            "Scheduler state does not match checkpoint iteration: "
+            f"last_epoch={scheduler.last_epoch}, start_update={start_update}"
+        )
 
     val_loader = base.make_data_loader(
         dataset=val_dataset,
@@ -491,6 +544,41 @@ def main() -> int:
         drop_last=False,
         persistent_workers=False,
     )
+
+    if start_update > stop_after_update:
+        target_validation = _load_history_iteration(
+            output_dir / "metrics_history.jsonl",
+            stop_after_update,
+        )
+        if target_validation is None or not _is_complete_validation_payload(
+            target_validation,
+            stop_after_update,
+        ):
+            raise RuntimeError(
+                f"Checkpoint is already at update {start_update}, beyond the requested "
+                f"epoch-{stop_after_epoch} cutoff ({stop_after_update} updates), but its "
+                "validation history is missing or incomplete"
+            )
+        base.LOGGER.info(
+            "%s %s is already beyond requested epoch %d: checkpoint update=%d, "
+            "target update=%d",
+            DATASET_DISPLAY_NAME,
+            args.model,
+            stop_after_epoch,
+            start_update,
+            stop_after_update,
+        )
+        return 0
+
+    if (
+        args.stop_after_epoch is not None
+        and stop_after_update - start_update > base.EPOCH_LENGTH
+    ):
+        raise RuntimeError(
+            f"Requested epoch {stop_after_epoch} would advance from update "
+            f"{start_update} to {stop_after_update}, more than one epoch. Run each "
+            "preceding epoch cutoff first so the global tokenizer barrier is preserved."
+        )
 
     if start_update == base.MAX_UPDATES:
         final_validation = _load_completed_validation(
@@ -540,14 +628,17 @@ def main() -> int:
         persistent_workers=args.num_workers > 0,
     )
     base.LOGGER.info(
-        "Starting %s %s seed=%d from update %d/%d; epochs=%d, "
-        "updates/epoch=%d, samples/epoch=%d, train_size=%d",
+        "Starting %s %s seed=%d from update %d/%d; full_epochs=%d, "
+        "stop_after_epoch=%d, stop_after_update=%d, updates/epoch=%d, "
+        "samples/epoch=%d, train_size=%d",
         DATASET_DISPLAY_NAME,
         args.model,
         args.seed,
         start_update,
         base.MAX_UPDATES,
         args.epochs,
+        stop_after_epoch,
+        stop_after_update,
         base.EPOCH_LENGTH,
         base.EPOCH_LENGTH * base.BATCH_SIZE,
         len(train_dataset),
@@ -571,18 +662,33 @@ def main() -> int:
             output_dir,
         )
 
-    if start_update < base.MAX_UPDATES:
+    if start_update == stop_after_update:
+        if _load_completed_validation(output_dir, stop_after_update) is None:
+            raise RuntimeError(
+                f"Missing or incomplete validation result at completed cutoff update "
+                f"{stop_after_update}"
+            )
+        base.LOGGER.info(
+            "%s %s already completed requested epoch %d at update %d",
+            DATASET_DISPLAY_NAME,
+            args.model,
+            stop_after_epoch,
+            stop_after_update,
+        )
+        return 0
+
+    if start_update < stop_after_update:
         metric_logger = base.MetricLogger(delimiter="  ")
         remaining_batches = itertools.islice(
             train_loader,
-            base.MAX_UPDATES - start_update,
+            stop_after_update - start_update,
         )
         update = start_update
         for images, labels in metric_logger.log_every(
             remaining_batches,
             10,
             "Training",
-            base.MAX_UPDATES,
+            stop_after_update,
             start_update,
         ):
             if images.shape[0] != base.BATCH_SIZE:
@@ -617,7 +723,12 @@ def main() -> int:
                 completed_updates % base.EPOCH_LENGTH == 0
                 and completed_updates < base.MAX_UPDATES
             ):
-                checkpointer.save("running_checkpoint_linear_eval", iteration=update)
+                checkpointer.save(
+                    "running_checkpoint_linear_eval",
+                    iteration=update,
+                    completed_epoch=completed_updates // base.EPOCH_LENGTH,
+                    protocol_fingerprint=protocol["fingerprint"],
+                )
                 _evaluate_validation_heads(
                     feature_model,
                     head_grid,
@@ -627,7 +738,28 @@ def main() -> int:
                 )
             update += 1
 
-    checkpointer.save("model_final", iteration=base.MAX_UPDATES - 1)
+    if stop_after_update < base.MAX_UPDATES:
+        if _load_completed_validation(output_dir, stop_after_update) is None:
+            raise RuntimeError(
+                f"Missing or incomplete validation result at intermediate cutoff update "
+                f"{stop_after_update}"
+            )
+        base.LOGGER.info(
+            "%s %s reached epoch %d/%d; checkpoint and validation are complete. "
+            "Deferring later epochs and the official test split to a future invocation.",
+            DATASET_DISPLAY_NAME,
+            args.model,
+            stop_after_epoch,
+            args.epochs,
+        )
+        return 0
+
+    checkpointer.save(
+        "model_final",
+        iteration=base.MAX_UPDATES - 1,
+        completed_epoch=args.epochs,
+        protocol_fingerprint=protocol["fingerprint"],
+    )
     final_validation = _evaluate_validation_heads(
         feature_model,
         head_grid,

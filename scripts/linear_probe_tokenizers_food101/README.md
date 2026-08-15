@@ -4,6 +4,12 @@ This experiment uses the 45 configurations listed in `Tokenizer_set_up.md`
 and the same fixed feature surfaces, 13-head learning-rate grid, batch 1024,
 SGD, and cosine schedule as `scripts/linear_probe_tokenizers`.
 
+The canonical panel is globally synchronized by epoch. Every tokenizer first
+finishes the epoch-1 checkpoint and validation; only then may any tokenizer
+start epoch 2. The same barrier is repeated through epoch 10. The optimizer
+and cosine horizon stay fixed at ten epochs throughout -- the per-process
+cutoff never shortens or restarts the learning-rate schedule.
+
 Food-101 is exactly balanced at 750 official train and 250 official test
 images for each of 101 classes. The official test is kept untouched. A fixed
 class-stratified split (seed 0, independent of the training seed) holds out
@@ -30,11 +36,12 @@ sampled images, 1.39% over one train pass. Training, per-epoch validation, and
 one final test total 791,850 frozen-backbone image forwards, about 5.95% of the
 current ImageNet-1K protocol.
 
-Scaling the existing ImageNet logs gives roughly 39--42 GPU-hours for the 35
-manifest models that already have usable timing traces. The remaining ten
-include unmeasured giant/high-resolution models, so the full 45-configuration
-panel is strictly more expensive and does not yet have a defensible total
-estimate.
+Scaling the existing ImageNet logs gives roughly 65--85 GPU-hours for the full
+45-configuration panel before allowing for unusually slow model/dataset
+startup. Because the epoch-barrier protocol reloads each backbone once per
+epoch, plan roughly 3--4 days on one A100 or 15--22 hours on eight A100s with
+the static sharding below. These are engineering estimates, not Food-101 wall
+times measured from a completed panel.
 
 ## Models
 
@@ -62,45 +69,63 @@ exceeds the visible GPU's memory.
 ## Run
 
 Use the same `dino` environment as the ImageNet probes. `run_model.sh` accepts
-either the document id or the implementation id:
+either the document id or the implementation id. For example, this advances
+one tokenizer through epoch 1 while retaining the ten-epoch cosine horizon:
 
 ```bash
 conda activate dino
 CUDA_VISIBLE_DEVICES=0 \
-  bash scripts/linear_probe_tokenizers_food101/run_model.sh unitok_attn
+  bash scripts/linear_probe_tokenizers_food101/run_model.sh \
+    unitok_attn --epochs 10 --stop-after-epoch 1
 ```
 
-Run the complete manifest sequentially on one visible GPU:
+The canonical coordinator runs the complete manifest epoch by epoch on one
+already-visible GPU:
 
 ```bash
 CUDA_VISIBLE_DEVICES=0 \
   bash scripts/linear_probe_tokenizers_food101/run_panel.sh
 ```
 
-For eight GPUs, launch one process per GPU with matching shard settings. For
-example, GPU 3 runs:
+For eight GPUs, launch one coordinator and give it the complete GPU list. It
+starts eight static shards for one epoch, checks every worker exit status, and
+starts the next epoch only after all eight succeed:
 
 ```bash
-CUDA_VISIBLE_DEVICES=3 \
-FOOD101_PANEL_SHARD_COUNT=8 \
-FOOD101_PANEL_SHARD_INDEX=3 \
+FOOD101_PANEL_GPUS=0,1,2,3,4,5,6,7 \
   bash scripts/linear_probe_tokenizers_food101/run_panel.sh
 ```
 
-Set `FOOD101_PANEL_DRY_RUN=1` to inspect a shard's assignments without
-starting any model.
+`run_panel_epoch.sh` is the one-epoch shard worker used by the coordinator; do
+not launch independent ten-epoch shard loops, because they would not provide a
+global barrier. Set `FOOD101_PANEL_DRY_RUN=1` to inspect all 10 x 45 scheduled
+jobs without starting a model.
+
+If the coordinator stops during epoch N, restart from that same barrier:
+
+```bash
+FOOD101_PANEL_START_EPOCH=N \
+FOOD101_PANEL_GPUS=0,1,2,3,4,5,6,7 \
+  bash scripts/linear_probe_tokenizers_food101/run_panel.sh
+```
+
+Models that already completed epoch N validate their saved history and no-op;
+unfinished models resume from epoch N-1. The driver refuses to advance a model
+by more than one epoch in one invocation, so a mistakenly skipped barrier
+fails instead of silently violating the schedule.
 
 All launchers resume by default. Outputs are isolated under
 `outputs/food101_linear_probing_dinov2_single_surface/<model>/seed<seed>/`.
 Use `metrics_history.jsonl` for epoch-by-epoch rank stability;
-`results_eval_linear.json` contains the final held-out validation table and
-`results_test_linear.json` contains the one-head official-test result.
+`results_eval_linear.json` contains the latest held-out validation table.
+`results_test_linear.json` is created only at epoch 10 and contains the
+one-head official-test result.
 
-Checkpoint resume restores the heads, optimizer, scheduler, and sampler
-position, but not DataLoader worker augmentation RNG state. Therefore an
-interrupted run is not guaranteed to be bitwise identical to an uninterrupted
-run with the same seed; seed-stability comparisons should use uninterrupted
-runs where practical.
+Each planned epoch boundary restores the heads, optimizer, scheduler, and
+sampler position. Restarting the process also restarts DataLoader worker
+augmentation RNG, so this synchronized trajectory intentionally differs from
+one uninterrupted ten-epoch process. An unplanned interruption within an
+epoch is not guaranteed to be bitwise identical after resume.
 
 The previous five-tokenizer Food-101 experiment selected readout/LR on the
 official test and used a different training protocol, so its absolute scores

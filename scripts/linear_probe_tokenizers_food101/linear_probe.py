@@ -16,7 +16,7 @@ DRIVER_PATH = (
 )
 MANIFEST_PATH = Path(__file__).resolve().parent / "tokenizers_from_setup.tsv"
 OUTPUT_ROOT = WORKSPACE / "outputs" / "food101_linear_probing_dinov2_single_surface"
-PROTOCOL_VERSION = "tokenizer_linear_probe_food101_balanced_single_surface_v1"
+PROTOCOL_VERSION = "tokenizer_linear_probe_food101_balanced_epoch_barrier_v2"
 DATASET_NAME = "food101"
 DATASET_DISPLAY_NAME = "Food-101-balanced"
 NUM_CLASSES = 101
@@ -299,14 +299,25 @@ def _make_food101_protocol(
                 "evaluate only after training using the head selected on final validation; "
                 "never use official test for model or LR selection"
             ),
+            "execution_schedule": (
+                "global tokenizer barrier after every epoch: all 45 configurations finish "
+                "checkpoint plus validation for epoch N before any starts epoch N+1"
+            ),
+            "execution_cutoff_semantics": (
+                "stop_after_epoch controls only one process invocation and is excluded from "
+                "the protocol fingerprint; the optimizer and cosine horizon remain fixed at "
+                f"the configured {args.epochs} epochs"
+            ),
             "feature_microbatch_default_source": (
                 "conservative per-model map in "
                 "scripts/linear_probe_tokenizers_food101/linear_probe.py"
             ),
             "resume_augmentation_note": (
-                "head, optimizer, scheduler, and sampler position resume exactly, but worker "
-                "random-augmentation RNG state is not checkpointed; interrupted and continuous "
-                "runs are not guaranteed bitwise identical"
+                "the planned process boundary after every epoch restores head, optimizer, "
+                "scheduler, and sampler position, but restarts DataLoader worker augmentation "
+                "RNG; this epoch-barrier trajectory intentionally differs from one uninterrupted "
+                f"{args.epochs}-epoch process. An unplanned mid-epoch resume is not "
+                "bitwise identical"
             ),
             "reported_metrics": {
                 "top-1": "micro accuracy; used for LR-head selection",
@@ -335,6 +346,8 @@ driver.DATASET_DISPLAY_NAME = DATASET_DISPLAY_NAME
 driver.NUM_CLASSES = NUM_CLASSES
 driver.MODEL_CHOICES = MODEL_CHOICES
 driver.SAFE_FEATURE_MICROBATCH_SIZES = FEATURE_MICROBATCH_SIZES
+driver.REQUIRE_CHECKPOINT_FINGERPRINT = True
+driver.REQUIRE_EPOCH_CUTOFF = True
 driver.EXPECTED_SPLIT_SIZES = {
     "train": NUM_CLASSES * TRAIN_PER_CLASS,
     "validation": NUM_CLASSES * VALIDATION_PER_CLASS,
