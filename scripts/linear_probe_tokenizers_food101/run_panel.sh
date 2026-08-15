@@ -2,11 +2,13 @@
 set -euo pipefail
 
 FOOD101_SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+source "$FOOD101_SCRIPT_DIR/run_common.sh"
 FOOD101_TOTAL_EPOCHS="${FOOD101_TOTAL_EPOCHS:-10}"
 FOOD101_PANEL_START_EPOCH="${FOOD101_PANEL_START_EPOCH:-1}"
 FOOD101_PANEL_END_EPOCH="${FOOD101_PANEL_END_EPOCH:-$FOOD101_TOTAL_EPOCHS}"
 FOOD101_PANEL_GPUS="${FOOD101_PANEL_GPUS:-}"
 FOOD101_PANEL_DRY_RUN="${FOOD101_PANEL_DRY_RUN:-0}"
+FOOD101_SEED="${FOOD101_SEED:-0}"
 
 for value_name in FOOD101_TOTAL_EPOCHS FOOD101_PANEL_START_EPOCH FOOD101_PANEL_END_EPOCH; do
     value="${!value_name}"
@@ -21,6 +23,10 @@ if (( FOOD101_PANEL_START_EPOCH > FOOD101_PANEL_END_EPOCH )); then
 fi
 if (( FOOD101_PANEL_END_EPOCH > FOOD101_TOTAL_EPOCHS )); then
     echo "!! FOOD101_PANEL_END_EPOCH must not exceed FOOD101_TOTAL_EPOCHS" >&2
+    exit 2
+fi
+if [[ ! "$FOOD101_SEED" =~ ^[0-9]+$ ]]; then
+    echo "!! FOOD101_SEED must be a non-negative integer" >&2
     exit 2
 fi
 
@@ -73,12 +79,14 @@ for ((epoch = FOOD101_PANEL_START_EPOCH; epoch <= FOOD101_PANEL_END_EPOCH; epoch
             FOOD101_PANEL_SHARD_COUNT="$worker_count" \
             FOOD101_PANEL_SHARD_INDEX="$worker_index" \
             FOOD101_PANEL_DRY_RUN="$FOOD101_PANEL_DRY_RUN" \
+            FOOD101_SEED="$FOOD101_SEED" \
                 bash "$FOOD101_SCRIPT_DIR/run_panel_epoch.sh" "$epoch" "$@" &
         else
             FOOD101_TOTAL_EPOCHS="$FOOD101_TOTAL_EPOCHS" \
             FOOD101_PANEL_SHARD_COUNT=1 \
             FOOD101_PANEL_SHARD_INDEX=0 \
             FOOD101_PANEL_DRY_RUN="$FOOD101_PANEL_DRY_RUN" \
+            FOOD101_SEED="$FOOD101_SEED" \
                 bash "$FOOD101_SCRIPT_DIR/run_panel_epoch.sh" "$epoch" "$@" &
         fi
         worker_pids+=("$!")
@@ -95,6 +103,17 @@ for ((epoch = FOOD101_PANEL_START_EPOCH; epoch <= FOOD101_PANEL_END_EPOCH; epoch
     if (( round_failed != 0 )); then
         echo "!! global epoch $epoch failed; epoch $((epoch + 1)) will not start" >&2
         exit 1
+    fi
+    if [[ "$FOOD101_PANEL_DRY_RUN" != "1" ]]; then
+        echo ">> generating epoch $epoch score report for all 45 tokenizers"
+        if ! python "$FOOD101_SCRIPT_DIR/summarize_epoch.py" \
+            --epoch "$epoch" \
+            --total-epochs "$FOOD101_TOTAL_EPOCHS" \
+            --seed "$FOOD101_SEED" \
+            --output-root "$FOOD101_OUT_ROOT"; then
+            echo "!! epoch $epoch score report failed; epoch $((epoch + 1)) will not start" >&2
+            exit 1
+        fi
     fi
     echo ">> ===== global epoch $epoch complete for all 45 tokenizers ====="
 done

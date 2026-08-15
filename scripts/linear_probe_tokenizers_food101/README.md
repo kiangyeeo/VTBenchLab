@@ -6,9 +6,12 @@ SGD, and cosine schedule as `scripts/linear_probe_tokenizers`.
 
 The canonical panel is globally synchronized by epoch. Every tokenizer first
 finishes the epoch-1 checkpoint and validation; only then may any tokenizer
-start epoch 2. The same barrier is repeated through epoch 10. The optimizer
-and cosine horizon stay fixed at ten epochs throughout -- the per-process
-cutoff never shortens or restarts the learning-rate schedule.
+start epoch 2. At every barrier the coordinator validates all 45 histories,
+prints the complete validation ranking, and saves CSV/JSON/Markdown score
+reports. Report generation must succeed before the next epoch starts. The same
+barrier is repeated through epoch 10. The optimizer and cosine horizon stay
+fixed at ten epochs throughout -- the per-process cutoff never shortens or
+restarts the learning-rate schedule.
 
 Food-101 is exactly balanced at 750 official train and 250 official test
 images for each of 101 classes. The official test is kept untouched. A fixed
@@ -89,7 +92,7 @@ CUDA_VISIBLE_DEVICES=0 \
 
 For eight GPUs, launch one coordinator and give it the complete GPU list. It
 starts eight static shards for one epoch, checks every worker exit status, and
-starts the next epoch only after all eight succeed:
+generates the 45-tokenizer score report before starting the next epoch:
 
 ```bash
 FOOD101_PANEL_GPUS=0,1,2,3,4,5,6,7 \
@@ -114,12 +117,31 @@ unfinished models resume from epoch N-1. The driver refuses to advance a model
 by more than one epoch in one invocation, so a mistakenly skipped barrier
 fails instead of silently violating the schedule.
 
+The controlled panel seed defaults to zero. Use `FOOD101_SEED=N` rather than a
+passthrough `--seed`; use `FOOD101_OUT_ROOT=/path` rather than `--output-root`.
+
 All launchers resume by default. Outputs are isolated under
 `outputs/food101_linear_probing_dinov2_single_surface/<model>/seed<seed>/`.
 Use `metrics_history.jsonl` for epoch-by-epoch rank stability;
 `results_eval_linear.json` contains the latest held-out validation table.
 `results_test_linear.json` is created only at epoch 10 and contains the
 one-head official-test result.
+
+After every completed barrier, aggregate reports are written to:
+
+```text
+outputs/food101_linear_probing_dinov2_single_surface/epoch_reports/
+  epoch_01_seed0.csv
+  epoch_01_seed0.json
+  epoch_01_seed0.md
+  ...
+```
+
+Each report contains all 45 validation scores, macro scores, selected LR,
+rank, and the per-model change from the preceding epoch. From epoch 2 onward
+it also reports Spearman rank stability against the previous epoch for all 45
+configurations and for the 44 independent tokenizer points. Epoch 10 adds the
+held-out official-test scores.
 
 Each planned epoch boundary restores the heads, optimizer, scheduler, and
 sampler position. Restarting the process also restarts DataLoader worker

@@ -15,6 +15,7 @@ FOOD101_TOTAL_EPOCHS="${FOOD101_TOTAL_EPOCHS:-10}"
 FOOD101_PANEL_SHARD_COUNT="${FOOD101_PANEL_SHARD_COUNT:-1}"
 FOOD101_PANEL_SHARD_INDEX="${FOOD101_PANEL_SHARD_INDEX:-0}"
 FOOD101_PANEL_DRY_RUN="${FOOD101_PANEL_DRY_RUN:-0}"
+FOOD101_SEED="${FOOD101_SEED:-0}"
 
 for value_name in target_epoch FOOD101_TOTAL_EPOCHS FOOD101_PANEL_SHARD_COUNT; do
     value="${!value_name}"
@@ -36,10 +37,14 @@ if [[ "$FOOD101_PANEL_DRY_RUN" != "0" && "$FOOD101_PANEL_DRY_RUN" != "1" ]]; the
     echo "!! FOOD101_PANEL_DRY_RUN must be 0 or 1" >&2
     exit 2
 fi
+if [[ ! "$FOOD101_SEED" =~ ^[0-9]+$ ]]; then
+    echo "!! FOOD101_SEED must be a non-negative integer" >&2
+    exit 2
+fi
 
 for argument in "$@"; do
     case "$argument" in
-        -h|--help|--model|--model=*|--epochs|--epochs=*|--stop-after-epoch|--stop-after-epoch=*|--no-resume|--output-dir|--output-dir=*)
+        -h|--help|--model|--model=*|--epochs|--epochs=*|--stop-after-epoch|--stop-after-epoch=*|--seed|--seed=*|--no-resume|--output-dir|--output-dir=*|--output-root|--output-root=*)
             echo "!! panel scheduling owns $argument; it cannot be passed through" >&2
             exit 2
             ;;
@@ -59,6 +64,7 @@ while IFS=$'\t' read -r setup_id probe_model; do
                 "$probe_model" \
                 --epochs "$FOOD101_TOTAL_EPOCHS" \
                 --stop-after-epoch "$target_epoch" \
+                --seed "$FOOD101_SEED" \
                 "$@"
         fi
     fi
