@@ -62,9 +62,13 @@ def evaluate(
 
     metric_logger = MetricLogger(delimiter="  ")
     header = "Test:"
+    keep_inputs_on_cpu = bool(
+        getattr(model, "keep_evaluation_inputs_on_cpu", False)
+    )
 
     for samples, targets, *_ in metric_logger.log_every(data_loader, 10, header):
-        outputs = model(samples.to(device))
+        model_inputs = samples if keep_inputs_on_cpu else samples.to(device)
+        outputs = model(model_inputs)
         targets = targets.to(device)
 
         if criterion is not None:

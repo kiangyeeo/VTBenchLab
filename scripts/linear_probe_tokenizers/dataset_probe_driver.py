@@ -35,6 +35,7 @@ SAFE_FEATURE_MICROBATCH_SIZES = {
     "unitok": 256,
     "vqgan": 16,
 }
+KEEP_EVAL_INPUTS_ON_CPU_MODELS = frozenset()
 REQUIRE_CHECKPOINT_FINGERPRINT = False
 REQUIRE_EPOCH_CUTOFF = False
 
@@ -411,6 +412,15 @@ def main() -> int:
         device=device,
         microbatch_size=args.feature_microbatch_size,
     ).to(device).eval()
+    feature_model.keep_evaluation_inputs_on_cpu = (
+        args.model in KEEP_EVAL_INPUTS_ON_CPU_MODELS
+    )
+    if feature_model.keep_evaluation_inputs_on_cpu:
+        base.LOGGER.info(
+            "Validation/test image batches remain on CPU and are transferred by the "
+            "frozen-feature microbatch wrapper for model %s",
+            args.model,
+        )
 
     train_dataset, val_dataset, test_dataset = _build_datasets(args, bundle)
     for split_name, dataset in (

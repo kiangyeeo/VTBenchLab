@@ -346,6 +346,12 @@ driver.DATASET_DISPLAY_NAME = DATASET_DISPLAY_NAME
 driver.NUM_CLASSES = NUM_CLASSES
 driver.MODEL_CHOICES = MODEL_CHOICES
 driver.SAFE_FEATURE_MICROBATCH_SIZES = FEATURE_MICROBATCH_SIZES
+# TokLIP-L at 384px already peaks near 80 GiB while forwarding a 256-image
+# feature microbatch.  Keep the outer 1024-image evaluation batch on CPU so
+# FrozenFeatureModel, rather than the generic DINO evaluator, owns H2D staging.
+# This changes only input staging for the still-unfinished evaluation; the
+# configured feature microbatch and optimization protocol remain unchanged.
+driver.KEEP_EVAL_INPUTS_ON_CPU_MODELS = frozenset({"toklip_l"})
 driver.REQUIRE_CHECKPOINT_FINGERPRINT = True
 driver.REQUIRE_EPOCH_CUTOFF = True
 driver.EXPECTED_SPLIT_SIZES = {
