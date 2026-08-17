@@ -2,6 +2,7 @@
 """Dataset linear-probing driver aligned with the ImageNet tokenizer protocol."""
 
 from importlib.util import module_from_spec, spec_from_file_location
+import gc
 import itertools
 import json
 import math
@@ -136,6 +137,13 @@ def _evaluate_validation_heads(
         output_dir,
         metric=_build_accuracy_metric(),
     )
+
+
+def _shutdown_loader_iterator(iterator) -> None:
+    """Stop DataLoader workers before another split creates its worker pool."""
+    shutdown_workers = getattr(iterator, "_shutdown_workers", None)
+    if callable(shutdown_workers):
+        shutdown_workers()
 
 
 def _load_json(path: Path) -> dict:
@@ -626,33 +634,6 @@ def main() -> int:
         )
         return 0
 
-    train_loader = base.make_data_loader(
-        dataset=train_dataset,
-        batch_size=base.BATCH_SIZE,
-        num_workers=args.num_workers,
-        shuffle=True,
-        seed=args.seed,
-        sampler_type=base.SamplerType.SHARDED_INFINITE,
-        sampler_advance=start_update * base.BATCH_SIZE,
-        drop_last=True,
-        persistent_workers=args.num_workers > 0,
-    )
-    base.LOGGER.info(
-        "Starting %s %s seed=%d from update %d/%d; full_epochs=%d, "
-        "stop_after_epoch=%d, stop_after_update=%d, updates/epoch=%d, "
-        "samples/epoch=%d, train_size=%d",
-        DATASET_DISPLAY_NAME,
-        args.model,
-        args.seed,
-        start_update,
-        base.MAX_UPDATES,
-        args.epochs,
-        stop_after_epoch,
-        stop_after_update,
-        base.EPOCH_LENGTH,
-        base.EPOCH_LENGTH * base.BATCH_SIZE,
-        len(train_dataset),
-    )
     if (
         0 < start_update < base.MAX_UPDATES
         and start_update % base.EPOCH_LENGTH == 0
@@ -687,10 +668,41 @@ def main() -> int:
         )
         return 0
 
+    train_loader = base.make_data_loader(
+        dataset=train_dataset,
+        batch_size=base.BATCH_SIZE,
+        num_workers=args.num_workers,
+        shuffle=True,
+        seed=args.seed,
+        sampler_type=base.SamplerType.SHARDED_INFINITE,
+        sampler_advance=start_update * base.BATCH_SIZE,
+        drop_last=True,
+        # An explicit epoch cutoff starts a new process for the next epoch, so keeping
+        # this worker pool alive can only overlap it with validation and raise host RAM.
+        persistent_workers=(args.num_workers > 0 and args.stop_after_epoch is None),
+    )
+    base.LOGGER.info(
+        "Starting %s %s seed=%d from update %d/%d; full_epochs=%d, "
+        "stop_after_epoch=%d, stop_after_update=%d, updates/epoch=%d, "
+        "samples/epoch=%d, train_size=%d",
+        DATASET_DISPLAY_NAME,
+        args.model,
+        args.seed,
+        start_update,
+        base.MAX_UPDATES,
+        args.epochs,
+        stop_after_epoch,
+        stop_after_update,
+        base.EPOCH_LENGTH,
+        base.EPOCH_LENGTH * base.BATCH_SIZE,
+        len(train_dataset),
+    )
+
     if start_update < stop_after_update:
         metric_logger = base.MetricLogger(delimiter="  ")
+        train_iterator = iter(train_loader)
         remaining_batches = itertools.islice(
-            train_loader,
+            train_iterator,
             stop_after_update - start_update,
         )
         update = start_update
@@ -739,20 +751,42 @@ def main() -> int:
                     completed_epoch=completed_updates // base.EPOCH_LENGTH,
                     protocol_fingerprint=protocol["fingerprint"],
                 )
-                _evaluate_validation_heads(
-                    feature_model,
-                    head_grid,
-                    val_loader,
-                    completed_updates,
-                    output_dir,
-                )
+                # For an invocation cutoff, defer validation until the train iterator
+                # and its worker pool have been destroyed. Large 512px batches can
+                # otherwise push the host cgroup over its RAM limit when val workers
+                # are created alongside persistent train workers.
+                if completed_updates != stop_after_update:
+                    _evaluate_validation_heads(
+                        feature_model,
+                        head_grid,
+                        val_loader,
+                        completed_updates,
+                        output_dir,
+                    )
             update += 1
+            del images, labels, features, logits, losses, loss
+
+        del remaining_batches
+        _shutdown_loader_iterator(train_iterator)
+        del train_iterator, train_loader
+        optimizer.zero_grad(set_to_none=True)
+        gc.collect()
+        base.LOGGER.info(
+            "Released training batches and DataLoader workers before validation"
+        )
 
     if stop_after_update < base.MAX_UPDATES:
-        if _load_completed_validation(output_dir, stop_after_update) is None:
-            raise RuntimeError(
-                f"Missing or incomplete validation result at intermediate cutoff update "
-                f"{stop_after_update}"
+        completed_validation = _load_completed_validation(
+            output_dir,
+            stop_after_update,
+        )
+        if completed_validation is None:
+            completed_validation = _evaluate_validation_heads(
+                feature_model,
+                head_grid,
+                val_loader,
+                stop_after_update,
+                output_dir,
             )
         base.LOGGER.info(
             "%s %s reached epoch %d/%d; checkpoint and validation are complete. "

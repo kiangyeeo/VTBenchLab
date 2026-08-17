@@ -34,6 +34,12 @@ that selected head and is never used for selection. A completed result is
 detected and skipped on restart; an evaluation interrupted before its result
 is written must be rerun.
 
+At each epoch cutoff the training DataLoader workers and the last optimization
+batch are explicitly released before validation workers start. This keeps the
+train and validation worker pools from overlapping in host memory, which is
+especially important for 512-pixel tokenizers. The held-out validation score
+is still computed, saved, and included in the barrier report after every epoch.
+
 At the default 10 epochs there are 65 updates per approximate epoch: 66,560
 sampled images, 1.39% over one train pass. Training, per-epoch validation, and
 one final test total 791,850 frozen-backbone image forwards, about 5.95% of the
