@@ -229,6 +229,112 @@ RAEV2_SPECS = {
     },
 }
 
+# directory, timm architecture, input size, readout kind, backbone width,
+# projection width (PE-Core only). The local checkpoints use the official
+# Perception Encoder key layout; timm's EVA checkpoint filter converts it.
+PE_SPECS = {
+    "pe_lang_g14_448": (
+        "PE-Lang-G14-448", "vit_pe_lang_gigantic_patch14_448", 448, "patch_mean", 1536, None,
+    ),
+    "pe_lang_l14_448": (
+        "PE-Lang-L14-448", "vit_pe_lang_large_patch14_448", 448, "patch_mean", 1024, None,
+    ),
+    "pe_lang_g14_448_tiling": (
+        "PE-Lang-G14-448-Tiling", "vit_pe_lang_gigantic_patch14_448", 448, "patch_mean", 1536, None,
+    ),
+    "pe_lang_l14_448_tiling": (
+        "PE-Lang-L14-448-Tiling", "vit_pe_lang_large_patch14_448", 448, "patch_mean", 1024, None,
+    ),
+    "pe_core_g14_448": (
+        "PE-Core-G14-448", "vit_pe_core_gigantic_patch14_448", 448, "attention_pool", 1536, 1280,
+    ),
+    "pe_core_l14_336": (
+        "PE-Core-L14-336", "vit_pe_core_large_patch14_336", 336, "attention_pool", 1024, 1024,
+    ),
+    "pe_core_b16_224": (
+        "PE-Core-B16-224", "vit_pe_core_base_patch16_224", 224, "attention_pool", 768, 1024,
+    ),
+    "pe_core_s16_384": (
+        "PE-Core-S16-384", "vit_pe_core_small_patch16_384", 384, "attention_pool", 384, 512,
+    ),
+    "pe_core_t16_384": (
+        "PE-Core-T16-384", "vit_pe_core_tiny_patch16_384", 384, "attention_pool", 192, 512,
+    ),
+    "pe_spatial_g14_448": (
+        "PE-Spatial-G14-448", "vit_pe_spatial_gigantic_patch14_448", 448, "patch_mean", 1536, None,
+    ),
+    "pe_spatial_l14_448": (
+        "PE-Spatial-L14-448", "vit_pe_spatial_large_patch14_448", 448, "patch_mean", 1024, None,
+    ),
+    "pe_spatial_b16_512": (
+        "PE-Spatial-B16-512", "vit_pe_spatial_base_patch16_512", 512, "patch_mean", 768, None,
+    ),
+    "pe_spatial_s16_512": (
+        "PE-Spatial-S16-512", "vit_pe_spatial_small_patch16_512", 512, "patch_mean", 384, None,
+    ),
+    "pe_spatial_t16_512": (
+        "PE-Spatial-T16-512", "vit_pe_spatial_tiny_patch16_512", 512, "patch_mean", 192, None,
+    ),
+}
+
+# directory, expected transformers model_type. All ViT entries use the same
+# fixed concat(CLS, mean(patch)) readout. Register tokens are excluded.
+DINO_VIT_SPECS = {
+    "dinov3_vitl16_lvd1689m": ("dinov3-vitl16-pretrain-lvd1689m", "dinov3_vit"),
+    "dinov3_vith16plus_lvd1689m": ("dinov3-vith16plus-pretrain-lvd1689m", "dinov3_vit"),
+    "dinov3_vitb16_lvd1689m": ("dinov3-vitb16-pretrain-lvd1689m", "dinov3_vit"),
+    "dinov3_vits16_lvd1689m": ("dinov3-vits16-pretrain-lvd1689m", "dinov3_vit"),
+    "dinov3_vits16plus_lvd1689m": ("dinov3-vits16plus-pretrain-lvd1689m", "dinov3_vit"),
+    "dinov3_vit7b16_lvd1689m": ("dinov3-vit7b16-pretrain-lvd1689m", "dinov3_vit"),
+    "dinov2_giant": ("dinov2-giant", "dinov2"),
+    "dinov2_large": ("dinov2-large", "dinov2"),
+    "dinov2_base": ("dinov2-base", "dinov2"),
+    "dinov2_small": ("dinov2-small", "dinov2"),
+    "dinov1_vitb16": ("dino-vitb16", "vit"),
+    "dinov1_vits16": ("dino-vits16", "vit"),
+    "dinov1_vitb8": ("dino-vitb8", "vit"),
+    "dinov1_vits8": ("dino-vits8", "vit"),
+}
+
+DINOV3_CONVNEXT_SPECS = {
+    "dinov3_convnext_large_lvd1689m": (
+        "dinov3-convnext-large-pretrain-lvd1689m", "dinov3_convnext",
+    ),
+    "dinov3_convnext_base_lvd1689m": (
+        "dinov3-convnext-base-pretrain-lvd1689m", "dinov3_convnext",
+    ),
+    "dinov3_convnext_small_lvd1689m": (
+        "dinov3-convnext-small-pretrain-lvd1689m", "dinov3_convnext",
+    ),
+    "dinov3_convnext_tiny_lvd1689m": (
+        "dinov3-convnext-tiny-pretrain-lvd1689m", "dinov3_convnext",
+    ),
+}
+
+WEBSSL_DINO_SPECS = {
+    "webssl_dino300m_full2b_224": ("webssl-dino300m-full2b-224", "dinov2"),
+    "webssl_dino1b_full2b_224": ("webssl-dino1b-full2b-224", "dinov2"),
+    "webssl_dino2b_full2b_224": ("webssl-dino2b-full2b-224", "dinov2"),
+    "webssl_dino3b_full2b_224": ("webssl-dino3b-full2b-224", "dinov2"),
+    "webssl_dino5b_full2b_224": ("webssl-dino5b-full2b-224", "dinov2"),
+    "webssl_dino7b_full8b_224": ("webssl-dino7b-full8b-224", "dinov2"),
+    "webssl_dino7b_full8b_378": ("webssl-dino7b-full8b-378", "dinov2"),
+    "webssl_dino7b_full8b_518": ("webssl-dino7b-full8b-518", "dinov2"),
+    "webssl_dino2b_light2b_224": ("webssl-dino2b-light2b-224", "dinov2"),
+    "webssl_dino2b_heavy2b_224": ("webssl-dino2b-heavy2b-224", "dinov2"),
+    "webssl_dino3b_light2b_224": ("webssl-dino3b-light2b-224", "dinov2"),
+    "webssl_dino3b_heavy2b_224": ("webssl-dino3b-heavy2b-224", "dinov2"),
+    "webssl_dino300m_light2b_224": ("webssl-dino300m-light2b-224", "dinov2"),
+}
+
+WEBSSL_MAE_SPECS = {
+    "webssl_mae300m_full2b_224": ("webssl-mae300m-full2b-224", "vit"),
+    "webssl_mae700m_full2b_224": ("webssl-mae700m-full2b-224", "vit"),
+    "webssl_mae1b_full2b_224": ("webssl-mae1b-full2b-224", "vit"),
+    "webssl_mae2b_full2b_224": ("webssl-mae2b-full2b-224", "vit"),
+    "webssl_mae3b_full2b_224": ("webssl-mae3b-full2b-224", "vit"),
+}
+
 DINOV3_L_CHECKPOINT = (
     "encoders/dinov3/dinov3_vitl16_pretrain_lvd1689m-8aa4cbdd.pth"
 )
@@ -311,6 +417,87 @@ class SigLIP2MAPEncoder(nn.Module):
         if features.ndim != 2:
             raise RuntimeError(f"Unexpected SigLIP 2 MAP shape: {tuple(features.shape)}")
         return features.float()
+
+
+class PerceptionEncoderReadout(nn.Module):
+    """Fixed PE readout: Core attention pool or Lang/Spatial patch mean."""
+
+    def __init__(self, model: nn.Module, readout_kind: str):
+        super().__init__()
+        if readout_kind not in {"attention_pool", "patch_mean"}:
+            raise ValueError(f"Unsupported Perception Encoder readout: {readout_kind}")
+        self.model = model
+        self.readout_kind = readout_kind
+
+    def forward(self, images: torch.Tensor) -> torch.Tensor:
+        tokens = self.model.forward_features(images)
+        if tokens.ndim != 3:
+            raise RuntimeError(f"Unexpected Perception Encoder token shape: {tuple(tokens.shape)}")
+        if self.readout_kind == "attention_pool":
+            features = self.model.forward_head(tokens, pre_logits=True)
+        else:
+            prefix_count = int(self.model.num_prefix_tokens)
+            patch_tokens = tokens[:, prefix_count:]
+            if patch_tokens.shape[1] == 0:
+                raise RuntimeError("Perception Encoder returned no patch tokens")
+            features = patch_tokens.mean(dim=1)
+        if features.ndim != 2:
+            raise RuntimeError(
+                f"Unexpected Perception Encoder readout shape: {tuple(features.shape)}"
+            )
+        return features.float()
+
+
+class HFClsPatchEncoder(nn.Module):
+    """Concatenate final normalized CLS with the mean patch token."""
+
+    def __init__(self, model: nn.Module, register_token_count: int):
+        super().__init__()
+        self.model = model
+        self.prefix_token_count = 1 + int(register_token_count)
+
+    def forward(self, images: torch.Tensor) -> torch.Tensor:
+        outputs = self.model(pixel_values=images, return_dict=True)
+        tokens = outputs.last_hidden_state
+        if tokens.ndim != 3 or tokens.shape[1] <= self.prefix_token_count:
+            raise RuntimeError(
+                "Unexpected DINO token shape: "
+                f"tokens={tuple(tokens.shape)}, prefix_count={self.prefix_token_count}"
+            )
+        cls_token = tokens[:, 0]
+        patch_mean = tokens[:, self.prefix_token_count:].mean(dim=1)
+        return torch.cat((cls_token, patch_mean), dim=-1).float()
+
+
+class HFConvNeXtGlobalEncoder(nn.Module):
+    """DINOv3 ConvNeXt final-stage GAP followed by the released final norm."""
+
+    def __init__(self, model: nn.Module):
+        super().__init__()
+        self.model = model
+
+    def forward(self, images: torch.Tensor) -> torch.Tensor:
+        outputs = self.model(pixel_values=images, return_dict=True)
+        features = outputs.pooler_output
+        if features is None or features.ndim != 2:
+            shape = None if features is None else tuple(features.shape)
+            raise RuntimeError(f"Unexpected DINOv3 ConvNeXt pooled shape: {shape}")
+        return features.float()
+
+
+class HFMeanPatchEncoder(nn.Module):
+    """Mean of final normalized patch tokens, excluding the ViT CLS token."""
+
+    def __init__(self, model: nn.Module):
+        super().__init__()
+        self.model = model
+
+    def forward(self, images: torch.Tensor) -> torch.Tensor:
+        outputs = self.model(pixel_values=images, return_dict=True)
+        tokens = outputs.last_hidden_state
+        if tokens.ndim != 3 or tokens.shape[1] <= 1:
+            raise RuntimeError(f"Unexpected Web-MAE token shape: {tuple(tokens.shape)}")
+        return tokens[:, 1:].mean(dim=1).float()
 
 
 class RAEv2LatentEncoder(nn.Module):
@@ -510,7 +697,14 @@ def _resolve_checkpoint(path: str) -> str:
     if checkpoint.is_file():
         return str(checkpoint)
     if checkpoint.is_dir():
-        for name in ("model.safetensors", "pytorch_model.bin", "open_clip_pytorch_model.bin", "checkpoint.pth"):
+        for name in (
+            "model.safetensors",
+            "model.safetensors.index.json",
+            "pytorch_model.bin",
+            "pytorch_model.bin.index.json",
+            "open_clip_pytorch_model.bin",
+            "checkpoint.pth",
+        ):
             candidate = checkpoint / name
             if candidate.is_file():
                 return str(candidate)
@@ -897,13 +1091,204 @@ def _processor_square_size(value, name: str) -> int:
     if isinstance(value, int):
         return value
     if isinstance(value, dict):
-        if "shortest_edge" in value:
-            return int(value["shortest_edge"])
+        shortest_edge = value.get("shortest_edge")
         height = value.get("height")
         width = value.get("width")
-        if height is not None and width is not None and int(height) == int(width):
-            return int(height)
-    raise ValueError(f"Expected a square CLIP image-processor {name}, got {value!r}")
+    else:
+        shortest_edge = getattr(value, "shortest_edge", None)
+        height = getattr(value, "height", None)
+        width = getattr(value, "width", None)
+    if shortest_edge is not None:
+        return int(shortest_edge)
+    if height is not None and width is not None and int(height) == int(width):
+        return int(height)
+    raise ValueError(f"Expected a square image-processor {name}, got {value!r}")
+
+
+def _load_perception_encoder(
+    model_root: str,
+    spec,
+    device: torch.device,
+) -> FeatureBundle:
+    import timm
+    from timm.models import load_checkpoint
+    from timm.models.eva import checkpoint_filter_fn
+
+    directory, architecture, image_size, readout_kind, feature_dim, projection_dim = spec
+    model_dir = Path(model_root).expanduser().resolve() / directory
+    checkpoint = model_dir / f"{directory}.pt"
+    if not checkpoint.is_file():
+        raise FileNotFoundError(f"Missing Perception Encoder checkpoint: {checkpoint}")
+
+    model = timm.create_model(
+        architecture,
+        pretrained=False,
+        num_classes=projection_dim or 0,
+        dtype=torch.bfloat16,
+    )
+    if int(model.num_features) != feature_dim:
+        raise RuntimeError(
+            f"Perception Encoder width mismatch: expected {feature_dim}, got {model.num_features}"
+        )
+    if readout_kind == "attention_pool":
+        if getattr(model, "attn_pool", None) is None:
+            raise RuntimeError("PE-Core model does not expose its attention pool")
+        if not isinstance(model.head, nn.Linear):
+            raise RuntimeError("PE-Core model does not expose its projection head")
+        head_shape = (int(model.head.in_features), int(model.head.out_features))
+        if head_shape != (feature_dim, projection_dim):
+            raise RuntimeError(
+                "PE-Core projection mismatch: "
+                f"expected {(feature_dim, projection_dim)}, got {head_shape}"
+            )
+
+    load_checkpoint(
+        model,
+        str(checkpoint),
+        strict=True,
+        filter_fn=checkpoint_filter_fn,
+    )
+    encoder = (
+        PerceptionEncoderReadout(model, readout_kind)
+        .to(device)
+        .eval()
+        .requires_grad_(False)
+    )
+    train_transform, eval_transform = _pm1_transforms(image_size)
+    if readout_kind == "attention_pool":
+        representation = (
+            "PE-Core learned attention-pool output before the released CLIP projection"
+        )
+    else:
+        representation = (
+            "mean of last-layer Perception Encoder patch tokens, excluding any CLS token"
+        )
+    tiling_note = (
+        "; tiling-aligned checkpoint evaluated as one native 448x448 crop"
+        if directory.endswith("-Tiling")
+        else ""
+    )
+    return FeatureBundle(
+        encoder=encoder,
+        train_transform=train_transform,
+        eval_transform=eval_transform,
+        autocast_context=partial(torch.autocast, device_type="cuda", dtype=torch.bfloat16),
+        representation=representation,
+        transform_description=(
+            f"train=RandomResizedCrop({image_size})+HorizontalFlip(0.5), "
+            f"eval=Resize({image_size})+CenterCrop({image_size}), "
+            f"mean={PM1_MEAN}, std={PM1_STD}{tiling_note}"
+        ),
+        backbone_precision="bfloat16 weights and autocast",
+        checkpoint_paths=[str(checkpoint.resolve())],
+    )
+
+
+def _load_hf_visual_encoder(
+    model_root: str,
+    spec,
+    readout_kind: str,
+    device: torch.device,
+) -> FeatureBundle:
+    # transformers 5.10 references this newly added PyTorch dtype while
+    # importing optional FP8 support. These checkpoints do not use FP8; the
+    # alias only keeps transformers importable with the workspace's torch 2.6.
+    if not hasattr(torch, "float8_e8m0fnu"):
+        torch.float8_e8m0fnu = torch.float8_e4m3fn
+    from transformers import AutoConfig, AutoImageProcessor, AutoModel
+
+    directory, expected_model_type = spec
+    model_dir = Path(model_root).expanduser().resolve() / directory
+    if not model_dir.is_dir():
+        raise FileNotFoundError(f"Missing Hugging Face visual model directory: {model_dir}")
+    config_path = model_dir / "config.json"
+    processor_path = model_dir / "preprocessor_config.json"
+    if not config_path.is_file() or not processor_path.is_file():
+        raise FileNotFoundError(
+            f"Expected config.json and preprocessor_config.json in {model_dir}"
+        )
+    checkpoint = _resolve_checkpoint(str(model_dir))
+
+    config = AutoConfig.from_pretrained(str(model_dir), local_files_only=True)
+    if config.model_type != expected_model_type:
+        raise RuntimeError(
+            f"HF model_type mismatch: expected {expected_model_type}, got {config.model_type}"
+        )
+    model_kwargs = (
+        {"add_pooling_layer": False}
+        if expected_model_type == "vit" and readout_kind == "cls_patch"
+        else {}
+    )
+    model, loading_info = AutoModel.from_pretrained(
+        str(model_dir),
+        config=config,
+        local_files_only=True,
+        torch_dtype=torch.bfloat16,
+        output_loading_info=True,
+        **model_kwargs,
+    )
+    loading_errors = {
+        key: loading_info.get(key, [])
+        for key in ("missing_keys", "unexpected_keys", "mismatched_keys", "error_msgs")
+        if loading_info.get(key)
+    }
+    if loading_errors:
+        raise RuntimeError(f"Failed to strictly load {directory}: {loading_errors}")
+    processor = AutoImageProcessor.from_pretrained(str(model_dir), local_files_only=True)
+
+    crop_value = getattr(processor, "crop_size", None)
+    image_size = _processor_square_size(
+        crop_value if crop_value is not None else processor.size,
+        "crop_size" if crop_value is not None else "size",
+    )
+    resize_size = _processor_square_size(processor.size, "size")
+    mean = tuple(float(value) for value in processor.image_mean)
+    std = tuple(float(value) for value in processor.image_std)
+    train_transform = make_classification_train_transform(
+        crop_size=image_size,
+        hflip_prob=0.5,
+        mean=mean,
+        std=std,
+    )
+    eval_transform = make_classification_eval_transform(
+        resize_size=resize_size,
+        crop_size=image_size,
+        mean=mean,
+        std=std,
+    )
+
+    if readout_kind == "cls_patch":
+        register_count = int(getattr(config, "num_register_tokens", 0) or 0)
+        encoder = HFClsPatchEncoder(model, register_count)
+        representation = (
+            "concat(final normalized CLS, mean(final normalized patch tokens)); "
+            f"excludes {register_count} register token(s)"
+        )
+    elif readout_kind == "convnext_gap":
+        encoder = HFConvNeXtGlobalEncoder(model)
+        representation = "DINOv3 ConvNeXt final-stage GAP after the released final LayerNorm"
+    elif readout_kind == "patch_mean":
+        encoder = HFMeanPatchEncoder(model)
+        representation = (
+            "mean of final normalized Web-MAE patch tokens, excluding the CLS token"
+        )
+    else:
+        raise ValueError(f"Unsupported Hugging Face visual readout: {readout_kind}")
+
+    encoder = encoder.to(device).eval().requires_grad_(False)
+    return FeatureBundle(
+        encoder=encoder,
+        train_transform=train_transform,
+        eval_transform=eval_transform,
+        autocast_context=partial(torch.autocast, device_type="cuda", dtype=torch.bfloat16),
+        representation=representation,
+        transform_description=(
+            f"train=RandomResizedCrop({image_size})+HorizontalFlip(0.5), "
+            f"eval=Resize({resize_size})+CenterCrop({image_size}), mean={mean}, std={std}"
+        ),
+        backbone_precision="bfloat16 weights and autocast",
+        checkpoint_paths=[checkpoint, str(config_path), str(processor_path)],
+    )
 
 
 def _load_clip_openai_l14(args, device: torch.device) -> FeatureBundle:
@@ -1217,6 +1602,40 @@ def load_feature_bundle(model_name: str, args, device: torch.device) -> FeatureB
             architecture,
             image_size,
             feature_dim,
+            device,
+        )
+    if model_name in PE_SPECS:
+        return _load_perception_encoder(
+            args.continuous_model_root,
+            PE_SPECS[model_name],
+            device,
+        )
+    if model_name in DINO_VIT_SPECS:
+        return _load_hf_visual_encoder(
+            args.continuous_model_root,
+            DINO_VIT_SPECS[model_name],
+            "cls_patch",
+            device,
+        )
+    if model_name in DINOV3_CONVNEXT_SPECS:
+        return _load_hf_visual_encoder(
+            args.continuous_model_root,
+            DINOV3_CONVNEXT_SPECS[model_name],
+            "convnext_gap",
+            device,
+        )
+    if model_name in WEBSSL_DINO_SPECS:
+        return _load_hf_visual_encoder(
+            args.continuous_model_root,
+            WEBSSL_DINO_SPECS[model_name],
+            "cls_patch",
+            device,
+        )
+    if model_name in WEBSSL_MAE_SPECS:
+        return _load_hf_visual_encoder(
+            args.continuous_model_root,
+            WEBSSL_MAE_SPECS[model_name],
+            "patch_mean",
             device,
         )
     if model_name in RAEV2_SPECS:

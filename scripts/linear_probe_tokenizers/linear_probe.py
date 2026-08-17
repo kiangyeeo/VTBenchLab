@@ -28,7 +28,15 @@ from dinov2.eval.metrics import MetricType, build_metric
 from dinov2.eval.utils import evaluate
 from dinov2.logging import MetricLogger, setup_logging
 
-from feature_extractors import FeatureBundle, load_feature_bundle
+from feature_extractors import (
+    DINOV3_CONVNEXT_SPECS,
+    DINO_VIT_SPECS,
+    PE_SPECS,
+    WEBSSL_DINO_SPECS,
+    WEBSSL_MAE_SPECS,
+    FeatureBundle,
+    load_feature_bundle,
+)
 
 
 LOGGER = logging.getLogger("dinov2")
@@ -86,6 +94,13 @@ RAEV2_MODEL_NAMES = (
     "raev2",
     "ijepa",
 )
+NEW_CONTINUOUS_MODEL_NAMES = (
+    *PE_SPECS,
+    *DINO_VIT_SPECS,
+    *DINOV3_CONVNEXT_SPECS,
+    *WEBSSL_DINO_SPECS,
+    *WEBSSL_MAE_SPECS,
+)
 MODEL_NAMES = (
     "metaclip",
     "clip_openai__l14",
@@ -102,6 +117,7 @@ MODEL_NAMES = (
     *MC2_MODEL_NAMES,
     *SIGLIP2_MODEL_NAMES,
     *RAEV2_MODEL_NAMES,
+    *NEW_CONTINUOUS_MODEL_NAMES,
     "toklip_s",
     "toklip_l",
     "unitok",
@@ -124,6 +140,7 @@ OUTPUT_NAMES = {
     **{model_name: model_name for model_name in MC2_MODEL_NAMES},
     **{model_name: model_name for model_name in SIGLIP2_MODEL_NAMES},
     **{model_name: model_name for model_name in RAEV2_MODEL_NAMES},
+    **{model_name: model_name for model_name in NEW_CONTINUOUS_MODEL_NAMES},
     "toklip_s": "toklip_s_semantic_256",
     "toklip_l": "toklip_l_semantic_384",
     "unitok": "unitok",
@@ -261,6 +278,11 @@ def _build_parser():
     parser.add_argument("--no-resume", action="store_true")
 
     parser.add_argument("--image-scripts", type=Path, default=image_scripts)
+    parser.add_argument(
+        "--continuous-model-root",
+        default=str(continuous_model_zoo),
+        help="Root containing the downloaded PE, DINO, and WebSSL model directories.",
+    )
     parser.add_argument("--metaclip-model", default="vit_base_patch16_clip_224.metaclip_2pt5b")
     parser.add_argument(
         "--metaclip-checkpoint",
