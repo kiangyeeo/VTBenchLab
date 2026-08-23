@@ -24,7 +24,7 @@ run_tokenizer_linear_probe_bn() {
     echo ">> BN tokenizer linear probing: $model"
     echo "   probe=BatchNorm1d(affine=False, eps=1e-6) -> Linear"
     echo "   BN training batch=1024; running statistics used for validation"
-    echo "   frozen-backbone feature microbatch=256; concatenated before BN"
+    echo "   frozen-backbone feature microbatch=${FEATURE_MICROBATCH_SIZE:-256}; concatenated before BN"
     echo "   updates=12500; base LR grid=0.0001 ... 0.5; DINO batch scaling=x4"
     echo "   output_root=$OUT_ROOT"
 

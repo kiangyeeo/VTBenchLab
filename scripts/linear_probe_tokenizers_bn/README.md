@@ -31,6 +31,20 @@ Replace `run_metaclip.sh` with one of:
 - `run_toklip_l.sh`
 - `run_unitok.sh`
 - `run_vilau.sh`
+- `run_webssl_mae300m_full2b_224.sh`
+- `run_webssl_mae700m_full2b_224.sh`
+- `run_webssl_mae1b_full2b_224.sh`
+- `run_webssl_mae2b_full2b_224.sh`
+- `run_webssl_mae3b_full2b_224.sh`
+
+The WebSSL-MAE launchers retain the feature microbatch defaults used by the
+corresponding no-BN runs: 16, 8, 4, 2, and 1024 respectively. Override one
+when needed, for example:
+
+```bash
+FEATURE_MICROBATCH_SIZE=1 CUDA_VISIBLE_DEVICES=0 \
+  bash scripts/linear_probe_tokenizers_bn/run_webssl_mae2b_full2b_224.sh
+```
 
 Every run trains the same 13-learning-rate grid as the no-BN baseline. Results
 are written under:
