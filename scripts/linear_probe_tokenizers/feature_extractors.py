@@ -335,6 +335,19 @@ WEBSSL_MAE_SPECS = {
     "webssl_mae3b_full2b_224": ("webssl-mae3b-full2b-224", "vit"),
 }
 
+# directory, architecture family, architecture size, released feature width.
+# EUPE checkpoints contain the backbone plus training-only distillation
+# projectors; the loader below admits only the latter as non-backbone keys and
+# strictly loads every backbone tensor.
+EUPE_SPECS = {
+    "eupe_vit_t": ("EUPE-ViT-T", "vit", "tiny", 192),
+    "eupe_vit_s": ("EUPE-ViT-S", "vit", "small", 384),
+    "eupe_vit_b": ("EUPE-ViT-B", "vit", "base", 768),
+    "eupe_convnext_t": ("EUPE-ConvNeXt-T", "convnext", "tiny", 768),
+    "eupe_convnext_s": ("EUPE-ConvNeXt-S", "convnext", "small", 768),
+    "eupe_convnext_b": ("EUPE-ConvNeXt-B", "convnext", "base", 1024),
+}
+
 DINOV3_L_CHECKPOINT = (
     "encoders/dinov3/dinov3_vitl16_pretrain_lvd1689m-8aa4cbdd.pth"
 )
@@ -498,6 +511,49 @@ class HFMeanPatchEncoder(nn.Module):
         if tokens.ndim != 3 or tokens.shape[1] <= 1:
             raise RuntimeError(f"Unexpected Web-MAE token shape: {tuple(tokens.shape)}")
         return tokens[:, 1:].mean(dim=1).float()
+
+
+class EUPEViTEncoder(nn.Module):
+    """Concatenate EUPE's normalized CLS with its mean normalized patch token."""
+
+    def __init__(self, model: nn.Module):
+        super().__init__()
+        self.model = model
+
+    def forward(self, images: torch.Tensor) -> torch.Tensor:
+        outputs = self.model.forward_features(images)
+        cls_token = outputs.get("x_norm_clstoken")
+        patch_tokens = outputs.get("x_norm_patchtokens")
+        if (
+            not torch.is_tensor(cls_token)
+            or not torch.is_tensor(patch_tokens)
+            or cls_token.ndim != 2
+            or patch_tokens.ndim != 3
+            or patch_tokens.shape[1] == 0
+        ):
+            cls_shape = None if not torch.is_tensor(cls_token) else tuple(cls_token.shape)
+            patch_shape = (
+                None if not torch.is_tensor(patch_tokens) else tuple(patch_tokens.shape)
+            )
+            raise RuntimeError(
+                f"Unexpected EUPE ViT features: CLS={cls_shape}, patches={patch_shape}"
+            )
+        return torch.cat((cls_token, patch_tokens.mean(dim=1)), dim=-1).float()
+
+
+class EUPEConvNeXtEncoder(nn.Module):
+    """EUPE ConvNeXt final-stage GAP followed by the released final norm."""
+
+    def __init__(self, model: nn.Module):
+        super().__init__()
+        self.model = model
+
+    def forward(self, images: torch.Tensor) -> torch.Tensor:
+        features = self.model.forward_features(images).get("x_norm_clstoken")
+        if not torch.is_tensor(features) or features.ndim != 2:
+            shape = None if not torch.is_tensor(features) else tuple(features.shape)
+            raise RuntimeError(f"Unexpected EUPE ConvNeXt pooled shape: {shape}")
+        return features.float()
 
 
 class RAEv2LatentEncoder(nn.Module):
@@ -1291,6 +1347,150 @@ def _load_hf_visual_encoder(
     )
 
 
+def _load_eupe(
+    model_root: str,
+    dinov3_path: Path,
+    spec,
+    device: torch.device,
+) -> FeatureBundle:
+    from torchvision import transforms
+
+    directory, family, size, feature_dim = spec
+    checkpoint = Path(model_root).expanduser().resolve() / directory / f"{directory}.pt"
+    if not checkpoint.is_file():
+        raise FileNotFoundError(f"Missing EUPE checkpoint: {checkpoint}")
+
+    dinov3_path = Path(dinov3_path).expanduser().resolve()
+    if not (dinov3_path / "dinov3" / "models" / "vision_transformer.py").is_file():
+        raise FileNotFoundError(f"Missing compatible local DINOv3 source: {dinov3_path}")
+    if str(dinov3_path) not in sys.path:
+        sys.path.insert(0, str(dinov3_path))
+
+    if family == "vit":
+        from dinov3.models.vision_transformer import DinoVisionTransformer
+
+        vit_sizes = {
+            "tiny": (192, 3),
+            "small": (384, 6),
+            "base": (768, 12),
+        }
+        embed_dim, num_heads = vit_sizes[size]
+        model = DinoVisionTransformer(
+            img_size=224,
+            patch_size=16,
+            in_chans=3,
+            pos_embed_rope_base=100,
+            pos_embed_rope_normalize_coords="separate",
+            pos_embed_rope_rescale_coords=2,
+            pos_embed_rope_dtype="fp32",
+            embed_dim=embed_dim,
+            depth=12,
+            num_heads=num_heads,
+            ffn_ratio=4,
+            qkv_bias=True,
+            drop_path_rate=0.0,
+            layerscale_init=1.0e-5,
+            norm_layer="layernormbf16",
+            ffn_layer="mlp",
+            ffn_bias=True,
+            proj_bias=True,
+            n_storage_tokens=4,
+            mask_k_bias=True,
+        )
+        encoder_type = EUPEViTEncoder
+        representation = (
+            "concat(final normalized EUPE CLS, mean(final normalized patch tokens)); "
+            "excludes 4 storage tokens"
+        )
+    elif family == "convnext":
+        from dinov3.models.convnext import ConvNeXt
+
+        convnext_sizes = {
+            "tiny": ([3, 3, 9, 3], [96, 192, 384, 768]),
+            "small": ([3, 3, 27, 3], [96, 192, 384, 768]),
+            "base": ([3, 3, 27, 3], [128, 256, 512, 1024]),
+        }
+        depths, dims = convnext_sizes[size]
+        model = ConvNeXt(
+            in_chans=3,
+            depths=depths,
+            dims=dims,
+            drop_path_rate=0.0,
+            layer_scale_init_value=1.0e-6,
+        )
+        encoder_type = EUPEConvNeXtEncoder
+        representation = (
+            "EUPE ConvNeXt final-stage global average pooling after the released "
+            "final LayerNorm"
+        )
+    else:
+        raise ValueError(f"Unsupported EUPE architecture family: {family}")
+
+    if int(model.embed_dim) != feature_dim:
+        raise RuntimeError(
+            f"EUPE feature-width mismatch: expected {feature_dim}, got {model.embed_dim}"
+        )
+
+    payload = torch.load(
+        checkpoint,
+        map_location="cpu",
+        weights_only=True,
+        mmap=True,
+    )
+    if not isinstance(payload, dict) or not payload:
+        raise RuntimeError(f"Expected a non-empty EUPE state_dict at {checkpoint}")
+    backbone_keys = set(model.state_dict())
+    backbone_state = {key: value for key, value in payload.items() if key in backbone_keys}
+    missing_keys = sorted(backbone_keys - set(backbone_state))
+    non_backbone_keys = sorted(set(payload) - backbone_keys)
+    invalid_extra_keys = [
+        key for key in non_backbone_keys if not key.startswith("projectors.")
+    ]
+    if missing_keys or invalid_extra_keys or not non_backbone_keys:
+        raise RuntimeError(
+            f"Unexpected EUPE checkpoint layout for {directory}: "
+            f"missing_backbone={missing_keys}, invalid_extra={invalid_extra_keys}, "
+            f"training_projector_keys={len(non_backbone_keys)}"
+        )
+    model = model.to(dtype=torch.bfloat16)
+    model.load_state_dict(backbone_state, strict=True)
+    del payload, backbone_state
+
+    encoder = encoder_type(model).to(device).eval().requires_grad_(False)
+    image_size = 256
+    train_transform = make_classification_train_transform(
+        crop_size=image_size,
+        hflip_prob=0.5,
+        mean=IMAGENET_MEAN,
+        std=IMAGENET_STD,
+    )
+    eval_transform = transforms.Compose(
+        [
+            transforms.Resize(
+                (image_size, image_size),
+                interpolation=transforms.InterpolationMode.BILINEAR,
+                antialias=True,
+            ),
+            transforms.ToTensor(),
+            transforms.Normalize(IMAGENET_MEAN, IMAGENET_STD),
+        ]
+    )
+    return FeatureBundle(
+        encoder=encoder,
+        train_transform=train_transform,
+        eval_transform=eval_transform,
+        autocast_context=partial(torch.autocast, device_type="cuda", dtype=torch.bfloat16),
+        representation=representation,
+        transform_description=(
+            f"train=RandomResizedCrop({image_size})+HorizontalFlip(0.5), "
+            f"eval=direct square Resize(({image_size},{image_size})) per EUPE release, "
+            f"mean={IMAGENET_MEAN}, std={IMAGENET_STD}"
+        ),
+        backbone_precision="bfloat16 weights and autocast",
+        checkpoint_paths=[str(checkpoint)],
+    )
+
+
 def _load_clip_openai_l14(args, device: torch.device) -> FeatureBundle:
     from transformers import CLIPImageProcessor, CLIPVisionModel
 
@@ -1636,6 +1836,13 @@ def load_feature_bundle(model_name: str, args, device: torch.device) -> FeatureB
             args.continuous_model_root,
             WEBSSL_MAE_SPECS[model_name],
             "patch_mean",
+            device,
+        )
+    if model_name in EUPE_SPECS:
+        return _load_eupe(
+            args.continuous_model_root,
+            args.dinov3_path,
+            EUPE_SPECS[model_name],
             device,
         )
     if model_name in RAEV2_SPECS:

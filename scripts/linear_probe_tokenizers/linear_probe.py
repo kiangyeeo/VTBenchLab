@@ -31,6 +31,7 @@ from dinov2.logging import MetricLogger, setup_logging
 from feature_extractors import (
     DINOV3_CONVNEXT_SPECS,
     DINO_VIT_SPECS,
+    EUPE_SPECS,
     PE_SPECS,
     WEBSSL_DINO_SPECS,
     WEBSSL_MAE_SPECS,
@@ -100,6 +101,7 @@ NEW_CONTINUOUS_MODEL_NAMES = (
     *DINOV3_CONVNEXT_SPECS,
     *WEBSSL_DINO_SPECS,
     *WEBSSL_MAE_SPECS,
+    *EUPE_SPECS,
 )
 MODEL_NAMES = (
     "metaclip",
