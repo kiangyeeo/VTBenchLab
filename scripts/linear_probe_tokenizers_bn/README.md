@@ -64,6 +64,11 @@ The existing TokLIP, UniTok, VILA-U, and larger WebSSL-MAE launchers remain
 available, but were not selected for this fast subset because their completed
 no-BN runs took longer.
 
+All WebSSL-MAE launchers use the final normalized encoder CLS token, matching
+the official ImageNet linear-probing readout. Corrected results are written to
+directories ending in `_cls`; the older patch-mean outputs are preserved under
+their original directory names and are never resumed by these launchers.
+
 The WebSSL-MAE launchers retain the feature microbatch defaults used by the
 corresponding no-BN runs: 16, 8, 4, 2, and 1024 respectively. Override one
 when needed, for example:

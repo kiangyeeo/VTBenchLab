@@ -498,8 +498,8 @@ class HFConvNeXtGlobalEncoder(nn.Module):
         return features.float()
 
 
-class HFMeanPatchEncoder(nn.Module):
-    """Mean of final normalized patch tokens, excluding the ViT CLS token."""
+class HFClsEncoder(nn.Module):
+    """Final normalized CLS token from a Hugging Face ViT encoder."""
 
     def __init__(self, model: nn.Module):
         super().__init__()
@@ -508,9 +508,9 @@ class HFMeanPatchEncoder(nn.Module):
     def forward(self, images: torch.Tensor) -> torch.Tensor:
         outputs = self.model(pixel_values=images, return_dict=True)
         tokens = outputs.last_hidden_state
-        if tokens.ndim != 3 or tokens.shape[1] <= 1:
+        if tokens.ndim != 3 or tokens.shape[1] < 1:
             raise RuntimeError(f"Unexpected Web-MAE token shape: {tuple(tokens.shape)}")
-        return tokens[:, 1:].mean(dim=1).float()
+        return tokens[:, 0].float()
 
 
 class EUPEViTEncoder(nn.Module):
@@ -1323,11 +1323,9 @@ def _load_hf_visual_encoder(
     elif readout_kind == "convnext_gap":
         encoder = HFConvNeXtGlobalEncoder(model)
         representation = "DINOv3 ConvNeXt final-stage GAP after the released final LayerNorm"
-    elif readout_kind == "patch_mean":
-        encoder = HFMeanPatchEncoder(model)
-        representation = (
-            "mean of final normalized Web-MAE patch tokens, excluding the CLS token"
-        )
+    elif readout_kind == "cls":
+        encoder = HFClsEncoder(model)
+        representation = "final normalized Web-MAE encoder CLS token"
     else:
         raise ValueError(f"Unsupported Hugging Face visual readout: {readout_kind}")
 
@@ -1835,7 +1833,7 @@ def load_feature_bundle(model_name: str, args, device: torch.device) -> FeatureB
         return _load_hf_visual_encoder(
             args.continuous_model_root,
             WEBSSL_MAE_SPECS[model_name],
-            "patch_mean",
+            "cls",
             device,
         )
     if model_name in EUPE_SPECS:

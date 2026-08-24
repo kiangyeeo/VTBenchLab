@@ -143,6 +143,7 @@ OUTPUT_NAMES = {
     **{model_name: model_name for model_name in SIGLIP2_MODEL_NAMES},
     **{model_name: model_name for model_name in RAEV2_MODEL_NAMES},
     **{model_name: model_name for model_name in NEW_CONTINUOUS_MODEL_NAMES},
+    **{model_name: f"{model_name}_cls" for model_name in WEBSSL_MAE_SPECS},
     "toklip_s": "toklip_s_semantic_256",
     "toklip_l": "toklip_l_semantic_384",
     "unitok": "unitok",
