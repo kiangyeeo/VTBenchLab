@@ -12,10 +12,10 @@ frozen feature [B,D]
   -> Linear(D, 1000)
 ```
 
-The frozen backbone still runs in microbatches of 256. Its FP32 features are
-concatenated into the full optimization batch of 1024 before BatchNorm is
-applied. BatchNorm running statistics are checkpointed and are used during
-validation.
+The frozen backbone uses the feature microbatch selected by each launcher. Its
+FP32 features are concatenated into the full optimization batch of 1024 before
+BatchNorm is applied. BatchNorm running statistics are checkpointed and are
+used during validation.
 
 ## Run one model
 
@@ -27,6 +27,12 @@ CUDA_VISIBLE_DEVICES=0 bash scripts/linear_probe_tokenizers_bn/run_metaclip.sh
 
 Replace `run_metaclip.sh` with one of:
 
+- `run_dinov1_vits16.sh`
+- `run_dinov2_small.sh`
+- `run_mc2_s16_224.sh`
+- `run_pe_core_b16_224.sh`
+- `run_pe_core_t16_384.sh`
+- `run_siglip2_b16_224.sh`
 - `run_toklip_s.sh`
 - `run_toklip_l.sh`
 - `run_unitok.sh`
@@ -36,6 +42,27 @@ Replace `run_metaclip.sh` with one of:
 - `run_webssl_mae1b_full2b_224.sh`
 - `run_webssl_mae2b_full2b_224.sh`
 - `run_webssl_mae3b_full2b_224.sh`
+
+## Fast representative family subset
+
+The following launchers form a relatively fast cross-family subset. The wall
+times are approximate measurements from the corresponding completed no-BN runs
+on this workspace and are only intended for relative selection:
+
+| Family | Launcher | Previous wall time |
+| --- | --- | ---: |
+| DINOv1 | `run_dinov1_vits16.sh` | 2.21 h |
+| DINOv2 | `run_dinov2_small.sh` | 2.22 h |
+| MetaCLIP 1 | `run_metaclip.sh` | 2.22 h |
+| MetaCLIP 2 | `run_mc2_s16_224.sh` | 2.31 h |
+| Perception Encoder | `run_pe_core_b16_224.sh` | 2.22 h |
+| Perception Encoder (tiny) | `run_pe_core_t16_384.sh` | 3.49 h |
+| SigLIP 2 | `run_siglip2_b16_224.sh` | 5.33 h |
+| WebSSL-MAE | `run_webssl_mae300m_full2b_224.sh` | 3.74 h |
+
+The existing TokLIP, UniTok, VILA-U, and larger WebSSL-MAE launchers remain
+available, but were not selected for this fast subset because their completed
+no-BN runs took longer.
 
 The WebSSL-MAE launchers retain the feature microbatch defaults used by the
 corresponding no-BN runs: 16, 8, 4, 2, and 1024 respectively. Override one
