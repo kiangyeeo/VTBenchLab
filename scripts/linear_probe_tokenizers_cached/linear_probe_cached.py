@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Deterministic ImageNet linear probe with one-time frozen-feature caching."""
+"""Batch-normalized ImageNet linear probe with deterministic feature caching."""
 
 from __future__ import annotations
 
@@ -23,15 +23,46 @@ if str(BASE_SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(BASE_SCRIPT_DIR))
 
 import linear_probe as base
+import feature_extractors as extractors
 
 
 LOGGER = logging.getLogger("dinov2")
-PROTOCOL_VERSION = "tokenizer_linear_probe_deterministic_cached_v1"
+PROTOCOL_VERSION = "tokenizer_linear_probe_deterministic_cached_bn_v1"
 CACHE_VERSION = "deterministic_frozen_features_v1"
 DEFAULT_OUTPUT_ROOT = (
-    WORKSPACE / "outputs" / "vae_linear_probing_dinov2_single_noaug_cached_paperlr"
+    WORKSPACE / "outputs" / "vae_linear_probing_dinov2_single_noaug_cached_paperlr_bn"
 )
 DEFAULT_CACHE_ROOT = DEFAULT_OUTPUT_ROOT / "_feature_cache"
+
+# The requested WebSSL protocol is CLS-only for both DINO and MAE families.
+# MAE names already carry this suffix in the baseline; add it to WebSSL-DINO.
+for _webssl_dino_model in base.WEBSSL_DINO_SPECS:
+    base.OUTPUT_NAMES[_webssl_dino_model] = f"{_webssl_dino_model}_cls"
+
+
+class BatchNormalizedLinearHead(nn.Module):
+    """MAE-style frozen-affine BatchNorm1d followed by a linear classifier."""
+
+    def __init__(self, in_dim: int, base_lr: float, effective_lr: float):
+        super().__init__()
+        self.base_lr = float(base_lr)
+        self.effective_lr = float(effective_lr)
+        self.batch_norm = nn.BatchNorm1d(
+            in_dim,
+            eps=1e-6,
+            momentum=0.1,
+            affine=False,
+            track_running_stats=True,
+        )
+        self.linear = nn.Linear(in_dim, base.NUM_CLASSES, bias=True)
+        self.linear.weight.data.normal_(mean=0.0, std=0.01)
+        self.linear.bias.data.zero_()
+
+    def forward(self, features: torch.Tensor) -> torch.Tensor:
+        return self.linear(self.batch_norm(features))
+
+
+_BASE_EVALUATE_HEADS = base._evaluate_heads
 
 
 class IndexedDataset(Dataset):
@@ -103,8 +134,8 @@ class CachedFeatureTransfer(nn.Module):
 def _build_parser():
     parser = base._build_parser()
     parser.description = (
-        "DINOv2-style ImageNet linear probing with deterministic preprocessing "
-        "and one-time frozen-feature caching"
+        "DINOv2-style ImageNet BatchNorm linear probing with deterministic "
+        "preprocessing and one-time frozen-feature caching"
     )
     parser.set_defaults(output_root=str(DEFAULT_OUTPUT_ROOT))
     parser.add_argument(
@@ -121,10 +152,11 @@ def _build_parser():
     parser.add_argument(
         "--stop-after-epoch",
         type=int,
-        default=3,
+        default=base.EPOCHS,
         help=(
             "Stop at this epoch while retaining the original 10-epoch cosine "
-            "schedule. Re-run with a larger value to resume the same probe."
+            "schedule (default: 10). A smaller value can be used for screening; "
+            "re-run with a larger value to resume the same probe."
         ),
     )
     return parser
@@ -144,6 +176,30 @@ def _checkpoint_identity(path_string: str) -> dict:
         "size": stat.st_size,
         "mtime_ns": stat.st_mtime_ns,
     }
+
+
+def _load_feature_bundle(model_name: str, args, device: torch.device):
+    """Use a CLS-only readout for every WebSSL checkpoint."""
+
+    if model_name in base.WEBSSL_DINO_SPECS:
+        bundle = extractors._load_hf_visual_encoder(
+            args.continuous_model_root,
+            base.WEBSSL_DINO_SPECS[model_name],
+            "cls",
+            device,
+        )
+        bundle.representation = "final normalized WebSSL-DINO encoder CLS token"
+        return bundle
+    if model_name in base.WEBSSL_MAE_SPECS:
+        bundle = extractors._load_hf_visual_encoder(
+            args.continuous_model_root,
+            base.WEBSSL_MAE_SPECS[model_name],
+            "cls",
+            device,
+        )
+        bundle.representation = "final normalized WebSSL-MAE encoder CLS token"
+        return bundle
+    return base.load_feature_bundle(model_name, args, device)
 
 
 def _cache_identity(args, bundle, data_root: Path, extra_root: Path) -> dict:
@@ -319,6 +375,17 @@ def _make_protocol(args, bundle, effective_lrs, cache_fingerprint: str) -> dict:
             "feature_extraction": "once per split, then persistent FP32 cache reuse",
             "feature_cache_dtype": "float32",
             "feature_cache_fingerprint": cache_fingerprint,
+            "feature_normalization": True,
+            "feature_normalization_type": "BatchNorm1d",
+            "feature_normalization_placement": "immediately before each linear classifier",
+            "batch_norm_affine": False,
+            "batch_norm_fixed_scale": 1.0,
+            "batch_norm_fixed_shift": 0.0,
+            "batch_norm_eps": 1e-6,
+            "batch_norm_momentum": 0.1,
+            "batch_norm_track_running_stats": True,
+            "batch_norm_training_batch_size": base.BATCH_SIZE,
+            "batch_norm_applied_after_feature_cache_load": True,
             "training_cutoff_semantics": (
                 "--stop-after-epoch is an execution cutoff; optimizer and cosine "
                 "scheduler retain the full 10-epoch/12500-update horizon"
@@ -327,6 +394,30 @@ def _make_protocol(args, bundle, effective_lrs, cache_fingerprint: str) -> dict:
     )
     protocol["fingerprint"] = base._protocol_fingerprint(protocol)
     return protocol
+
+
+@torch.no_grad()
+def _evaluate_heads_with_running_stats(
+    feature_model,
+    head_grid,
+    data_loader,
+    iteration: int,
+    output_dir: Path,
+):
+    """Evaluate BN heads with running stats, then restore their prior mode."""
+
+    was_training = head_grid.training
+    head_grid.eval()
+    try:
+        return _BASE_EVALUATE_HEADS(
+            feature_model,
+            head_grid,
+            data_loader,
+            iteration,
+            output_dir,
+        )
+    finally:
+        head_grid.train(was_training)
 
 
 def _make_cached_loader(
@@ -378,6 +469,7 @@ def main() -> int:
         raise ValueError(f"--stop-after-epoch must be in [1, {base.EPOCHS}]")
 
     base.PROTOCOL_VERSION = PROTOCOL_VERSION
+    base.LinearHead = BatchNormalizedLinearHead
     base.distributed.enable(overwrite=True)
     if base.distributed.get_global_size() != 1:
         raise RuntimeError(f"Expected world_size=1, got {base.distributed.get_global_size()}")
@@ -399,7 +491,7 @@ def main() -> int:
 
     train_dataset_str = f"ImageNet:split=TRAIN:root={data_root}:extra={extra_root}"
     val_dataset_str = f"ImageNet:split=VAL:root={data_root}:extra={extra_root}"
-    bundle = base.load_feature_bundle(args.model, args, device)
+    bundle = _load_feature_bundle(args.model, args, device)
     base._configure_cuda_math()
     feature_model = base.FrozenFeatureModel(
         bundle,
@@ -502,7 +594,7 @@ def main() -> int:
         and start_update % base.EPOCH_LENGTH == 0
         and not base._metrics_history_has_iteration(metrics_path, start_update)
     ):
-        base._evaluate_heads(
+        _evaluate_heads_with_running_stats(
             cached_feature_model,
             head_grid,
             val_loader,
@@ -542,7 +634,7 @@ def main() -> int:
                 if completed_updates < base.MAX_UPDATES:
                     checkpointer.save("running_checkpoint_linear_eval", iteration=update)
                 if not base._metrics_history_has_iteration(metrics_path, completed_updates):
-                    base._evaluate_heads(
+                    _evaluate_heads_with_running_stats(
                         cached_feature_model,
                         head_grid,
                         val_loader,
