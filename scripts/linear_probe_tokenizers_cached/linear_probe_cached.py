@@ -131,6 +131,432 @@ class CachedFeatureTransfer(nn.Module):
         return features.to(self.device, non_blocking=True)
 
 
+class LocalDINOv3ConvNeXtGlobalEncoder(nn.Module):
+    """Official DINOv3 ConvNeXt GAP readout for older Transformers releases."""
+
+    def __init__(self, model: nn.Module):
+        super().__init__()
+        self.model = model
+
+    def forward(self, images: torch.Tensor) -> torch.Tensor:
+        features = self.model.forward_features(images).get("x_norm_clstoken")
+        if not torch.is_tensor(features) or features.ndim != 2:
+            shape = None if not torch.is_tensor(features) else tuple(features.shape)
+            raise RuntimeError(f"Unexpected DINOv3 ConvNeXt pooled shape: {shape}")
+        return features.float()
+
+
+class LocalDINOv3ViTClsPatchEncoder(nn.Module):
+    """Concatenate official DINOv3 ViT CLS and mean patch representations."""
+
+    def __init__(self, model: nn.Module):
+        super().__init__()
+        self.model = model
+
+    def forward(self, images: torch.Tensor) -> torch.Tensor:
+        outputs = self.model.forward_features(images)
+        cls_token = outputs.get("x_norm_clstoken")
+        patch_tokens = outputs.get("x_norm_patchtokens")
+        if (
+            not torch.is_tensor(cls_token)
+            or not torch.is_tensor(patch_tokens)
+            or cls_token.ndim != 2
+            or patch_tokens.ndim != 3
+            or patch_tokens.shape[1] == 0
+        ):
+            cls_shape = None if not torch.is_tensor(cls_token) else tuple(cls_token.shape)
+            patch_shape = (
+                None if not torch.is_tensor(patch_tokens) else tuple(patch_tokens.shape)
+            )
+            raise RuntimeError(
+                f"Unexpected DINOv3 ViT features: CLS={cls_shape}, patches={patch_shape}"
+            )
+        return torch.cat((cls_token, patch_tokens.mean(dim=1)), dim=-1).float()
+
+
+def _dinov3_safetensor_files(model_dir: Path) -> list[Path]:
+    checkpoint = model_dir / "model.safetensors"
+    if checkpoint.is_file():
+        return [checkpoint]
+    index_path = model_dir / "model.safetensors.index.json"
+    if not index_path.is_file():
+        raise FileNotFoundError(f"Missing safetensors checkpoint in {model_dir}")
+    with index_path.open("r", encoding="utf-8") as handle:
+        index = json.load(handle)
+    filenames = sorted(set(index.get("weight_map", {}).values()))
+    checkpoints = [model_dir / filename for filename in filenames]
+    missing = [str(path) for path in checkpoints if not path.is_file()]
+    if not checkpoints or missing:
+        raise FileNotFoundError(f"Missing DINOv3 checkpoint shards: {missing}")
+    return checkpoints
+
+
+def _load_local_dinov3_vit(args, spec, device: torch.device):
+    """Strictly convert HF DINOv3 ViT weights to the local official model."""
+
+    from safetensors import safe_open
+
+    directory, expected_model_type = spec
+    model_dir = Path(args.continuous_model_root).expanduser().resolve() / directory
+    config_path = model_dir / "config.json"
+    processor_path = model_dir / "preprocessor_config.json"
+    for required_path in (config_path, processor_path):
+        if not required_path.is_file():
+            raise FileNotFoundError(f"Missing DINOv3 ViT file: {required_path}")
+    checkpoints = _dinov3_safetensor_files(model_dir)
+
+    with config_path.open("r", encoding="utf-8") as handle:
+        config = json.load(handle)
+    if config.get("model_type") != expected_model_type:
+        raise RuntimeError(
+            "DINOv3 ViT model_type mismatch: "
+            f"expected {expected_model_type}, got {config.get('model_type')}"
+        )
+    bias_flags = {
+        "q_proj": bool(config["query_bias"]),
+        "k_proj": bool(config["key_bias"]),
+        "v_proj": bool(config["value_bias"]),
+    }
+    qkv_bias = any(bias_flags.values())
+
+    dinov3_path = Path(args.dinov3_path).expanduser().resolve()
+    source_path = dinov3_path / "dinov3" / "models" / "vision_transformer.py"
+    if not source_path.is_file():
+        raise FileNotFoundError(f"Missing compatible local DINOv3 source: {source_path}")
+    if str(dinov3_path) not in sys.path:
+        sys.path.insert(0, str(dinov3_path))
+    from dinov3.models.vision_transformer import DinoVisionTransformer
+
+    hidden_size = int(config["hidden_size"])
+    num_heads = int(config["num_attention_heads"])
+    gated_mlp = bool(config["use_gated_mlp"])
+    ffn_ratio = float(config["intermediate_size"]) / hidden_size
+    if gated_mlp:
+        # The local SwiGLU converts its requested width to 2/3 internally.
+        ffn_ratio *= 1.5
+    norm_layer = (
+        "layernormbf16"
+        if float(config["layer_norm_eps"]) == 1e-5
+        else "layernorm"
+    )
+    # Meta initialization avoids allocating a second FP32 copy of ViT-7B.
+    with torch.device("meta"):
+        model = DinoVisionTransformer(
+            img_size=int(config["image_size"]),
+            patch_size=int(config["patch_size"]),
+            in_chans=int(config["num_channels"]),
+            pos_embed_rope_base=float(config["rope_theta"]),
+            pos_embed_rope_shift_coords=config.get("pos_embed_shift"),
+            pos_embed_rope_jitter_coords=config.get("pos_embed_jitter"),
+            pos_embed_rope_rescale_coords=config.get("pos_embed_rescale"),
+            pos_embed_rope_dtype="bf16",
+            embed_dim=hidden_size,
+            depth=int(config["num_hidden_layers"]),
+            num_heads=num_heads,
+            ffn_ratio=ffn_ratio,
+            qkv_bias=qkv_bias,
+            drop_path_rate=float(config["drop_path_rate"]),
+            layerscale_init=float(config["layerscale_value"]),
+            norm_layer=norm_layer,
+            ffn_layer="swiglu" if gated_mlp else "mlp",
+            ffn_bias=bool(config["mlp_bias"]),
+            proj_bias=bool(config["proj_bias"]),
+            n_storage_tokens=int(config["num_register_tokens"]),
+            mask_k_bias=False,
+        )
+
+    converted = {}
+    qkv_parts = {}
+    seen_hf_keys = set()
+    for checkpoint in checkpoints:
+        with safe_open(checkpoint, framework="pt", device="cpu") as handle:
+            for hf_key in handle.keys():
+                if hf_key in seen_hf_keys:
+                    raise RuntimeError(f"Duplicate DINOv3 ViT key: {hf_key}")
+                seen_hf_keys.add(hf_key)
+                tensor = handle.get_tensor(hf_key).to(torch.bfloat16)
+                if hf_key == "embeddings.cls_token":
+                    local_key = "cls_token"
+                elif hf_key == "embeddings.mask_token":
+                    local_key = "mask_token"
+                    tensor = tensor.squeeze(0)
+                elif hf_key == "embeddings.register_tokens":
+                    local_key = "storage_tokens"
+                elif hf_key.startswith("embeddings.patch_embeddings."):
+                    local_key = "patch_embed.proj." + hf_key.rsplit(".", 1)[1]
+                elif hf_key.startswith("layer."):
+                    parts = hf_key.split(".")
+                    layer_index = parts[1]
+                    suffix = ".".join(parts[2:])
+                    if suffix.startswith("attention.") and any(
+                        suffix.startswith(f"attention.{projection}")
+                        for projection in ("q_proj", "k_proj", "v_proj")
+                    ):
+                        projection, parameter = parts[3], parts[4]
+                        qkv_parts[(layer_index, parameter, projection)] = tensor
+                        continue
+                    replacements = {
+                        "attention.o_proj.": "attn.proj.",
+                        "layer_scale1.lambda1": "ls1.gamma",
+                        "layer_scale2.lambda1": "ls2.gamma",
+                        "norm1.": "norm1.",
+                        "norm2.": "norm2.",
+                        "mlp.up_proj.": "mlp.w2." if gated_mlp else "mlp.fc1.",
+                        "mlp.gate_proj.": "mlp.w1.",
+                        "mlp.down_proj.": "mlp.w3." if gated_mlp else "mlp.fc2.",
+                    }
+                    local_suffix = None
+                    for source_prefix, target_prefix in replacements.items():
+                        if suffix.startswith(source_prefix):
+                            local_suffix = target_prefix + suffix.removeprefix(source_prefix)
+                            break
+                    if local_suffix is None:
+                        raise RuntimeError(f"Unrecognized DINOv3 ViT key: {hf_key}")
+                    local_key = f"blocks.{layer_index}.{local_suffix}"
+                elif hf_key.startswith("norm."):
+                    local_key = hf_key
+                else:
+                    raise RuntimeError(f"Unrecognized DINOv3 ViT key: {hf_key}")
+                if local_key in converted:
+                    raise RuntimeError(f"Duplicate converted DINOv3 ViT key: {local_key}")
+                converted[local_key] = tensor
+
+    for layer_index in range(int(config["num_hidden_layers"])):
+        layer = str(layer_index)
+        q_weight = qkv_parts.pop((layer, "weight", "q_proj"))
+        k_weight = qkv_parts.pop((layer, "weight", "k_proj"))
+        v_weight = qkv_parts.pop((layer, "weight", "v_proj"))
+        converted[f"blocks.{layer}.attn.qkv.weight"] = torch.cat(
+            (q_weight, k_weight, v_weight), dim=0
+        )
+        if qkv_bias:
+            bias_parts = []
+            for projection in ("q_proj", "k_proj", "v_proj"):
+                if bias_flags[projection]:
+                    bias_parts.append(
+                        qkv_parts.pop((layer, "bias", projection))
+                    )
+                else:
+                    bias_parts.append(
+                        torch.zeros(hidden_size, dtype=torch.bfloat16)
+                    )
+            converted[f"blocks.{layer}.attn.qkv.bias"] = torch.cat(
+                bias_parts, dim=0
+            )
+    if qkv_parts:
+        raise RuntimeError(f"Unexpected unconsumed DINOv3 QKV keys: {sorted(qkv_parts)}")
+
+    head_dim = hidden_size // num_heads
+    periods = float(config["rope_theta"]) ** (
+        2
+        * torch.arange(head_dim // 4, dtype=torch.float32)
+        / (head_dim // 2)
+    )
+    converted["rope_embed.periods"] = periods.to(torch.bfloat16)
+    expected_state = model.state_dict()
+    missing = sorted(set(expected_state) - set(converted))
+    unexpected = sorted(set(converted) - set(expected_state))
+    mismatched = sorted(
+        key
+        for key in set(expected_state) & set(converted)
+        if expected_state[key].shape != converted[key].shape
+    )
+    if missing or unexpected or mismatched:
+        raise RuntimeError(
+            "Failed to strictly convert DINOv3 ViT weights: "
+            f"missing={missing}, unexpected={unexpected}, mismatched={mismatched}"
+        )
+    model.load_state_dict(converted, strict=True, assign=True)
+    del converted
+    encoder = (
+        LocalDINOv3ViTClsPatchEncoder(model)
+        .to(device)
+        .eval()
+        .requires_grad_(False)
+    )
+
+    with processor_path.open("r", encoding="utf-8") as handle:
+        processor = json.load(handle)
+    crop_value = processor.get("crop_size")
+    image_size = extractors._processor_square_size(
+        crop_value if crop_value is not None else processor["size"],
+        "crop_size" if crop_value is not None else "size",
+    )
+    resize_size = extractors._processor_square_size(processor["size"], "size")
+    mean = tuple(float(value) for value in processor["image_mean"])
+    std = tuple(float(value) for value in processor["image_std"])
+    train_transform = extractors.make_classification_train_transform(
+        crop_size=image_size,
+        hflip_prob=0.5,
+        mean=mean,
+        std=std,
+    )
+    eval_transform = extractors.make_classification_eval_transform(
+        resize_size=resize_size,
+        crop_size=image_size,
+        mean=mean,
+        std=std,
+    )
+    register_count = int(config["num_register_tokens"])
+    return extractors.FeatureBundle(
+        encoder=encoder,
+        train_transform=train_transform,
+        eval_transform=eval_transform,
+        autocast_context=lambda: torch.autocast(
+            device_type="cuda", dtype=torch.bfloat16
+        ),
+        representation=(
+            "concat(final normalized CLS, mean(final normalized patch tokens)); "
+            f"excludes {register_count} register token(s)"
+        ),
+        transform_description=(
+            f"train=RandomResizedCrop({image_size})+HorizontalFlip(0.5), "
+            f"eval=Resize({resize_size})+CenterCrop({image_size}), "
+            f"mean={mean}, std={std}"
+        ),
+        backbone_precision="bfloat16 weights and autocast",
+        checkpoint_paths=[
+            *(str(path.resolve()) for path in checkpoints),
+            str(config_path.resolve()),
+            str(processor_path.resolve()),
+        ],
+    )
+
+
+def _load_local_dinov3_convnext(args, spec, device: torch.device):
+    """Strictly convert HF DINOv3 ConvNeXt weights to the local official model."""
+
+    from safetensors import safe_open
+
+    directory, expected_model_type = spec
+    model_dir = Path(args.continuous_model_root).expanduser().resolve() / directory
+    config_path = model_dir / "config.json"
+    processor_path = model_dir / "preprocessor_config.json"
+    checkpoint = model_dir / "model.safetensors"
+    for required_path in (config_path, processor_path, checkpoint):
+        if not required_path.is_file():
+            raise FileNotFoundError(f"Missing DINOv3 ConvNeXt file: {required_path}")
+
+    with config_path.open("r", encoding="utf-8") as handle:
+        config = json.load(handle)
+    if config.get("model_type") != expected_model_type:
+        raise RuntimeError(
+            "DINOv3 ConvNeXt model_type mismatch: "
+            f"expected {expected_model_type}, got {config.get('model_type')}"
+        )
+
+    dinov3_path = Path(args.dinov3_path).expanduser().resolve()
+    source_path = dinov3_path / "dinov3" / "models" / "convnext.py"
+    if not source_path.is_file():
+        raise FileNotFoundError(f"Missing compatible local DINOv3 source: {source_path}")
+    if str(dinov3_path) not in sys.path:
+        sys.path.insert(0, str(dinov3_path))
+    from dinov3.models.convnext import ConvNeXt
+
+    model = ConvNeXt(
+        in_chans=int(config["num_channels"]),
+        depths=list(config["depths"]),
+        dims=list(config["hidden_sizes"]),
+        drop_path_rate=float(config["drop_path_rate"]),
+        layer_scale_init_value=float(config["layer_scale_init_value"]),
+    )
+    converted = {}
+    with safe_open(checkpoint, framework="pt", device="cpu") as handle:
+        for hf_key in handle.keys():
+            if hf_key.startswith("layer_norm."):
+                local_key = "norm." + hf_key.removeprefix("layer_norm.")
+            else:
+                parts = hf_key.split(".")
+                if len(parts) < 5 or parts[0] != "stages":
+                    raise RuntimeError(f"Unrecognized DINOv3 ConvNeXt key: {hf_key}")
+                stage = parts[1]
+                if parts[2] == "downsample_layers":
+                    local_key = ".".join(("downsample_layers", stage, *parts[3:]))
+                elif parts[2] == "layers":
+                    block = parts[3]
+                    suffix = ".".join(parts[4:])
+                    suffix = suffix.replace("depthwise_conv", "dwconv", 1)
+                    suffix = suffix.replace("layer_norm", "norm", 1)
+                    suffix = suffix.replace("pointwise_conv1", "pwconv1", 1)
+                    suffix = suffix.replace("pointwise_conv2", "pwconv2", 1)
+                    local_key = f"stages.{stage}.{block}.{suffix}"
+                else:
+                    raise RuntimeError(f"Unrecognized DINOv3 ConvNeXt key: {hf_key}")
+            if local_key in converted:
+                raise RuntimeError(f"Duplicate converted ConvNeXt key: {local_key}")
+            converted[local_key] = handle.get_tensor(hf_key)
+
+    # ``norms.3`` aliases the final ``norm`` in the official implementation,
+    # so state_dict exposes the same two parameters under both names.
+    converted["norms.3.weight"] = converted["norm.weight"]
+    converted["norms.3.bias"] = converted["norm.bias"]
+    expected_state = model.state_dict()
+    missing = sorted(set(expected_state) - set(converted))
+    unexpected = sorted(set(converted) - set(expected_state))
+    mismatched = sorted(
+        key
+        for key in set(expected_state) & set(converted)
+        if expected_state[key].shape != converted[key].shape
+    )
+    if missing or unexpected or mismatched:
+        raise RuntimeError(
+            "Failed to strictly convert DINOv3 ConvNeXt weights: "
+            f"missing={missing}, unexpected={unexpected}, mismatched={mismatched}"
+        )
+    model.load_state_dict(converted, strict=True)
+    encoder = (
+        LocalDINOv3ConvNeXtGlobalEncoder(model)
+        .to(device=device, dtype=torch.bfloat16)
+        .eval()
+        .requires_grad_(False)
+    )
+
+    with processor_path.open("r", encoding="utf-8") as handle:
+        processor = json.load(handle)
+    crop_value = processor.get("crop_size")
+    image_size = extractors._processor_square_size(
+        crop_value if crop_value is not None else processor["size"],
+        "crop_size" if crop_value is not None else "size",
+    )
+    resize_size = extractors._processor_square_size(processor["size"], "size")
+    mean = tuple(float(value) for value in processor["image_mean"])
+    std = tuple(float(value) for value in processor["image_std"])
+    train_transform = extractors.make_classification_train_transform(
+        crop_size=image_size,
+        hflip_prob=0.5,
+        mean=mean,
+        std=std,
+    )
+    eval_transform = extractors.make_classification_eval_transform(
+        resize_size=resize_size,
+        crop_size=image_size,
+        mean=mean,
+        std=std,
+    )
+    return extractors.FeatureBundle(
+        encoder=encoder,
+        train_transform=train_transform,
+        eval_transform=eval_transform,
+        autocast_context=lambda: torch.autocast(
+            device_type="cuda", dtype=torch.bfloat16
+        ),
+        representation=(
+            "DINOv3 ConvNeXt final-stage GAP after the released final LayerNorm"
+        ),
+        transform_description=(
+            f"train=RandomResizedCrop({image_size})+HorizontalFlip(0.5), "
+            f"eval=Resize({resize_size})+CenterCrop({image_size}), "
+            f"mean={mean}, std={std}"
+        ),
+        backbone_precision="bfloat16 weights and autocast",
+        checkpoint_paths=[
+            str(checkpoint.resolve()),
+            str(config_path.resolve()),
+            str(processor_path.resolve()),
+        ],
+    )
+
+
 def _build_parser():
     parser = base._build_parser()
     parser.description = (
@@ -181,6 +607,21 @@ def _checkpoint_identity(path_string: str) -> dict:
 def _load_feature_bundle(model_name: str, args, device: torch.device):
     """Use a CLS-only readout for every WebSSL checkpoint."""
 
+    if (
+        model_name in extractors.DINO_VIT_SPECS
+        and extractors.DINO_VIT_SPECS[model_name][1] == "dinov3_vit"
+    ):
+        return _load_local_dinov3_vit(
+            args,
+            extractors.DINO_VIT_SPECS[model_name],
+            device,
+        )
+    if model_name in extractors.DINOV3_CONVNEXT_SPECS:
+        return _load_local_dinov3_convnext(
+            args,
+            extractors.DINOV3_CONVNEXT_SPECS[model_name],
+            device,
+        )
     if model_name in base.WEBSSL_DINO_SPECS:
         bundle = extractors._load_hf_visual_encoder(
             args.continuous_model_root,
