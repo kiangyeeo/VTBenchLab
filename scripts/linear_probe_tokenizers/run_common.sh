@@ -20,7 +20,8 @@ run_tokenizer_linear_probe() {
     echo ">> tokenizer linear probing: $model"
     echo "   single visible GPU; optimization global batch=1024; accumulation=1"
     echo "   frozen-backbone chunks are concatenated before the linear heads"
-    echo "   updates=12500; base LR grid=0.0001 ... 0.5; DINO batch scaling=x4"
+    echo "   full schedule=10 epochs/12500 updates; --stop-after-epoch can end an invocation early"
+    echo "   base LR grid=0.0001 ... 0.5; DINO batch scaling=x4"
     echo "   output_root=$OUT_ROOT"
 
     PYTHONPATH="$DINO_REPO${PYTHONPATH:+:$PYTHONPATH}" \
