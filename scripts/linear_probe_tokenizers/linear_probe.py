@@ -278,6 +278,16 @@ def _build_parser():
             "concatenated before the linear heads; the optimization batch remains 1024."
         ),
     )
+    parser.add_argument(
+        "--stop-after-epoch",
+        type=int,
+        default=EPOCHS,
+        help=(
+            "Stop after this epoch while retaining the full 10-epoch cosine "
+            "schedule (default: 10). Re-run with a larger value to resume from "
+            "the saved epoch checkpoint."
+        ),
+    )
     parser.add_argument("--no-resume", action="store_true")
 
     parser.add_argument("--image-scripts", type=Path, default=image_scripts)
@@ -619,6 +629,8 @@ def main() -> int:
         raise ValueError("--num-workers must be non-negative")
     if args.feature_microbatch_size <= 0:
         raise ValueError("--feature-microbatch-size must be positive")
+    if not 1 <= args.stop_after_epoch <= EPOCHS:
+        raise ValueError(f"--stop-after-epoch must be in [1, {EPOCHS}]")
 
     distributed.enable(overwrite=True)
     if distributed.get_global_size() != 1:
@@ -677,8 +689,14 @@ def main() -> int:
     checkpointer = Checkpointer(head_grid, str(output_dir), optimizer=optimizer, scheduler=scheduler)
     checkpoint = checkpointer.resume_or_load("", resume=not args.no_resume)
     start_update = int(checkpoint.get("iteration", -1)) + 1
+    stop_update = args.stop_after_epoch * EPOCH_LENGTH
     if start_update < 0 or start_update > MAX_UPDATES:
         raise RuntimeError(f"Invalid checkpoint update: {start_update}")
+    if start_update > stop_update:
+        raise RuntimeError(
+            f"Checkpoint is already at update {start_update}, beyond requested cutoff "
+            f"{stop_update}; use a larger --stop-after-epoch or a new --output-dir."
+        )
 
     train_loader = make_data_loader(
         dataset=train_dataset,
@@ -703,11 +721,14 @@ def main() -> int:
     )
 
     LOGGER.info(
-        "Starting %s from update %d/%d with optimization global batch %d "
-        "and frozen-backbone feature microbatch %d",
+        "Starting %s from update %d/%d with requested cutoff epoch=%d "
+        "(%d updates), optimization global batch %d, and frozen-backbone "
+        "feature microbatch %d",
         args.model,
         start_update,
         MAX_UPDATES,
+        args.stop_after_epoch,
+        stop_update,
         BATCH_SIZE,
         args.feature_microbatch_size,
     )
@@ -724,15 +745,15 @@ def main() -> int:
         )
         _evaluate_heads(feature_model, head_grid, val_loader, start_update, output_dir)
 
-    if start_update < MAX_UPDATES:
+    if start_update < stop_update:
         metric_logger = MetricLogger(delimiter="  ")
-        remaining_batches = itertools.islice(train_loader, MAX_UPDATES - start_update)
+        remaining_batches = itertools.islice(train_loader, stop_update - start_update)
         update = start_update
         for images, labels in metric_logger.log_every(
             remaining_batches,
             10,
             "Training",
-            MAX_UPDATES,
+            stop_update,
             start_update,
         ):
             if images.shape[0] != BATCH_SIZE:
@@ -760,6 +781,20 @@ def main() -> int:
             if completed_updates % EVAL_PERIOD_UPDATES == 0 and completed_updates < MAX_UPDATES:
                 _evaluate_heads(feature_model, head_grid, val_loader, completed_updates, output_dir)
             update += 1
+
+    if stop_update < MAX_UPDATES:
+        if not _metrics_history_has_iteration(
+            output_dir / "metrics_history.jsonl", stop_update
+        ):
+            _evaluate_heads(feature_model, head_grid, val_loader, stop_update, output_dir)
+        LOGGER.info(
+            "Stopped at epoch %d/%d (update %d); checkpoint and validation are "
+            "complete. Re-run with a larger --stop-after-epoch to resume.",
+            args.stop_after_epoch,
+            EPOCHS,
+            stop_update,
+        )
+        return 0
 
     checkpointer.save("model_final", iteration=MAX_UPDATES - 1)
     final_results = _evaluate_heads(feature_model, head_grid, val_loader, MAX_UPDATES, output_dir)
