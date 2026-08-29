@@ -33,6 +33,7 @@ from feature_extractors import (
     DINO_VIT_SPECS,
     EUPE_SPECS,
     PE_SPECS,
+    PIXIO_SPECS,
     WEBSSL_DINO_SPECS,
     WEBSSL_MAE_SPECS,
     FeatureBundle,
@@ -102,6 +103,7 @@ NEW_CONTINUOUS_MODEL_NAMES = (
     *WEBSSL_DINO_SPECS,
     *WEBSSL_MAE_SPECS,
     *EUPE_SPECS,
+    *PIXIO_SPECS,
 )
 MODEL_NAMES = (
     "metaclip",

@@ -335,6 +335,17 @@ WEBSSL_MAE_SPECS = {
     "webssl_mae3b_full2b_224": ("webssl-mae3b-full2b-224", "vit"),
 }
 
+# directory, hidden width, encoder depth, attention heads. Pixio uses eight
+# learned CLS tokens for every released size; the source-native global readout
+# averages the final block's pre-LayerNorm CLS tokens.
+PIXIO_SPECS = {
+    "pixio_vitb16": ("pixio-vitb16", 768, 12, 12),
+    "pixio_vitl16": ("pixio-vitl16", 1024, 24, 16),
+    "pixio_vith16": ("pixio-vith16", 1280, 32, 16),
+    "pixio_vit1b16": ("pixio-vit1b16", 1536, 48, 24),
+    "pixio_vit5b16": ("pixio-vit5b16", 3072, 48, 32),
+}
+
 # directory, architecture family, architecture size, released feature width.
 # EUPE checkpoints contain the backbone plus training-only distillation
 # projectors; the loader below admits only the latter as non-backbone keys and
@@ -511,6 +522,246 @@ class HFClsEncoder(nn.Module):
         if tokens.ndim != 3 or tokens.shape[1] < 1:
             raise RuntimeError(f"Unexpected Web-MAE token shape: {tuple(tokens.shape)}")
         return tokens[:, 0].float()
+
+
+class PixioPatchEmbeddings(nn.Module):
+    """Patch projection with names matching the released HF safetensors."""
+
+    def __init__(self, hidden_size: int, patch_size: int):
+        super().__init__()
+        self.patch_size = int(patch_size)
+        self.projection = nn.Conv2d(
+            3,
+            hidden_size,
+            kernel_size=self.patch_size,
+            stride=self.patch_size,
+        )
+
+    def forward(self, images: torch.Tensor) -> torch.Tensor:
+        return self.projection(images).flatten(2).transpose(1, 2)
+
+
+class PixioEmbeddings(nn.Module):
+    """Eight CLS tokens followed by the spatial patch-token sequence."""
+
+    def __init__(
+        self,
+        image_size: int,
+        patch_size: int,
+        hidden_size: int,
+        n_cls_tokens: int,
+    ):
+        super().__init__()
+        self.image_size = int(image_size)
+        self.patch_size = int(patch_size)
+        self.n_cls_tokens = int(n_cls_tokens)
+        self.cls_token = nn.Parameter(torch.empty(1, n_cls_tokens, hidden_size))
+        self.patch_embeddings = PixioPatchEmbeddings(hidden_size, patch_size)
+        patch_count = (image_size // patch_size) ** 2
+        self.position_embeddings = nn.Parameter(
+            torch.empty(1, n_cls_tokens + patch_count, hidden_size)
+        )
+
+    def _position_encoding(
+        self,
+        token_count: int,
+        height: int,
+        width: int,
+    ) -> torch.Tensor:
+        native_patch_count = self.position_embeddings.shape[1] - self.n_cls_tokens
+        if (
+            token_count == native_patch_count
+            and height == self.image_size
+            and width == self.image_size
+        ):
+            return self.position_embeddings
+        if height % self.patch_size or width % self.patch_size:
+            raise ValueError(
+                f"Pixio input {(height, width)} must be divisible by patch size "
+                f"{self.patch_size}"
+            )
+        native_grid = math.isqrt(native_patch_count)
+        if native_grid * native_grid != native_patch_count:
+            raise RuntimeError(
+                f"Pixio positional embedding has a non-square patch grid: "
+                f"{native_patch_count}"
+            )
+        cls_position = self.position_embeddings[:, : self.n_cls_tokens]
+        patch_position = self.position_embeddings[:, self.n_cls_tokens :]
+        patch_position = patch_position.reshape(
+            1, native_grid, native_grid, -1
+        ).permute(0, 3, 1, 2)
+        target_dtype = patch_position.dtype
+        patch_position = nn.functional.interpolate(
+            patch_position.float(),
+            size=(height // self.patch_size, width // self.patch_size),
+            mode="bicubic",
+            align_corners=False,
+        ).to(target_dtype)
+        patch_position = patch_position.permute(0, 2, 3, 1).reshape(
+            1, token_count, -1
+        )
+        return torch.cat((cls_position, patch_position), dim=1)
+
+    def forward(self, images: torch.Tensor) -> torch.Tensor:
+        batch_size, _channels, height, width = images.shape
+        patch_tokens = self.patch_embeddings(images)
+        cls_tokens = self.cls_token.expand(batch_size, -1, -1)
+        tokens = torch.cat((cls_tokens, patch_tokens), dim=1)
+        return tokens + self._position_encoding(
+            patch_tokens.shape[1], height, width
+        )
+
+
+class PixioSelfAttention(nn.Module):
+    """Pre-norm multi-head attention with checkpoint-compatible names."""
+
+    def __init__(self, hidden_size: int, num_heads: int):
+        super().__init__()
+        if hidden_size % num_heads:
+            raise ValueError(
+                f"Pixio hidden size {hidden_size} is not divisible by {num_heads} heads"
+            )
+        self.num_heads = int(num_heads)
+        self.head_dim = hidden_size // num_heads
+        self.query = nn.Linear(hidden_size, hidden_size)
+        self.key = nn.Linear(hidden_size, hidden_size)
+        self.value = nn.Linear(hidden_size, hidden_size)
+
+    def _split_heads(self, tokens: torch.Tensor) -> torch.Tensor:
+        batch_size, token_count, hidden_size = tokens.shape
+        return tokens.reshape(
+            batch_size, token_count, self.num_heads, self.head_dim
+        ).transpose(1, 2)
+
+    def forward(self, tokens: torch.Tensor) -> torch.Tensor:
+        query = self._split_heads(self.query(tokens))
+        key = self._split_heads(self.key(tokens))
+        value = self._split_heads(self.value(tokens))
+        attended = nn.functional.scaled_dot_product_attention(
+            query,
+            key,
+            value,
+            dropout_p=0.0,
+            is_causal=False,
+        )
+        return attended.transpose(1, 2).reshape(tokens.shape)
+
+
+class PixioAttentionOutput(nn.Module):
+    def __init__(self, hidden_size: int):
+        super().__init__()
+        self.dense = nn.Linear(hidden_size, hidden_size)
+
+    def forward(self, tokens: torch.Tensor) -> torch.Tensor:
+        return self.dense(tokens)
+
+
+class PixioAttention(nn.Module):
+    def __init__(self, hidden_size: int, num_heads: int):
+        super().__init__()
+        self.attention = PixioSelfAttention(hidden_size, num_heads)
+        self.output = PixioAttentionOutput(hidden_size)
+
+    def forward(self, tokens: torch.Tensor) -> torch.Tensor:
+        return self.output(self.attention(tokens))
+
+
+class PixioMLP(nn.Module):
+    def __init__(self, hidden_size: int, mlp_ratio: int):
+        super().__init__()
+        self.fc1 = nn.Linear(hidden_size, hidden_size * mlp_ratio)
+        self.fc2 = nn.Linear(hidden_size * mlp_ratio, hidden_size)
+
+    def forward(self, tokens: torch.Tensor) -> torch.Tensor:
+        return self.fc2(nn.functional.gelu(self.fc1(tokens)))
+
+
+class PixioLayer(nn.Module):
+    """One official Pixio pre-normalization Transformer block."""
+
+    def __init__(
+        self,
+        hidden_size: int,
+        num_heads: int,
+        mlp_ratio: int,
+        layer_norm_eps: float,
+    ):
+        super().__init__()
+        self.attention = PixioAttention(hidden_size, num_heads)
+        self.mlp = PixioMLP(hidden_size, mlp_ratio)
+        self.norm1 = nn.LayerNorm(hidden_size, eps=layer_norm_eps)
+        self.norm2 = nn.LayerNorm(hidden_size, eps=layer_norm_eps)
+
+    def forward(self, tokens: torch.Tensor) -> torch.Tensor:
+        tokens = tokens + self.attention(self.norm1(tokens))
+        return tokens + self.mlp(self.norm2(tokens))
+
+
+class PixioLayers(nn.Module):
+    def __init__(
+        self,
+        hidden_size: int,
+        depth: int,
+        num_heads: int,
+        mlp_ratio: int,
+        layer_norm_eps: float,
+    ):
+        super().__init__()
+        self.layer = nn.ModuleList(
+            [
+                PixioLayer(
+                    hidden_size,
+                    num_heads,
+                    mlp_ratio,
+                    layer_norm_eps,
+                )
+                for _ in range(depth)
+            ]
+        )
+
+    def forward(self, tokens: torch.Tensor) -> torch.Tensor:
+        for block in self.layer:
+            tokens = block(tokens)
+        return tokens
+
+
+class PixioEncoder(nn.Module):
+    """Released Pixio encoder with the official image-classification readout."""
+
+    def __init__(
+        self,
+        image_size: int,
+        patch_size: int,
+        hidden_size: int,
+        depth: int,
+        num_heads: int,
+        mlp_ratio: int,
+        n_cls_tokens: int,
+        layer_norm_eps: float,
+    ):
+        super().__init__()
+        self.n_cls_tokens = int(n_cls_tokens)
+        self.embeddings = PixioEmbeddings(
+            image_size,
+            patch_size,
+            hidden_size,
+            n_cls_tokens,
+        )
+        self.encoder = PixioLayers(
+            hidden_size,
+            depth,
+            num_heads,
+            mlp_ratio,
+            layer_norm_eps,
+        )
+        # Retained for a strict checkpoint load. The source-native global
+        # classification readout is deliberately taken before this final norm.
+        self.layernorm = nn.LayerNorm(hidden_size, eps=layer_norm_eps)
+
+    def forward(self, images: torch.Tensor) -> torch.Tensor:
+        tokens = self.encoder(self.embeddings(images))
+        return tokens[:, : self.n_cls_tokens].mean(dim=1).float()
 
 
 class EUPEViTEncoder(nn.Module):
@@ -1345,6 +1596,115 @@ def _load_hf_visual_encoder(
     )
 
 
+def _load_pixio(
+    model_root: str,
+    spec,
+    device: torch.device,
+) -> FeatureBundle:
+    from safetensors.torch import load_file
+
+    directory, expected_hidden_size, expected_depth, expected_heads = spec
+    model_dir = Path(model_root).expanduser().resolve() / directory
+    config_path = model_dir / "config.json"
+    processor_path = model_dir / "preprocessor_config.json"
+    checkpoint_path = model_dir / "model.safetensors"
+    for required_path in (config_path, processor_path, checkpoint_path):
+        if not required_path.is_file():
+            raise FileNotFoundError(f"Missing Pixio model file: {required_path}")
+
+    with config_path.open("r", encoding="utf-8") as handle:
+        config = json.load(handle)
+    expected_config = {
+        "model_type": "pixio",
+        "image_size": 256,
+        "patch_size": 16,
+        "hidden_size": expected_hidden_size,
+        "num_hidden_layers": expected_depth,
+        "num_attention_heads": expected_heads,
+        "mlp_ratio": 4,
+        "n_cls_tokens": 8,
+        "layer_norm_eps": 1e-6,
+    }
+    actual_config = {key: config.get(key) for key in expected_config}
+    if actual_config != expected_config:
+        raise RuntimeError(
+            f"Pixio config mismatch for {directory}: "
+            f"expected={expected_config}, actual={actual_config}"
+        )
+
+    with processor_path.open("r", encoding="utf-8") as handle:
+        processor = json.load(handle)
+    mean = tuple(float(value) for value in processor.get("image_mean", ()))
+    std = tuple(float(value) for value in processor.get("image_std", ()))
+    if mean != IMAGENET_MEAN or std != IMAGENET_STD:
+        raise RuntimeError(
+            f"Unexpected Pixio normalization for {directory}: mean={mean}, std={std}"
+        )
+
+    # Construct on the meta device, assign the mmap-backed safetensors, then
+    # materialize directly as BF16 on the GPU. This avoids an additional full
+    # FP32 allocation, which is important for Pixio-1B and Pixio-5B.
+    with torch.device("meta"):
+        model = PixioEncoder(
+            image_size=expected_config["image_size"],
+            patch_size=expected_config["patch_size"],
+            hidden_size=expected_hidden_size,
+            depth=expected_depth,
+            num_heads=expected_heads,
+            mlp_ratio=expected_config["mlp_ratio"],
+            n_cls_tokens=expected_config["n_cls_tokens"],
+            layer_norm_eps=expected_config["layer_norm_eps"],
+        )
+    state_dict = load_file(str(checkpoint_path), device="cpu", backend="mmap")
+    incompatible = model.load_state_dict(state_dict, strict=True, assign=True)
+    if incompatible.missing_keys or incompatible.unexpected_keys:
+        raise RuntimeError(
+            f"Failed to strictly load {directory}: "
+            f"missing={incompatible.missing_keys}, "
+            f"unexpected={incompatible.unexpected_keys}"
+        )
+    del state_dict
+    model = model.to(device=device, dtype=torch.bfloat16).eval().requires_grad_(False)
+
+    image_size = expected_config["image_size"]
+    train_transform = make_classification_train_transform(
+        crop_size=image_size,
+        hflip_prob=0.5,
+        mean=mean,
+        std=std,
+    )
+    eval_transform = make_classification_eval_transform(
+        resize_size=image_size,
+        crop_size=image_size,
+        mean=mean,
+        std=std,
+    )
+    return FeatureBundle(
+        encoder=model,
+        train_transform=train_transform,
+        eval_transform=eval_transform,
+        autocast_context=partial(
+            torch.autocast,
+            device_type="cuda",
+            dtype=torch.bfloat16,
+        ),
+        representation=(
+            "mean of the eight final-block pre-LayerNorm Pixio CLS tokens"
+        ),
+        transform_description=(
+            f"train=RandomResizedCrop({image_size})+HorizontalFlip(0.5), "
+            f"eval=Resize({image_size})+CenterCrop({image_size}), "
+            f"mean={mean}, std={std}"
+        ),
+        backbone_precision="bfloat16 weights and autocast",
+        checkpoint_paths=[
+            str(checkpoint_path),
+            str(config_path),
+            str(processor_path),
+        ],
+    )
+
+
 def _load_eupe(
     model_root: str,
     dinov3_path: Path,
@@ -1834,6 +2194,12 @@ def load_feature_bundle(model_name: str, args, device: torch.device) -> FeatureB
             args.continuous_model_root,
             WEBSSL_MAE_SPECS[model_name],
             "cls",
+            device,
+        )
+    if model_name in PIXIO_SPECS:
+        return _load_pixio(
+            args.continuous_model_root,
+            PIXIO_SPECS[model_name],
             device,
         )
     if model_name in EUPE_SPECS:
