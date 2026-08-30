@@ -2,6 +2,7 @@
 """Single-surface DINOv2-style linear probing for visual tokenizers."""
 
 import argparse
+import gc
 import hashlib
 import itertools
 import json
@@ -469,6 +470,33 @@ def _write_or_validate_protocol(output_dir: Path, protocol: dict) -> None:
         with protocol_path.open("r", encoding="utf-8") as handle:
             previous = json.load(handle)
         if previous != protocol:
+            # A feature microbatch only chunks independent frozen-backbone forwards;
+            # it does not change the optimization batch or schedule. Permit a failed
+            # pre-training attempt to retry with a safer chunk size, but never mix
+            # protocols after a checkpoint or metric has been produced.
+            ignored_keys = {"feature_extraction_microbatch_size", "fingerprint"}
+            previous_core = {
+                key: value for key, value in previous.items() if key not in ignored_keys
+            }
+            protocol_core = {
+                key: value for key, value in protocol.items() if key not in ignored_keys
+            }
+            progress_artifacts = [
+                output_dir / "last_checkpoint",
+                output_dir / "metrics_history.jsonl",
+                output_dir / "results_eval_linear.json",
+                *output_dir.glob("*.pth"),
+            ]
+            if previous_core == protocol_core and not any(
+                path.exists() for path in progress_artifacts
+            ):
+                LOGGER.warning(
+                    "Replacing the protocol from an incomplete pre-training attempt "
+                    "with feature microbatch %d",
+                    protocol["feature_extraction_microbatch_size"],
+                )
+                _atomic_json_dump(protocol_path, protocol)
+                return
             raise RuntimeError(
                 "The output directory contains a different protocol.json; "
                 "refusing to mix incompatible runs. Choose a new --output-dir."
@@ -534,6 +562,30 @@ def _validate_feature_model(feature_model: FrozenFeatureModel, sample: torch.Ten
     if any(parameter.requires_grad for parameter in feature_model.encoder.parameters()):
         raise RuntimeError("The feature encoder contains trainable parameters")
     return int(features.shape[1])
+
+
+def _load_probe_feature_bundle(args, device: torch.device) -> FeatureBundle:
+    """Load DINOv3 ViTs through the local official implementation when needed."""
+
+    spec = DINO_VIT_SPECS.get(args.model)
+    if spec is not None and spec[1] == "dinov3_vit":
+        cached_script_dir = WORKSPACE / "scripts" / "linear_probe_tokenizers_cached"
+        if str(cached_script_dir) not in sys.path:
+            sys.path.insert(0, str(cached_script_dir))
+        # This strict converter already supports the locally downloaded DINOv3 HF
+        # checkpoints without requiring a Transformers upgrade.
+        from linear_probe_cached import _load_local_dinov3_vit
+
+        return _load_local_dinov3_vit(args, spec, device)
+    return load_feature_bundle(args.model, args, device)
+
+
+def _shutdown_loader_iterator(iterator) -> None:
+    """Stop DataLoader workers before validation starts its worker pool."""
+
+    shutdown_workers = getattr(iterator, "_shutdown_workers", None)
+    if callable(shutdown_workers):
+        shutdown_workers()
 
 
 def _build_heads(in_dim: int, device: torch.device):
@@ -653,7 +705,7 @@ def main() -> int:
 
     train_dataset_str = f"ImageNet:split=TRAIN:root={data_root}:extra={extra_root}"
     val_dataset_str = f"ImageNet:split=VAL:root={data_root}:extra={extra_root}"
-    bundle = load_feature_bundle(args.model, args, device)
+    bundle = _load_probe_feature_bundle(args, device)
     _configure_cuda_math()
     feature_model = FrozenFeatureModel(
         bundle,
@@ -749,7 +801,10 @@ def main() -> int:
 
     if start_update < stop_update:
         metric_logger = MetricLogger(delimiter="  ")
-        remaining_batches = itertools.islice(train_loader, stop_update - start_update)
+        train_iterator = iter(train_loader)
+        remaining_batches = itertools.islice(
+            train_iterator, stop_update - start_update
+        )
         update = start_update
         for images, labels in metric_logger.log_every(
             remaining_batches,
@@ -780,9 +835,24 @@ def main() -> int:
                 metric_logger.update(loss=float(loss.item()), lr=float(optimizer.param_groups[0]["lr"]))
             if completed_updates % EPOCH_LENGTH == 0 and completed_updates < MAX_UPDATES:
                 checkpointer.save("running_checkpoint_linear_eval", iteration=update)
-            if completed_updates % EVAL_PERIOD_UPDATES == 0 and completed_updates < MAX_UPDATES:
+            if (
+                completed_updates % EVAL_PERIOD_UPDATES == 0
+                and completed_updates < MAX_UPDATES
+                and completed_updates != stop_update
+            ):
                 _evaluate_heads(feature_model, head_grid, val_loader, completed_updates, output_dir)
             update += 1
+            del images, labels, features, logits, losses, loss
+
+        del remaining_batches
+        _shutdown_loader_iterator(train_iterator)
+        del train_iterator, train_loader
+        optimizer.zero_grad(set_to_none=True)
+        gc.collect()
+        torch.cuda.empty_cache()
+        LOGGER.info(
+            "Released training batches and DataLoader workers before cutoff validation"
+        )
 
     if stop_update < MAX_UPDATES:
         if not _metrics_history_has_iteration(
