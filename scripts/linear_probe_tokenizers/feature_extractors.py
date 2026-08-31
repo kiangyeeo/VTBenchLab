@@ -727,7 +727,7 @@ class PixioLayers(nn.Module):
 
 
 class PixioEncoder(nn.Module):
-    """Released Pixio encoder with the official image-classification readout."""
+    """Released Pixio encoder with the MAE-style linear-probing readout."""
 
     def __init__(
         self,
@@ -755,13 +755,12 @@ class PixioEncoder(nn.Module):
             mlp_ratio,
             layer_norm_eps,
         )
-        # Retained for a strict checkpoint load. The source-native global
-        # classification readout is deliberately taken before this final norm.
         self.layernorm = nn.LayerNorm(hidden_size, eps=layer_norm_eps)
 
     def forward(self, images: torch.Tensor) -> torch.Tensor:
         tokens = self.encoder(self.embeddings(images))
-        return tokens[:, : self.n_cls_tokens].mean(dim=1).float()
+        normalized_tokens = self.layernorm(tokens)
+        return normalized_tokens[:, : self.n_cls_tokens].mean(dim=1).float()
 
 
 class EUPEViTEncoder(nn.Module):
@@ -1689,7 +1688,7 @@ def _load_pixio(
             dtype=torch.bfloat16,
         ),
         representation=(
-            "mean of the eight final-block pre-LayerNorm Pixio CLS tokens"
+            "mean of the eight final-LayerNorm Pixio CLS tokens"
         ),
         transform_description=(
             f"train=RandomResizedCrop({image_size})+HorizontalFlip(0.5), "

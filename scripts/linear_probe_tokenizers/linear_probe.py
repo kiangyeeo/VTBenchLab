@@ -147,6 +147,9 @@ OUTPUT_NAMES = {
     **{model_name: model_name for model_name in RAEV2_MODEL_NAMES},
     **{model_name: model_name for model_name in NEW_CONTINUOUS_MODEL_NAMES},
     **{model_name: f"{model_name}_cls" for model_name in WEBSSL_MAE_SPECS},
+    # Preserve the invalid pre-LayerNorm/no-BN Pixio runs and write the corrected
+    # MAE-style probing protocol to distinct output directories.
+    **{model_name: f"{model_name}_mae_bn" for model_name in PIXIO_SPECS},
     "toklip_s": "toklip_s_semantic_256",
     "toklip_l": "toklip_l_semantic_384",
     "unitok": "unitok",
@@ -236,6 +239,23 @@ class LinearHead(nn.Module):
 
     def forward(self, features: torch.Tensor) -> torch.Tensor:
         return self.linear(features)
+
+
+class BatchNormalizedLinearHead(LinearHead):
+    """MAE-style non-affine BatchNorm followed by a linear classifier."""
+
+    def __init__(self, in_dim: int, base_lr: float, effective_lr: float):
+        super().__init__(in_dim, base_lr, effective_lr)
+        self.batch_norm = nn.BatchNorm1d(
+            in_dim,
+            eps=1e-6,
+            momentum=0.1,
+            affine=False,
+            track_running_stats=True,
+        )
+
+    def forward(self, features: torch.Tensor) -> torch.Tensor:
+        return self.linear(self.batch_norm(features))
 
 
 class LinearHeadGrid(nn.Module):
@@ -506,6 +526,7 @@ def _write_or_validate_protocol(output_dir: Path, protocol: dict) -> None:
 
 
 def _make_protocol(args, bundle: FeatureBundle, effective_lrs: list[float]) -> dict:
+    use_batch_norm = args.model in PIXIO_SPECS
     protocol = {
         "version": PROTOCOL_VERSION,
         "model": args.model,
@@ -533,7 +554,7 @@ def _make_protocol(args, bundle: FeatureBundle, effective_lrs: list[float]) -> d
         "num_classes": NUM_CLASSES,
         "readout_search": False,
         "multi_block_search": False,
-        "feature_normalization": False,
+        "feature_normalization": use_batch_norm,
         "loss": "cross_entropy",
         "optimizer": "SGD",
         "momentum": 0.9,
@@ -547,6 +568,24 @@ def _make_protocol(args, bundle: FeatureBundle, effective_lrs: list[float]) -> d
         "base_learning_rates": list(BASE_LEARNING_RATES),
         "effective_learning_rates": effective_lrs,
     }
+    if use_batch_norm:
+        protocol.update(
+            {
+                "feature_normalization_type": "BatchNorm1d",
+                "feature_normalization_placement": (
+                    "immediately before each linear classifier"
+                ),
+                "batch_norm_affine": False,
+                "batch_norm_eps": 1e-6,
+                "batch_norm_momentum": 0.1,
+                "batch_norm_track_running_stats": True,
+                "batch_norm_training_batch_size": BATCH_SIZE,
+                "pixio_readout_protocol": (
+                    "mean of eight final-LayerNorm CLS tokens, followed by "
+                    "MAE-style non-affine BatchNorm"
+                ),
+            }
+        )
     protocol["fingerprint"] = _protocol_fingerprint(protocol)
     return protocol
 
@@ -588,7 +627,12 @@ def _shutdown_loader_iterator(iterator) -> None:
         shutdown_workers()
 
 
-def _build_heads(in_dim: int, device: torch.device):
+def _build_heads(
+    in_dim: int,
+    device: torch.device,
+    *,
+    use_batch_norm: bool = False,
+):
     lr_scale = BATCH_SIZE * distributed.get_global_size() / 256.0
     effective_lrs = [float(base_lr * lr_scale) for base_lr in BASE_LEARNING_RATES]
     heads = {}
@@ -597,7 +641,8 @@ def _build_heads(in_dim: int, device: torch.device):
         name = f"classifier_fixed_readout_lr_{_lr_token(effective_lr)}"
         if name in heads:
             raise RuntimeError(f"Linear-head name collision: {name}")
-        head = LinearHead(in_dim, base_lr, effective_lr).to(device)
+        head_type = BatchNormalizedLinearHead if use_batch_norm else LinearHead
+        head = head_type(in_dim, base_lr, effective_lr).to(device)
         heads[name] = head
         parameter_groups.append({"params": head.parameters(), "lr": effective_lr})
     if len(heads) != len(BASE_LEARNING_RATES):
@@ -618,13 +663,18 @@ def _evaluate_heads(
         metric = build_metric(MetricType.MEAN_ACCURACY, num_classes=NUM_CLASSES)
     postprocessors = {name: LinearPostprocessor(head) for name, head in head_grid.heads.items()}
     metrics = {name: metric.clone() for name in head_grid.heads}
-    _stats, raw_results = evaluate(
-        feature_model,
-        data_loader,
-        postprocessors,
-        metrics,
-        torch.cuda.current_device(),
-    )
+    was_training = head_grid.training
+    head_grid.eval()
+    try:
+        _stats, raw_results = evaluate(
+            feature_model,
+            data_loader,
+            postprocessors,
+            metrics,
+            torch.cuda.current_device(),
+        )
+    finally:
+        head_grid.train(was_training)
 
     classifiers = []
     for name, metric_values in raw_results.items():
@@ -721,7 +771,11 @@ def main() -> int:
 
     sample = train_dataset[0][0].unsqueeze(0).to(device)
     in_dim = _validate_feature_model(feature_model, sample)
-    head_grid, parameter_groups, effective_lrs = _build_heads(in_dim, device)
+    head_grid, parameter_groups, effective_lrs = _build_heads(
+        in_dim,
+        device,
+        use_batch_norm=args.model in PIXIO_SPECS,
+    )
     if any(parameter.requires_grad for parameter in feature_model.parameters()):
         raise RuntimeError("Frozen feature model unexpectedly has trainable parameters")
 
