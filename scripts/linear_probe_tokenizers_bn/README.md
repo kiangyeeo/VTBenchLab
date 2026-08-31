@@ -36,6 +36,7 @@ Replace `run_metaclip.sh` with one of:
 - `run_toklip_s.sh`
 - `run_toklip_l.sh`
 - `run_unitok.sh`
+- `run_vqgan.sh`
 - `run_vilau.sh`
 - `run_webssl_mae300m_full2b_224.sh`
 - `run_webssl_mae700m_full2b_224.sh`
