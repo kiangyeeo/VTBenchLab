@@ -314,6 +314,15 @@ def _build_parser():
         ),
     )
     parser.add_argument("--no-resume", action="store_true")
+    parser.add_argument(
+        "--pixio-readout",
+        choices=("post-ln", "pre-ln"),
+        default="post-ln",
+        help=(
+            "Pixio CLS-token readout before the non-affine BatchNorm. "
+            "The default is post-ln; pre-ln is provided for an ablation."
+        ),
+    )
 
     parser.add_argument("--image-scripts", type=Path, default=image_scripts)
     parser.add_argument(
@@ -599,8 +608,8 @@ def _make_protocol(args, bundle: FeatureBundle, effective_lrs: list[float]) -> d
                 "batch_norm_track_running_stats": True,
                 "batch_norm_training_batch_size": BATCH_SIZE,
                 "pixio_readout_protocol": (
-                    "mean of eight final-LayerNorm CLS tokens, followed by "
-                    "MAE-style non-affine BatchNorm"
+                    f"mean of eight {args.pixio_readout} CLS tokens, followed by "
+                    "non-affine BatchNorm"
                 ),
             }
         )
@@ -753,6 +762,8 @@ def main() -> int:
         raise ValueError("--feature-microbatch-size must be positive")
     if not 1 <= args.stop_after_epoch <= EPOCHS:
         raise ValueError(f"--stop-after-epoch must be in [1, {EPOCHS}]")
+    if args.model not in PIXIO_SPECS and args.pixio_readout != "post-ln":
+        raise ValueError("--pixio-readout pre-ln is only valid for Pixio models")
 
     distributed.enable(overwrite=True)
     if distributed.get_global_size() != 1:
@@ -760,7 +771,10 @@ def main() -> int:
     _seed_everything(SEED)
 
     device = torch.device("cuda", torch.cuda.current_device())
-    output_dir = Path(args.output_dir or Path(args.output_root) / OUTPUT_NAMES[args.model]).resolve()
+    output_name = OUTPUT_NAMES[args.model]
+    if args.model in PIXIO_SPECS and args.pixio_readout == "pre-ln":
+        output_name = f"{args.model}_pre_ln_bn"
+    output_dir = Path(args.output_dir or Path(args.output_root) / output_name).resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
     setup_logging(output=str(output_dir), level=logging.INFO)
 

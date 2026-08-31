@@ -727,7 +727,7 @@ class PixioLayers(nn.Module):
 
 
 class PixioEncoder(nn.Module):
-    """Released Pixio encoder with the MAE-style linear-probing readout."""
+    """Released Pixio encoder with a selectable CLS-token readout."""
 
     def __init__(
         self,
@@ -739,9 +739,13 @@ class PixioEncoder(nn.Module):
         mlp_ratio: int,
         n_cls_tokens: int,
         layer_norm_eps: float,
+        readout: str = "post-ln",
     ):
         super().__init__()
+        if readout not in {"pre-ln", "post-ln"}:
+            raise ValueError(f"Unsupported Pixio readout: {readout}")
         self.n_cls_tokens = int(n_cls_tokens)
+        self.readout = readout
         self.embeddings = PixioEmbeddings(
             image_size,
             patch_size,
@@ -759,8 +763,9 @@ class PixioEncoder(nn.Module):
 
     def forward(self, images: torch.Tensor) -> torch.Tensor:
         tokens = self.encoder(self.embeddings(images))
-        normalized_tokens = self.layernorm(tokens)
-        return normalized_tokens[:, : self.n_cls_tokens].mean(dim=1).float()
+        if self.readout == "post-ln":
+            tokens = self.layernorm(tokens)
+        return tokens[:, : self.n_cls_tokens].mean(dim=1).float()
 
 
 class EUPEViTEncoder(nn.Module):
@@ -1686,6 +1691,7 @@ def _load_pixio(
     model_root: str,
     spec,
     device: torch.device,
+    readout: str = "post-ln",
 ) -> FeatureBundle:
     from safetensors.torch import load_file
 
@@ -1740,6 +1746,7 @@ def _load_pixio(
             mlp_ratio=expected_config["mlp_ratio"],
             n_cls_tokens=expected_config["n_cls_tokens"],
             layer_norm_eps=expected_config["layer_norm_eps"],
+            readout=readout,
         )
     state_dict = load_file(str(checkpoint_path), device="cpu", backend="mmap")
     incompatible = model.load_state_dict(state_dict, strict=True, assign=True)
@@ -1776,6 +1783,8 @@ def _load_pixio(
         ),
         representation=(
             "mean of the eight final-LayerNorm Pixio CLS tokens"
+            if readout == "post-ln"
+            else "mean of the eight pre-LayerNorm Pixio CLS tokens"
         ),
         transform_description=(
             f"train=RandomResizedCrop({image_size})+HorizontalFlip(0.5), "
@@ -2383,6 +2392,7 @@ def load_feature_bundle(model_name: str, args, device: torch.device) -> FeatureB
             args.continuous_model_root,
             PIXIO_SPECS[model_name],
             device,
+            readout=getattr(args, "pixio_readout", "post-ln"),
         )
     if model_name in EUPE_SPECS:
         return _load_eupe(
