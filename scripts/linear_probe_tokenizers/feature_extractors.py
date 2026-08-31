@@ -923,6 +923,93 @@ class UniTokEncoder(nn.Module):
         return self.model.fc_norm(tokens.mean(dim=1)).float()
 
 
+class UniARBSQEncoder(nn.Module):
+    """Mean of UniAR's final-block BSQ tokens after the official patch merger."""
+
+    def __init__(self, model: nn.Module, image_size: int):
+        super().__init__()
+        self.model = model
+        self.image_size = int(image_size)
+        self.patch_size = int(model.config.patch_size)
+        self.temporal_patch_size = int(model.config.temporal_patch_size)
+        self.merge_size = int(model.config.spatial_merge_size)
+        self.output_dim = int(model.config.out_hidden_size)
+
+        factor = self.patch_size * self.merge_size
+        if self.image_size % factor != 0:
+            raise ValueError(
+                f"UniAR image size {self.image_size} must be divisible by "
+                f"patch_size * merge_size = {factor}"
+            )
+
+    def _patchify(self, images: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+        """Match Qwen2VLImageProcessor's merge-aware image patch ordering."""
+        if images.ndim != 4 or images.shape[1] != 3:
+            raise RuntimeError(
+                f"Expected UniAR input shaped [B,3,H,W], got {tuple(images.shape)}"
+            )
+        batch_size, channels, height, width = images.shape
+        if (height, width) != (self.image_size, self.image_size):
+            raise RuntimeError(
+                f"Expected {self.image_size}x{self.image_size} UniAR crops, "
+                f"got {height}x{width}"
+            )
+
+        patch = self.patch_size
+        merge = self.merge_size
+        grid_h, grid_w = height // patch, width // patch
+        patches = images.reshape(
+            batch_size,
+            channels,
+            grid_h // merge,
+            merge,
+            patch,
+            grid_w // merge,
+            merge,
+            patch,
+        )
+        patches = patches.permute(0, 2, 5, 3, 6, 1, 4, 7)
+        patches = (
+            patches.unsqueeze(6)
+            .expand(-1, -1, -1, -1, -1, -1, self.temporal_patch_size, -1, -1)
+            .reshape(
+                batch_size * grid_h * grid_w,
+                channels * self.temporal_patch_size * patch * patch,
+            )
+        )
+        grid_thw = torch.tensor(
+            [[1, grid_h, grid_w]] * batch_size,
+            dtype=torch.long,
+            device=images.device,
+        )
+        return patches, grid_thw
+
+    def forward(self, images: torch.Tensor) -> torch.Tensor:
+        patches, grid_thw = self._patchify(images)
+        model_dtype = next(self.model.parameters()).dtype
+        main_tokens, _deepstack_tokens = self.model(
+            patches.to(dtype=model_dtype),
+            grid_thw=grid_thw,
+        )
+
+        batch_size = images.shape[0]
+        tokens_per_image = (
+            (self.image_size // self.patch_size) ** 2 // (self.merge_size ** 2)
+        )
+        expected_shape = (batch_size * tokens_per_image, self.output_dim)
+        if tuple(main_tokens.shape) != expected_shape:
+            raise RuntimeError(
+                f"Unexpected UniAR final-token shape: expected {expected_shape}, "
+                f"got {tuple(main_tokens.shape)}"
+            )
+        main_tokens = main_tokens.reshape(
+            batch_size,
+            tokens_per_image,
+            self.output_dim,
+        )
+        return main_tokens.float().mean(dim=1)
+
+
 class VQGANEncoder(nn.Module):
     """Mean-pooled quantized Taming VQGAN codebook embeddings."""
 
@@ -1979,6 +2066,102 @@ def _load_unitok(args, device: torch.device) -> FeatureBundle:
     )
 
 
+def _load_uniar_bsq(args, device: torch.device) -> FeatureBundle:
+    source_root = Path(args.uniar_path).expanduser().resolve()
+    source_file = source_root / "uniar" / "vision_encoder" / "modeling_vision_encoder.py"
+    if not source_file.is_file():
+        raise FileNotFoundError(
+            f"Missing official UniAR source checkout: {source_root}. "
+            "Clone https://github.com/ShareLab-SII/UniAR.git there or pass --uniar-path."
+        )
+
+    checkpoint_dir = Path(args.uniar_checkpoint).expanduser().resolve()
+    if (checkpoint_dir / "bsq_encoder").is_dir():
+        checkpoint_dir /= "bsq_encoder"
+    config_path = checkpoint_dir / "config.json"
+    weights_path = checkpoint_dir / "model.safetensors"
+    if not config_path.is_file() or not weights_path.is_file():
+        raise FileNotFoundError(
+            f"Expected config.json and model.safetensors in {checkpoint_dir}"
+        )
+
+    # transformers 5.10 references this PyTorch 2.7 dtype while importing
+    # optional FP8 support. UniAR does not use FP8, so retain the compatibility
+    # alias already used by the other local Hugging Face feature extractors.
+    if not hasattr(torch, "float8_e8m0fnu"):
+        torch.float8_e8m0fnu = torch.float8_e4m3fn
+    if str(source_root) not in sys.path:
+        sys.path.insert(0, str(source_root))
+    try:
+        from uniar.vision_encoder.configuration_vision_encoder import UniARVisionConfig
+        from uniar.vision_encoder.modeling_vision_encoder import UniARVisionModel
+    except ImportError as error:
+        raise RuntimeError(
+            "Failed to import the official UniAR vision encoder. Install its "
+            "Qwen3-VL-compatible dependencies (the release pins transformers==4.57.0)."
+        ) from error
+
+    config = UniARVisionConfig.from_pretrained(
+        str(checkpoint_dir),
+        local_files_only=True,
+    )
+    expected_config = {
+        "depth": 27,
+        "hidden_size": 1152,
+        "patch_size": 16,
+        "spatial_merge_size": 2,
+        "out_hidden_size": 4096,
+        "bsq_dim": 64,
+        "deepstack_visual_indexes": [8, 16, 24],
+        "use_bsq": True,
+    }
+    for name, expected in expected_config.items():
+        actual = getattr(config, name)
+        if actual != expected:
+            raise RuntimeError(
+                f"Unexpected UniAR config {name}: expected {expected!r}, got {actual!r}"
+            )
+
+    model, loading_info = UniARVisionModel.from_pretrained(
+        str(checkpoint_dir),
+        config=config,
+        local_files_only=True,
+        torch_dtype=torch.bfloat16,
+        low_cpu_mem_usage=True,
+        output_loading_info=True,
+    )
+    missing = loading_info.get("missing_keys", [])
+    unexpected = loading_info.get("unexpected_keys", [])
+    mismatched = loading_info.get("mismatched_keys", [])
+    if missing or unexpected or mismatched:
+        raise RuntimeError(
+            "UniAR checkpoint did not load strictly: "
+            f"missing={missing}, unexpected={unexpected}, mismatched={mismatched}"
+        )
+
+    image_size = int(args.uniar_image_size)
+    encoder = UniARBSQEncoder(model, image_size)
+    encoder = encoder.to(device).eval().requires_grad_(False)
+    train_transform, eval_transform = _pm1_transforms(image_size)
+    return FeatureBundle(
+        encoder=encoder,
+        train_transform=train_transform,
+        eval_transform=eval_transform,
+        autocast_context=partial(torch.autocast, device_type="cuda", dtype=torch.bfloat16),
+        representation=(
+            "mean of UniAR block 27 tokens after 64-bit BSQ quantize/dequantize, "
+            "BSQ output projection, and the official 2x2 patch merger"
+        ),
+        transform_description=(
+            f"train=RandomResizedCrop({image_size})+HorizontalFlip(0.5), "
+            f"eval=Resize({image_size})+CenterCrop({image_size}), "
+            f"mean={PM1_MEAN}, std={PM1_STD}; merge-aware Qwen patch ordering"
+        ),
+        backbone_precision="bfloat16 weights and autocast",
+        checkpoint_paths=[str(config_path), str(weights_path)],
+    )
+
+
 def _load_vilau(args, device: torch.device) -> FeatureBundle:
     if str(args.image_scripts) not in sys.path:
         sys.path.insert(0, str(args.image_scripts))
@@ -2216,6 +2399,8 @@ def load_feature_bundle(model_name: str, args, device: torch.device) -> FeatureB
         return _load_toklip(args, device, "l")
     if model_name == "unitok":
         return _load_unitok(args, device)
+    if model_name == "uniar_bsq":
+        return _load_uniar_bsq(args, device)
     if model_name == "vilau":
         return _load_vilau(args, device)
     if model_name == "vqgan":

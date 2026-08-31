@@ -126,6 +126,7 @@ MODEL_NAMES = (
     "toklip_s",
     "toklip_l",
     "unitok",
+    "uniar_bsq",
     "vilau",
     "vqgan",
 )
@@ -153,6 +154,7 @@ OUTPUT_NAMES = {
     "toklip_s": "toklip_s_semantic_256",
     "toklip_l": "toklip_l_semantic_384",
     "unitok": "unitok",
+    "uniar_bsq": "uniar_bsq_final27_256",
     "vilau": "vilau_7b_256_semantic_penultimate",
     "vqgan": "vqgan_imagenet_f16_16384",
 }
@@ -412,6 +414,22 @@ def _build_parser():
     parser.add_argument(
         "--unitok-checkpoint",
         default=str(model_zoo / "unitok_20250227" / "unitok_tokenizer.pth"),
+    )
+    parser.add_argument(
+        "--uniar-path",
+        default=str(image_scripts / "UniAR"),
+        help="Path to the official ShareLab-SII/UniAR source checkout.",
+    )
+    parser.add_argument(
+        "--uniar-checkpoint",
+        default=str(model_zoo / "uniar_bsq" / "bsq_encoder"),
+        help="Directory containing the standalone UniAR BSQ encoder checkpoint.",
+    )
+    parser.add_argument(
+        "--uniar-image-size",
+        type=int,
+        default=256,
+        help="Square linear-probing crop; must be divisible by patch_size * merge_size (32).",
     )
     parser.add_argument("--vilau-path", default=str(image_scripts / "vila-u"))
     parser.add_argument("--vilau-model-path", default=str(model_zoo / "VILA-U" / "vila-u-7b-256"))
