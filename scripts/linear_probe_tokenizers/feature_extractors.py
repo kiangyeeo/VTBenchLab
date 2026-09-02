@@ -1748,7 +1748,11 @@ def _load_pixio(
             layer_norm_eps=expected_config["layer_norm_eps"],
             readout=readout,
         )
-    state_dict = load_file(str(checkpoint_path), device="cpu", backend="mmap")
+    # Official safetensors releases (including 0.7) memory-map files
+    # internally and expose only ``filename`` and ``device`` here.  Some
+    # development builds accepted a non-standard ``backend="mmap"`` keyword,
+    # which makes the loader fail before reading any weights on official builds.
+    state_dict = load_file(str(checkpoint_path), device="cpu")
     incompatible = model.load_state_dict(state_dict, strict=True, assign=True)
     if incompatible.missing_keys or incompatible.unexpected_keys:
         raise RuntimeError(

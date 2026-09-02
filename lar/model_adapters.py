@@ -19,6 +19,29 @@ if str(PROBE_SCRIPTS) not in sys.path:
 if str(DINO_ROOT) not in sys.path:
     sys.path.insert(0, str(DINO_ROOT))
 
+
+def _ensure_transformers_torch_compatibility() -> None:
+    """Keep optional Transformers FP8 imports working with PyTorch 2.6.
+
+    Transformers 5.10 imports its fine-grained FP8 integration while lazily
+    resolving ordinary vision classes such as CLIPImageProcessor.  That module
+    references ``torch.float8_e8m0fnu``, which is absent from the workspace's
+    PyTorch 2.6 even though none of the LAR visual encoders use that FP8 dtype.
+    Install the same inert dtype alias before any feature loader can import
+    Transformers.
+    """
+    if not hasattr(torch, "float8_e8m0fnu"):
+        fallback = getattr(torch, "float8_e4m3fn", None)
+        if fallback is None:
+            raise RuntimeError(
+                "This Transformers version expects an FP8 dtype symbol unavailable "
+                f"in PyTorch {torch.__version__}; install a compatible PyTorch/Transformers pair"
+            )
+        torch.float8_e8m0fnu = fallback
+
+
+_ensure_transformers_torch_compatibility()
+
 import feature_extractors as fe  # noqa: E402
 
 
@@ -74,7 +97,17 @@ class PatchMeanEncoder(nn.Module):
 
         if isinstance(encoder, fe.OpenAIClipEncoder):
             tokens = encoder.model(pixel_values=images, return_dict=True).last_hidden_state
-            normalized = encoder.model.vision_model.post_layernorm(tokens[:, 1:])
+            # Transformers <=4.x wrapped the vision tower under
+            # ``model.vision_model``.  In 5.x CLIPVisionModel is the tower
+            # itself, so post_layernorm lives directly on ``model``.
+            vision_tower = getattr(encoder.model, "vision_model", encoder.model)
+            post_layernorm = getattr(vision_tower, "post_layernorm", None)
+            if post_layernorm is None:
+                raise RuntimeError(
+                    f"Unsupported CLIP vision layout: {type(encoder.model).__module__}."
+                    f"{type(encoder.model).__name__} has no post_layernorm"
+                )
+            normalized = post_layernorm(tokens[:, 1:])
             return self._finish(normalized)
 
         if isinstance(encoder, fe.SigLIP2MAPEncoder):
