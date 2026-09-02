@@ -48,8 +48,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--num-workers", type=int, default=8)
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--num-shards", type=int, default=1)
+    parser.add_argument("--shard-index", type=int, default=0)
     parser.add_argument("--limit", type=int, default=None, help="Smoke-test only; writes a .limitN stem")
     parser.add_argument("--overwrite", action="store_true")
+    parser.add_argument(
+        "--skip-existing", action="store_true",
+        help="Skip only complete FP32 arrays whose ID sidecar exactly matches this manifest.",
+    )
     return parser.parse_args()
 
 
@@ -69,15 +75,17 @@ def extract_one(spec: dict, identifiers: list[str], args: argparse.Namespace) ->
     if args.device.startswith("cuda") and not torch.cuda.is_available():
         raise RuntimeError("CUDA was requested but is unavailable")
     device = torch.device(args.device)
-    protocol = WORKSPACE / spec["probing_protocol"]
-    if not protocol.is_file():
-        raise FileNotFoundError(f"Selected probing run does not exist: {protocol}")
-    with protocol.open("r", encoding="utf-8") as handle:
-        protocol_payload = json.load(handle)
-    if protocol_payload.get("model") != spec["loader_name"]:
-        raise RuntimeError(
-            f"Protocol model {protocol_payload.get('model')} != loader {spec['loader_name']}"
-        )
+    protocol_value = spec.get("probing_protocol")
+    protocol = None if not protocol_value else WORKSPACE / protocol_value
+    if protocol is not None:
+        if not protocol.is_file():
+            raise FileNotFoundError(f"Selected probing run does not exist: {protocol}")
+        with protocol.open("r", encoding="utf-8") as handle:
+            protocol_payload = json.load(handle)
+        if protocol_payload.get("model") != spec["loader_name"]:
+            raise RuntimeError(
+                f"Protocol model {protocol_payload.get('model')} != loader {spec['loader_name']}"
+            )
 
     bundle = load_patch_bundle(spec["loader_name"], device)
     dataset = ManifestImages(identifiers, args.image_set, bundle.eval_transform)
@@ -136,15 +144,36 @@ def extract_one(spec: dict, identifiers: list[str], args: argparse.Namespace) ->
         "pooling": bundle.representation,
         "transform": bundle.transform_description,
         "checkpoint_paths": bundle.checkpoint_paths,
-        "probing_protocol": str(protocol),
+        "probing_protocol": None if protocol is None else str(protocol),
         "seed": args.seed,
     }
     metadata_path.write_text(json.dumps(metadata, indent=2) + "\n", encoding="utf-8")
     return output_path
 
 
+def complete_existing_path(spec: dict, identifiers: list[str], args: argparse.Namespace) -> Path | None:
+    suffix = "" if args.limit is None else f".limit{len(identifiers)}"
+    path = args.output_root / f"{spec['name']}__{args.image_set}{suffix}.npy"
+    if not path.exists():
+        return None
+    ids_path = path.with_suffix(".ids.txt")
+    metadata_path = path.with_suffix(".meta.json")
+    if not ids_path.is_file() or not metadata_path.is_file():
+        raise RuntimeError(f"Incomplete existing feature sidecars for {path}")
+    if ids_path.read_text(encoding="utf-8").splitlines() != identifiers:
+        raise RuntimeError(f"Existing feature IDs do not match the requested manifest: {path}")
+    array = np.load(path, mmap_mode="r")
+    if array.ndim != 2 or array.shape[0] != len(identifiers) or array.dtype != np.float32:
+        raise RuntimeError(f"Invalid existing feature array: {path}, shape={array.shape}, dtype={array.dtype}")
+    return path
+
+
 def main() -> None:
     args = parse_args()
+    if args.overwrite and args.skip_existing:
+        raise ValueError("--overwrite and --skip-existing are mutually exclusive")
+    if args.num_shards < 1 or not 0 <= args.shard_index < args.num_shards:
+        raise ValueError("Require num_shards >= 1 and 0 <= shard_index < num_shards")
     torch.manual_seed(args.seed)
     manifests = write_manifests(seed=args.seed)
     identifiers = manifests[args.image_set].read_text(encoding="utf-8").splitlines()
@@ -152,7 +181,18 @@ def main() -> None:
         if args.limit < 1:
             raise ValueError("--limit must be positive")
         identifiers = identifiers[: args.limit]
-    for spec in load_specs(args.models_config, args.models):
+    specs = load_specs(args.models_config, args.models)
+    specs = specs[args.shard_index :: args.num_shards]
+    print(
+        f"shard {args.shard_index}/{args.num_shards}: {len(specs)} model(s)",
+        flush=True,
+    )
+    for spec in specs:
+        if args.skip_existing:
+            existing = complete_existing_path(spec, identifiers, args)
+            if existing is not None:
+                print(f"SKIP complete {existing}", flush=True)
+                continue
         print(extract_one(spec, identifiers, args))
 
 

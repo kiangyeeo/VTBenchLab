@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from pathlib import Path
 
 import numpy as np
@@ -21,6 +22,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--domain", choices=("caption", "answer", "imagenet"), required=True)
     parser.add_argument("--image-set", choices=("coco4618", "coco5000", "in1k10k"), required=True)
     parser.add_argument("--model", default="Qwen/Qwen2.5-1.5B")
+    parser.add_argument(
+        "--hf-endpoint",
+        default=os.environ.get("HF_ENDPOINT", "https://hf-mirror.com"),
+        help=(
+            "Hugging Face Hub endpoint. Defaults to HF_ENDPOINT when set, otherwise "
+            "https://hf-mirror.com for mainland-China compute nodes."
+        ),
+    )
     parser.add_argument("--output-root", type=Path, default=WORKSPACE / "lar" / "text")
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--max-length", type=int, default=128)
@@ -37,7 +46,26 @@ def _torch_dtype(name: str) -> torch.dtype:
     return {"float32": torch.float32, "float16": torch.float16, "bfloat16": torch.bfloat16}[name]
 
 
+def _ensure_transformers_torch_compatibility() -> None:
+    """Bridge optional Transformers FP8 symbols absent from older PyTorch.
+
+    Transformers imports the fine-grained FP8 integration while defining
+    Qwen2Model even though this BF16 extraction never uses FP8.  PyTorch
+    releases before float8_e8m0fnu therefore fail during the lazy import.  The
+    existing UniAR loader uses the same inert compatibility alias.
+    """
+    if not hasattr(torch, "float8_e8m0fnu"):
+        fallback = getattr(torch, "float8_e4m3fn", None)
+        if fallback is None:
+            raise RuntimeError(
+                "This Transformers version expects an FP8 dtype symbol unavailable "
+                f"in PyTorch {torch.__version__}; install a compatible PyTorch/Transformers pair"
+            )
+        torch.float8_e8m0fnu = fallback
+
+
 def encode_unique_texts(texts: list[str], args: argparse.Namespace) -> np.ndarray:
+    _ensure_transformers_torch_compatibility()
     from transformers import AutoModel, AutoTokenizer
 
     if args.device.startswith("cuda") and not torch.cuda.is_available():
@@ -53,7 +81,7 @@ def encode_unique_texts(texts: list[str], args: argparse.Namespace) -> np.ndarra
         args.model,
         local_files_only=args.local_files_only,
         trust_remote_code=False,
-        torch_dtype=_torch_dtype(args.dtype),
+        dtype=_torch_dtype(args.dtype),
     ).to(args.device).eval().requires_grad_(False)
 
     unique_texts = list(dict.fromkeys(texts))
@@ -82,6 +110,11 @@ def encode_unique_texts(texts: list[str], args: argparse.Namespace) -> np.ndarra
 
 def main() -> None:
     args = parse_args()
+    if args.hf_endpoint:
+        # Set this before transformers/huggingface_hub is imported by
+        # encode_unique_texts; huggingface_hub reads the endpoint at import time.
+        os.environ["HF_ENDPOINT"] = args.hf_endpoint.rstrip("/")
+        print(f"Hugging Face endpoint: {os.environ['HF_ENDPOINT']}", flush=True)
     torch.manual_seed(args.seed)
     write_manifests(seed=args.seed)
     dataset = build_text_dataset(args.domain, args.image_set, seed=args.seed)
