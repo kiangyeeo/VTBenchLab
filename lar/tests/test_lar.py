@@ -13,6 +13,7 @@ import yaml
 
 from lar.compute_lar import CSV_FIELDS, compute_metrics, compute_spectral_metrics
 from lar.compute_lar_pool import main as pool_main
+from lar.compute_metrics_v3 import main as metrics_v3_main
 from lar.data import build_text_dataset
 from lar.eval_e2 import anova_f
 from lar.eval_e3 import main as e3_main, mean_regret
@@ -67,6 +68,17 @@ class MetricTest(unittest.TestCase):
         target = values.copy()
         regret = mean_regret(values, target, 5, 20, np.random.default_rng(0))
         self.assertEqual(regret, 0.0)
+
+    def test_all_e4_text_domain_rules(self):
+        caption = build_text_dataset("caption", "coco4618")
+        domains = {
+            name: build_text_dataset(name, "coco4618")
+            for name in ("answer_other", "question_other", "qa_concat", "answer_all_types")
+        }
+        for dataset in domains.values():
+            self.assertEqual(dataset.ids, caption.ids)
+            self.assertEqual(len(dataset.texts), 4618)
+        self.assertIn(" ", domains["qa_concat"].texts[0])
 
 
 class E3PipelineTest(unittest.TestCase):
@@ -178,6 +190,42 @@ class E3PipelineTest(unittest.TestCase):
             self.assertEqual({row["text_domain"] for row in rows}, {"caption", "answer"})
             self.assertNotIn("Waste", rows[0])
             self.assertTrue((spectrum_root / "synthetic__answer__coco4618.npz").is_file())
+
+    def test_metrics_v3_synthetic_smoke(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            feature_root, text_root = root / "features", root / "text"
+            feature_root.mkdir(); text_root.mkdir()
+            rng = np.random.default_rng(99)
+            ids = [str(index) for index in range(48)]
+            visual = rng.normal(size=(48, 8)).astype(np.float32)
+            text = (visual[:, :4] @ rng.normal(size=(4, 7)) + rng.normal(size=(48, 7))).astype(np.float32)
+            visual_path = feature_root / "synthetic__coco4618.npy"
+            text_path = text_root / "caption__coco4618.npy"
+            np.save(visual_path, visual); np.save(text_path, text)
+            for path in (visual_path, text_path):
+                path.with_suffix(".ids.txt").write_text("\n".join(ids) + "\n")
+            visual_path.with_suffix(".meta.json").write_text(json.dumps({"n_tokens": 16}))
+            text_path.with_suffix(".texts.json").write_text(json.dumps([f"text {i}" for i in ids]))
+            config = root / "models.yaml"
+            config.write_text(yaml.safe_dump({"models": [{"name": "synthetic"}]}))
+            output, metadata = root / "metrics_v3.csv", root / "metrics_v3_meta.json"
+            arguments = [
+                "compute_metrics_v3", "--models-config", str(config),
+                "--feature-root", str(feature_root), "--text-root", str(text_root),
+                "--domains", "caption", "--device", "cpu", "--ridge-repeats", "1",
+                "--cca-pca-rank", "7", "--output", str(output), "--metadata", str(metadata),
+            ]
+            with patch.object(sys, "argv", arguments):
+                metrics_v3_main()
+            with output.open(encoding="utf-8") as handle:
+                rows = list(csv.DictReader(handle))
+            self.assertEqual(len(rows), 9)
+            self.assertEqual({row["metric_name"] for row in rows}, {
+                "VSA", "mutual_kNN_k5", "mutual_kNN_k10", "mutual_kNN_k20",
+                "cm_cka", "cm_r2", "VSA_abtt1", "VSA_abtt2", "VSA_abtt3",
+            })
+            self.assertTrue(metadata.is_file())
 
 
 if __name__ == "__main__":

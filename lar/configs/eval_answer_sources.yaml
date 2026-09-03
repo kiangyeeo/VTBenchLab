@@ -1,0 +1,19 @@
+# Optional train-split answer sources for T6. Missing files are audited and
+# skipped. Paths are relative to the workspace root.
+sources:
+  - name: vqav2_train
+    kind: vqav2
+    id_namespace: coco
+    path: data/gvt/raw/vqa/v2_mscoco_train2014_annotations.json
+    questions: data/gvt/raw/vqa/v2_OpenEnded_mscoco_train2014_questions.json
+  - name: gqa_train
+    kind: gqa
+    id_namespace: gqa
+    # Optional JSON mapping source image IDs to COCO IDs:
+    # coco_id_map: data/gvt/raw/gqa/gqa_to_coco.json
+    path: data/gvt/raw/gqa/train_balanced_questions.json
+  - name: textvqa_train
+    kind: textvqa
+    id_namespace: textvqa
+    # Set coco_id_map when the local release provides a verified mapping.
+    path: data/gvt/raw/textvqa/TextVQA_0.5.1_train.json

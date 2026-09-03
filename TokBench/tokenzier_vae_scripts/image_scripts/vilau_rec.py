@@ -1,6 +1,9 @@
 import argparse
+import importlib
+import importlib.machinery
 import os
 import sys
+import types
 from types import SimpleNamespace
 
 import numpy as np
@@ -60,6 +63,61 @@ def resolve_vision_tower_path(model_path):
     return model_path
 
 
+def import_vilau_vision_classes(vilau_path):
+    """Import only VILA-U's vision tokenizer without eager LLM dependencies.
+
+    The upstream ``vila_u`` and ``vila_u.model`` package initializers eagerly
+    import the chat/LLM stack.  Tokenizer-only inference does not need that
+    stack, and importing it introduces unrelated dependencies such as loguru
+    plus APIs removed by newer Transformers releases.  Lightweight package
+    shells preserve normal relative imports inside the vision subtree while
+    skipping those two initializers.
+    """
+    package_paths = {
+        "vila_u": os.path.join(vilau_path, "vila_u"),
+        "vila_u.model": os.path.join(vilau_path, "vila_u", "model"),
+    }
+    for package_name, package_path in package_paths.items():
+        if package_name in sys.modules:
+            continue
+        package = types.ModuleType(package_name)
+        package.__path__ = [package_path]
+        package.__package__ = package_name
+        package.__spec__ = importlib.machinery.ModuleSpec(
+            package_name, loader=None, is_package=True
+        )
+        sys.modules[package_name] = package
+
+    module = importlib.import_module(
+        "vila_u.model.multimodal_encoder.rqvaesigliptransformer"
+    )
+    return module.RQVAESIGLIPTransformer, module.RQVAESIGLIPTransformerConfig
+
+
+def restore_position_ids(model):
+    """Rebuild non-persistent position IDs after Transformers meta loading.
+
+    Transformers 5.x materializes non-persistent buffers from a meta model with
+    ``empty_like``.  Since position IDs are deliberately absent from the
+    checkpoint, that leaves them as uninitialized integers.  Recreate them
+    from each position embedding before moving the model to its target device.
+    """
+    restored = 0
+    for module in model.modules():
+        position_embedding = getattr(module, "position_embedding", None)
+        position_ids = getattr(module, "position_ids", None)
+        if not isinstance(position_embedding, torch.nn.Embedding) or not torch.is_tensor(
+            position_ids
+        ):
+            continue
+        count = int(position_embedding.num_embeddings)
+        values = torch.arange(count, device=position_embedding.weight.device).expand(1, -1)
+        module.register_buffer("position_ids", values, persistent=False)
+        restored += 1
+    if restored == 0:
+        raise RuntimeError("VILA-U model has no position_ids buffers to restore")
+
+
 def load_vilau_tokenizer(args, device):
     vilau_path = os.path.abspath(args.vilau_path)
     model_path = os.path.abspath(args.model_path)
@@ -70,17 +128,20 @@ def load_vilau_tokenizer(args, device):
     require_path(vision_tower_path, "VILA-U vision tower checkpoint")
     require_path(os.path.join(siglip_config_path, "config.json"), "SigLIP base config")
 
-    sys.path.insert(0, vilau_path)
-    from vila_u.model.multimodal_encoder.rqvaesigliptransformer import (
-        RQVAESIGLIPTransformer,
-        RQVAESIGLIPTransformerConfig,
+    RQVAESIGLIPTransformer, RQVAESIGLIPTransformerConfig = import_vilau_vision_classes(
+        vilau_path
     )
     from transformers import CLIPImageProcessor
 
     dtype = torch_dtype(args.dtype)
     config = RQVAESIGLIPTransformerConfig.from_pretrained(vision_tower_path)
     config.rqvaesiglip["pretrained_model"] = siglip_config_path
-    model = RQVAESIGLIPTransformer.from_pretrained(vision_tower_path, config=config, torch_dtype=dtype)
+    model = RQVAESIGLIPTransformer.from_pretrained(
+        vision_tower_path,
+        config=config,
+        dtype=dtype,
+    )
+    restore_position_ids(model)
     model.to(device=device, dtype=dtype)
     model.eval()
 

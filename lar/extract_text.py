@@ -12,14 +12,22 @@ import numpy as np
 import torch
 
 try:
-    from .data import WORKSPACE, build_text_dataset, write_lines, write_manifests
+    from .data import (
+        EVAL_ANSWER_SOURCES, WORKSPACE, build_text_dataset, write_lines, write_manifests,
+    )
 except ImportError:  # Direct execution: python lar/extract_text.py
-    from data import WORKSPACE, build_text_dataset, write_lines, write_manifests
+    from data import EVAL_ANSWER_SOURCES, WORKSPACE, build_text_dataset, write_lines, write_manifests
+
+
+COCO_DOMAINS = (
+    "caption", "answer", "answer_other", "question_other", "qa_concat",
+    "answer_all_types", "eval_answer",
+)
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--domain", choices=("caption", "answer", "imagenet"), required=True)
+    parser.add_argument("--domain", choices=(*COCO_DOMAINS, "imagenet"), required=True)
     parser.add_argument("--image-set", choices=("coco4618", "coco5000", "in1k10k"), required=True)
     parser.add_argument("--model", default="Qwen/Qwen2.5-1.5B")
     parser.add_argument(
@@ -34,10 +42,18 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--max-length", type=int, default=128)
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument(
+        "--eval-answer-sources", type=Path, default=EVAL_ANSWER_SOURCES,
+        help="YAML describing VQAv2/GQA/TextVQA train-answer sources for eval_answer.",
+    )
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--dtype", choices=("float32", "float16", "bfloat16"), default="bfloat16")
     parser.add_argument("--local-files-only", action="store_true")
     parser.add_argument("--prepare-only", action="store_true")
+    parser.add_argument(
+        "--tokenize-only", action="store_true",
+        help="Only write token-length diagnostics; keep an existing embedding array unchanged.",
+    )
     parser.add_argument("--overwrite", action="store_true")
     return parser.parse_args()
 
@@ -64,7 +80,27 @@ def _ensure_transformers_torch_compatibility() -> None:
         torch.float8_e8m0fnu = fallback
 
 
-def encode_unique_texts(texts: list[str], args: argparse.Namespace) -> np.ndarray:
+def tokenize_lengths(texts: list[str], args: argparse.Namespace) -> np.ndarray:
+    from transformers import AutoTokenizer
+
+    tokenizer = AutoTokenizer.from_pretrained(
+        args.model, local_files_only=args.local_files_only, trust_remote_code=False,
+    )
+    if tokenizer.pad_token_id is None:
+        tokenizer.pad_token = tokenizer.eos_token
+    chunks = []
+    for start in range(0, len(texts), args.batch_size):
+        tokens = tokenizer(
+            texts[start : start + args.batch_size], padding=True, truncation=True,
+            max_length=args.max_length, return_tensors="np",
+        )
+        chunks.append(np.asarray(tokens["attention_mask"].sum(axis=1), dtype=np.int32))
+    return np.concatenate(chunks) if chunks else np.empty(0, dtype=np.int32)
+
+
+def encode_unique_texts(
+    texts: list[str], args: argparse.Namespace,
+) -> tuple[np.ndarray, np.ndarray]:
     _ensure_transformers_torch_compatibility()
     from transformers import AutoModel, AutoTokenizer
 
@@ -87,6 +123,7 @@ def encode_unique_texts(texts: list[str], args: argparse.Namespace) -> np.ndarra
     unique_texts = list(dict.fromkeys(texts))
     unique_index = {text: index for index, text in enumerate(unique_texts)}
     chunks: list[np.ndarray] = []
+    length_chunks: list[np.ndarray] = []
     for start in range(0, len(unique_texts), args.batch_size):
         batch = unique_texts[start : start + args.batch_size]
         tokens = tokenizer(
@@ -103,9 +140,14 @@ def encode_unique_texts(texts: list[str], args: argparse.Namespace) -> np.ndarra
         mask = tokens["attention_mask"].unsqueeze(-1).to(hidden.dtype)
         pooled = (hidden * mask).sum(dim=1) / mask.sum(dim=1).clamp_min(1)
         chunks.append(pooled.cpu().numpy().astype(np.float32, copy=False))
+        length_chunks.append(
+            tokens["attention_mask"].sum(dim=1).cpu().numpy().astype(np.int32, copy=False)
+        )
         print(f"encoded {min(start + args.batch_size, len(unique_texts))}/{len(unique_texts)} unique texts", flush=True)
     unique_features = np.concatenate(chunks, axis=0)
-    return unique_features[[unique_index[text] for text in texts]]
+    unique_lengths = np.concatenate(length_chunks, axis=0)
+    indices = [unique_index[text] for text in texts]
+    return unique_features[indices], unique_lengths[indices]
 
 
 def main() -> None:
@@ -117,38 +159,71 @@ def main() -> None:
         print(f"Hugging Face endpoint: {os.environ['HF_ENDPOINT']}", flush=True)
     torch.manual_seed(args.seed)
     write_manifests(seed=args.seed)
-    dataset = build_text_dataset(args.domain, args.image_set, seed=args.seed)
+    dataset = build_text_dataset(
+        args.domain, args.image_set, seed=args.seed,
+        eval_answer_sources=args.eval_answer_sources,
+    )
     args.output_root.mkdir(parents=True, exist_ok=True)
     stem = f"{args.domain}__{args.image_set}"
     text_json = args.output_root / f"{stem}.texts.json"
     ids_path = args.output_root / f"{stem}.ids.txt"
     output_path = args.output_root / f"{stem}.npy"
+    token_lengths_path = args.output_root / f"{stem}.token_lengths.npy"
     metadata_path = args.output_root / f"{stem}.meta.json"
 
     text_json.write_text(json.dumps(dataset.texts, ensure_ascii=False, indent=2), encoding="utf-8")
     write_lines(ids_path, dataset.ids)
+    previous_metadata = (
+        json.loads(metadata_path.read_text(encoding="utf-8"))
+        if metadata_path.is_file() else {}
+    )
+    base_metadata = {
+        **previous_metadata,
+        "domain": dataset.domain,
+        "image_set": dataset.image_set,
+        "N": len(dataset.ids),
+        "model": args.model,
+        "max_length": args.max_length,
+        "seed": args.seed,
+        "unique_texts": len(set(dataset.texts)),
+        "dataset": dataset.metadata or {},
+        "answer_count_mean": (
+            None if dataset.answer_counts is None else float(np.mean(dataset.answer_counts))
+        ),
+    }
+    metadata_path.write_text(json.dumps(base_metadata, indent=2) + "\n", encoding="utf-8")
     if args.prepare_only:
         print(f"prepared {len(dataset.ids)} rows: {text_json}")
+        return
+    if not dataset.ids:
+        raise RuntimeError(
+            "No eval_answer rows matched the COCO-4618 pool. Check --eval-answer-sources; "
+            f"coverage audit is in {metadata_path} (run --prepare-only to write it)."
+        )
+    if args.tokenize_only:
+        token_lengths = tokenize_lengths(dataset.texts, args)
+        np.save(token_lengths_path, token_lengths)
+        base_metadata.update(
+            mean_token_length=float(token_lengths.mean()),
+            token_lengths=str(token_lengths_path),
+        )
+        metadata_path.write_text(json.dumps(base_metadata, indent=2) + "\n", encoding="utf-8")
+        print(token_lengths_path)
         return
     if output_path.exists() and not args.overwrite:
         raise FileExistsError(f"Refusing to overwrite {output_path}; pass --overwrite")
 
-    features = encode_unique_texts(dataset.texts, args)
+    features, token_lengths = encode_unique_texts(dataset.texts, args)
     if features.shape[0] != len(dataset.ids) or not np.isfinite(features).all():
         raise RuntimeError(f"Invalid text feature array: {features.shape}")
     np.save(output_path, features)
+    np.save(token_lengths_path, token_lengths)
     metadata = {
-        "domain": dataset.domain,
-        "image_set": dataset.image_set,
-        "N": len(dataset.ids),
+        **base_metadata,
         "d": int(features.shape[1]),
-        "model": args.model,
         "pooling": "last_hidden_state attention-mask mean",
-        "max_length": args.max_length,
-        "seed": args.seed,
-        "answer_count_mean": (
-            None if dataset.answer_counts is None else float(np.mean(dataset.answer_counts))
-        ),
+        "mean_token_length": float(token_lengths.mean()),
+        "token_lengths": str(token_lengths_path),
     }
     metadata_path.write_text(json.dumps(metadata, indent=2) + "\n", encoding="utf-8")
     print(output_path)

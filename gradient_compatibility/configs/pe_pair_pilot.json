@@ -1,0 +1,82 @@
+{
+  "repo_root": "../..",
+  "runtime": {
+    "artifact_root": "gradient_compatibility/artifacts/pe_pair_pilot",
+    "device": "cuda",
+    "feature_dtype": "bfloat16",
+    "token_shard_size": 16
+  },
+  "data": {
+    "sample_seed": 42,
+    "caption_prompt": "Describe this image in one concise sentence.",
+    "coco_train_annotations": "data/clip_benchmark/mscoco_captions/coco_train_karpathy.json",
+    "coco_train_images": "data/gvt/raw/coco/train2014",
+    "coco_val_annotations": "data/clip_benchmark/mscoco_captions/coco_val_karpathy.json",
+    "coco_val_images": "data/gvt/raw/coco/val2014",
+    "coco_existence_arrow": "data/gvt/arrow/coco_mci.arrow",
+    "coco_counting_arrow": "data/gvt/arrow/coco_oc.arrow",
+    "textvqa_dir": "data/gradient_compatibility/textvqa/data",
+    "scienceqa_dir": "data/gradient_compatibility/scienceqa/ScienceQA-IMG",
+    "counts": {
+      "warmup": 4096,
+      "generic": 512,
+      "caption": 256,
+      "vqa": 256,
+      "ocr": 256,
+      "reasoning": 256
+    }
+  },
+  "tokenizers": {
+    "pe_lang_g14_448": {
+      "architecture": "vit_pe_lang_gigantic_patch14_448",
+      "checkpoint": "TokBench/tokenizer_modelzoo/continuous/PE-Lang-G14-448/PE-Lang-G14-448.pt",
+      "num_classes": 0,
+      "image_size": 448,
+      "token_count": 1024,
+      "hidden_dim": 1536,
+      "extract_batch_size": 1
+    },
+    "pe_core_g14_448": {
+      "architecture": "vit_pe_core_gigantic_patch14_448",
+      "checkpoint": "TokBench/tokenizer_modelzoo/continuous/PE-Core-G14-448/PE-Core-G14-448.pt",
+      "num_classes": 1280,
+      "image_size": 448,
+      "token_count": 1024,
+      "hidden_dim": 1536,
+      "extract_batch_size": 1
+    }
+  },
+  "llm": {
+    "path": "/cache/ma-user/hf_cache/hub/models--Qwen--Qwen2.5-1.5B/snapshots/8faed761d45a263340a0528343f099c05c9a4323",
+    "hidden_dim": 1536,
+    "gradient_checkpointing": true
+  },
+  "projector_training": {
+    "seeds": [0],
+    "microbatch_size": 1,
+    "gradient_accumulation_steps": 8,
+    "learning_rate": 0.001,
+    "weight_decay": 0.0,
+    "max_gradient_norm": 1.0,
+    "checkpoint_examples": [256, 1024, 4096],
+    "log_every_optimizer_steps": 20
+  },
+  "probe": {
+    "domains": ["generic", "caption", "vqa", "ocr", "reasoning"],
+    "generic_domain": "generic",
+    "last_n_layers": 4,
+    "target_modules": ["q_proj", "v_proj"],
+    "lora_rank": 8,
+    "lora_seed": 20260902,
+    "shuffle_seed": 20260903,
+    "log_every_examples": 16
+  },
+  "summary": {
+    "bootstrap_samples": 2000,
+    "bootstrap_seed": 20260904
+  },
+  "ground_truth": {
+    "pe_lang_g14_448": {"probe_epoch1": 74.61, "qwen2_5_mllm": 58.03},
+    "pe_core_g14_448": {"probe_epoch1": 88.22, "qwen2_5_mllm": 51.88}
+  }
+}

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Complete E3 evaluation over both COCO text domains and both targets."""
+"""Complete E3 evaluation over both COCO text domains and three audited targets."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ import argparse
 import hashlib
 import json
 import math
-from collections import defaultdict
+from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Callable
 
@@ -19,10 +19,12 @@ try:
     from .data import WORKSPACE
     from .eval_common import finite_float, read_csv, write_json
     from .eval_e2 import anova_f
+    from .metric_config import higher_is_better, load_metric_config, oriented
 except ImportError:  # Direct execution
     from data import WORKSPACE
     from eval_common import finite_float, read_csv, write_json
     from eval_e2 import anova_f
+    from metric_config import higher_is_better, load_metric_config, oriented
 
 
 DOMAINS = ("caption", "answer")
@@ -34,9 +36,10 @@ BASELINES = (
     "probe_epoch1", "retrieval-ImageNet", "CKA", "pretrain_loss",
     "A_score", "RankMe", "eff_rank",
 )
-LOWER_IS_BETTER = {"m50", "m90", "pretrain_loss"}
 TARGET_AVG = "MLLM_Avg"
+TARGET_AVG_MATCHED = "MLLM_Avg_matched"
 TARGET_PC1 = "PC1"
+TARGET_NAMES = (TARGET_AVG, TARGET_AVG_MATCHED, TARGET_PC1)
 COMBINATIONS = {
     "probe_epoch1": ("probe_epoch1",),
     "probe_epoch1+Lift_64": ("probe_epoch1", "Lift_64"),
@@ -51,6 +54,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--metrics", type=Path,
         default=WORKSPACE / "lar" / "results" / "lar_metrics_v2.csv",
+    )
+    parser.add_argument(
+        "--metrics-config", type=Path,
+        default=WORKSPACE / "lar" / "configs" / "metrics.yaml",
     )
     parser.add_argument(
         "--targets", type=Path,
@@ -263,10 +270,6 @@ def compute_pc1(rows: list[dict[str, str]]) -> tuple[dict[str, float], dict[str,
     return values, metadata
 
 
-def oriented(column: str, values: np.ndarray) -> np.ndarray:
-    return -values if column in LOWER_IS_BETTER else values
-
-
 def family_diagnostics(
     values: np.ndarray, target: np.ndarray, families: list[str]
 ) -> dict[str, object]:
@@ -299,8 +302,9 @@ def evaluate_candidate(
     families: list[str],
     args: argparse.Namespace,
     seed_parts: tuple[object, ...],
+    metric_config: dict[str, dict[str, object]],
 ) -> dict[str, object]:
-    selection_values = oriented(column, values)
+    selection_values = oriented(column, values, metric_config)
     seed = stable_seed(args.seed, *seed_parts, column)
     full_rho, pvalue = coefficient(selection_values, target)
     full_boot = bootstrap_spearman(
@@ -318,7 +322,9 @@ def evaluate_candidate(
     return {
         "n": len(values),
         "n_families": len(set(families)),
-        "selection_direction": "min" if column in LOWER_IS_BETTER else "max",
+        "family_composition": dict(sorted(Counter(families).items())),
+        "higher_is_better": higher_is_better(column, metric_config),
+        "selection_direction": "max" if higher_is_better(column, metric_config) else "min",
         "protocol_1_full_spearman": {
             "rho": safe_number(full_rho), "pvalue": safe_number(pvalue),
             "bootstrap_95_ci": percentile_interval(full_boot),
@@ -336,14 +342,21 @@ def evaluate_candidate(
     }
 
 
-def unavailable_candidate(column: str, n: int, reason: str) -> dict[str, object]:
+def unavailable_candidate(
+    column: str,
+    n: int,
+    reason: str,
+    metric_config: dict[str, dict[str, object]],
+) -> dict[str, object]:
     simulation = {
         "mean": None, "std": None, "bootstrap_95_ci": [None, None],
         "sampling_95_interval": [None, None],
     }
     return {
         "n": n, "n_families": None,
-        "selection_direction": "min" if column in LOWER_IS_BETTER else "max",
+        "family_composition": {},
+        "higher_is_better": higher_is_better(column, metric_config),
+        "selection_direction": "max" if higher_is_better(column, metric_config) else "min",
         "unavailable_reason": reason,
         "protocol_1_full_spearman": {
             "rho": None, "pvalue": None, "bootstrap_95_ci": [None, None],
@@ -423,7 +436,29 @@ def format_value(value: object, digits: int = 3) -> str:
 def create_report(payload: dict[str, object], path: Path, figure: Path) -> None:
     lines = ["# E3：全池三协议评估", ""]
     targets = payload["evaluations"]
-    for target_name in (TARGET_AVG, TARGET_PC1):
+    lines.extend(("## 覆盖审计", ""))
+    lines.append(
+        "补齐 qwen3/qwen2.5/smollm2 三列之前，主结论只使用 "
+        f"MLLM_Avg（n={payload['target_metadata'][TARGET_AVG]['n']}）。"
+    )
+    lines.append(
+        "PC1 与 MLLM_Avg_matched 使用完全相同的模型池；PC1 与未匹配的 "
+        "MLLM_Avg 不可直接解释为仅更换目标。"
+    )
+    lines.extend(("", "| 目标 | 指标 | caption n / family | answer n / family |", "|---|---|---:|---:|"))
+    for target_name in TARGET_NAMES:
+        for metric in (*LAR_METRICS, *BASELINES):
+            cells = []
+            for domain in DOMAINS:
+                row = targets[domain][target_name]["candidates"][metric]
+                composition = ", ".join(
+                    f"{family}:{count}" for family, count in row["family_composition"].items()
+                ) or "NA"
+                cells.append(f"{row['n']} / {composition}")
+            lines.append(f"| {target_name} | {metric} | {cells[0]} | {cells[1]} |")
+    lines.append("")
+
+    for target_name in TARGET_NAMES:
         lines.extend((f"## {target_name}", ""))
         for domain in DOMAINS:
             lines.extend((f"### {domain}", ""))
@@ -461,7 +496,7 @@ def create_report(payload: dict[str, object], path: Path, figure: Path) -> None:
             f"rho(n_tokens, Lift_64)={format_value(checks['n_tokens_vs_Lift_64']['rho'])}."
         )
     lines.extend(("", "## 停止判据", ""))
-    for target_name in (TARGET_AVG, TARGET_PC1):
+    for target_name in TARGET_NAMES:
         for domain in DOMAINS:
             stop = payload["stop_rule"][domain][target_name]
             lines.append(
@@ -482,6 +517,14 @@ def main() -> None:
         args.bootstrap_repeats, args.shortlist_size,
     ) < 1:
         raise ValueError("All repeat counts and shortlist size must be positive")
+
+    metric_config = load_metric_config(args.metrics_config)
+    evaluated_metrics = (*LAR_METRICS, *BASELINES)
+    missing_metric_config = sorted(set(evaluated_metrics) - set(metric_config))
+    if missing_metric_config:
+        raise RuntimeError(
+            f"Metrics missing from {args.metrics_config}: {missing_metric_config}"
+        )
 
     targets_list = read_csv(args.targets)
     required = {
@@ -508,8 +551,21 @@ def main() -> None:
             name: value for name, row in target_rows.items()
             if (value := finite_float(row.get(TARGET_AVG))) is not None
         },
+        TARGET_AVG_MATCHED: {
+            name: float(target_rows[name][TARGET_AVG])
+            for name in pc1_values
+            if name in target_rows and finite_float(target_rows[name].get(TARGET_AVG)) is not None
+        },
         TARGET_PC1: pc1_values,
     }
+    if set(target_values[TARGET_AVG_MATCHED]) != set(target_values[TARGET_PC1]):
+        raise RuntimeError("MLLM_Avg_matched and PC1 model pools differ")
+    pc1_metadata.update({
+        "family_composition": dict(sorted(Counter(
+            target_rows[name]["family"] for name in target_values[TARGET_PC1]
+        ).items())),
+        "role": "auxiliary target on the three-column-complete pool",
+    })
 
     metric_rows: dict[str, dict[str, dict[str, str]]] = {domain: {} for domain in DOMAINS}
     unexpected_metric_rows = []
@@ -586,7 +642,7 @@ def main() -> None:
     evaluations: dict[str, object] = {}
     for domain in DOMAINS:
         evaluations[domain] = {}
-        for target_name in (TARGET_AVG, TARGET_PC1):
+        for target_name in TARGET_NAMES:
             candidates: dict[str, object] = {}
             outcomes = target_values[target_name]
             for column in (*LAR_METRICS, *BASELINES):
@@ -607,12 +663,12 @@ def main() -> None:
                     families.append(target_row["family"])
                 if len(values) < 3:
                     candidates[column] = unavailable_candidate(
-                        column, len(values), "fewer than three complete rows"
+                        column, len(values), "fewer than three complete rows", metric_config
                     )
                 else:
                     candidates[column] = evaluate_candidate(
                         column, np.asarray(values), np.asarray(y), families, args,
-                        (domain, target_name),
+                        (domain, target_name), metric_config,
                     )
 
             combinations: dict[str, object] = {}
@@ -630,7 +686,9 @@ def main() -> None:
                         value = finite_float(source.get(feature))
                         if value is None:
                             break
-                        row_values.append(value)
+                        row_values.append(
+                            float(oriented(feature, np.asarray([value]), metric_config)[0])
+                        )
                     else:
                         feature_rows.append(row_values)
                         y.append(target_value)
@@ -685,7 +743,7 @@ def main() -> None:
     stop_rule: dict[str, object] = {}
     for domain in DOMAINS:
         stop_rule[domain] = {}
-        for target_name in (TARGET_AVG, TARGET_PC1):
+        for target_name in TARGET_NAMES:
             result = evaluations[domain][target_name]
             candidates = result["candidates"]
             rhos = {
@@ -741,8 +799,29 @@ def main() -> None:
         },
         "shortlist_size": args.shortlist_size,
         "target_metadata": {
-            TARGET_AVG: {"column": TARGET_AVG, "definition": "qwen2.5 1.5B MLLM Avg"},
+            TARGET_AVG: {
+                "column": TARGET_AVG,
+                "definition": "qwen2.5 1.5B MLLM Avg",
+                "n": len(target_values[TARGET_AVG]),
+                "family_composition": dict(sorted(Counter(
+                    target_rows[name]["family"] for name in target_values[TARGET_AVG]
+                ).items())),
+                "role": "primary target",
+            },
+            TARGET_AVG_MATCHED: {
+                "column": TARGET_AVG,
+                "definition": "MLLM_Avg restricted to the exact PC1-complete model pool",
+                "n": len(target_values[TARGET_AVG_MATCHED]),
+                "family_composition": dict(sorted(Counter(
+                    target_rows[name]["family"] for name in target_values[TARGET_AVG_MATCHED]
+                ).items())),
+                "role": "matched-pool control for comparison with PC1",
+            },
             TARGET_PC1: pc1_metadata,
+        },
+        "metric_config": {
+            name: {"higher_is_better": higher_is_better(name, metric_config)}
+            for name in evaluated_metrics
         },
         "coverage": {
             "n_targets": len(target_rows),
@@ -759,7 +838,7 @@ def main() -> None:
         "stop_rule": stop_rule,
         "route_failed_for_both_domains": {},
     }
-    for target_name in (TARGET_AVG, TARGET_PC1):
+    for target_name in TARGET_NAMES:
         decisions = [stop_rule[domain][target_name]["route_failed"] for domain in DOMAINS]
         payload["route_failed_for_both_domains"][target_name] = (
             None if any(decision is None for decision in decisions) else all(decisions)

@@ -1,0 +1,77 @@
+{
+  "repo_root": "../..",
+  "protocol": {
+    "name": "frozen_reliability_gated_loss_proxy_v1",
+    "calibration_tokenizers": [
+      "pe_lang_g14_448",
+      "pe_core_g14_448",
+      "siglip2_b16_256",
+      "mc1_b16_224_2.5b",
+      "RAE v2"
+    ],
+    "reliable_domains": ["caption", "reasoning"],
+    "reliability_threshold": 0.2,
+    "selection_uses_mllm_labels": false,
+    "notes": "Domains and 4096-example warmup were frozen after the five-tokenizer calibration. No full-sweep MLLM scores are read before predictions are written."
+  },
+  "runtime": {
+    "artifact_root": "gradient_compatibility/artifacts/full_sweep_v1",
+    "device": "cuda",
+    "feature_dtype": "bfloat16",
+    "token_shard_size": 32
+  },
+  "tokenizer_registry": {
+    "models_yaml": "lar/configs/models_e3.yaml",
+    "model_list": "gradient_compatibility/configs/full_sweep_models.txt",
+    "aliases": {"RAE v2": "raev2"}
+  },
+  "data": {
+    "sample_seed": 42,
+    "caption_prompt": "Describe this image in one concise sentence.",
+    "coco_train_annotations": "data/clip_benchmark/mscoco_captions/coco_train_karpathy.json",
+    "coco_train_images": "data/gvt/raw/coco/train2014",
+    "coco_val_annotations": "data/clip_benchmark/mscoco_captions/coco_val_karpathy.json",
+    "coco_val_images": "data/gvt/raw/coco/val2014",
+    "coco_existence_arrow": "data/gvt/arrow/coco_mci.arrow",
+    "coco_counting_arrow": "data/gvt/arrow/coco_oc.arrow",
+    "textvqa_dir": "data/gradient_compatibility/textvqa/data",
+    "scienceqa_dir": "data/gradient_compatibility/scienceqa/ScienceQA-IMG",
+    "counts": {
+      "warmup": 4096,
+      "generic": 0,
+      "caption": 256,
+      "vqa": 0,
+      "ocr": 0,
+      "reasoning": 256
+    }
+  },
+  "llm": {
+    "path": "/cache/ma-user/hf_cache/hub/models--Qwen--Qwen2.5-1.5B/snapshots/8faed761d45a263340a0528343f099c05c9a4323",
+    "hidden_dim": 1536,
+    "gradient_checkpointing": true
+  },
+  "projector_training": {
+    "seeds": [0],
+    "microbatch_size": 1,
+    "gradient_accumulation_steps": 8,
+    "learning_rate": 0.001,
+    "weight_decay": 0.0,
+    "max_gradient_norm": 1.0,
+    "checkpoint_examples": [4096],
+    "log_every_optimizer_steps": 20
+  },
+  "probe": {
+    "domains": ["caption", "reasoning"],
+    "generic_domain": "caption",
+    "last_n_layers": 4,
+    "target_modules": ["q_proj", "v_proj"],
+    "lora_rank": 8,
+    "lora_seed": 20260902,
+    "shuffle_seed": 20260903,
+    "log_every_examples": 16
+  },
+  "summary": {
+    "bootstrap_samples": 2000,
+    "bootstrap_seed": 20260904
+  }
+}

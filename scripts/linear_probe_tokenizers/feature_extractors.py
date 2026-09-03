@@ -1617,14 +1617,49 @@ def _load_hf_visual_encoder(
         if expected_model_type == "vit" and readout_kind == "cls_patch"
         else {}
     )
-    model, loading_info = AutoModel.from_pretrained(
-        str(model_dir),
-        config=config,
-        local_files_only=True,
-        torch_dtype=torch.bfloat16,
-        output_loading_info=True,
-        **model_kwargs,
+    torch_version = tuple(
+        int(part) for part in torch.__version__.split("+", 1)[0].split(".")[:2]
     )
+    # Transformers rejects every PyTorch .bin checkpoint on torch<2.6 after
+    # CVE-2025-32434, even when the caller requests weights_only=True.  These
+    # two legacy DINOv1 files are trusted local model-zoo state_dicts. Load
+    # them explicitly with the safe tensor-only unpickler and strict key
+    # validation; all other HF checkpoints retain from_pretrained semantics.
+    if Path(checkpoint).suffix == ".bin" and torch_version < (2, 6):
+        model = AutoModel.from_config(config, **model_kwargs)
+        state_dict = torch.load(
+            checkpoint,
+            map_location="cpu",
+            weights_only=True,
+            mmap=True,
+        )
+        if not isinstance(state_dict, dict) or not state_dict:
+            raise RuntimeError(f"Expected a non-empty tensor state_dict in {checkpoint}")
+        invalid_values = [
+            key for key, value in state_dict.items() if not torch.is_tensor(value)
+        ]
+        if invalid_values:
+            raise RuntimeError(
+                f"Legacy HF checkpoint contains non-tensor values: {invalid_values[:10]}"
+            )
+        incompatible = model.load_state_dict(state_dict, strict=True)
+        if incompatible.missing_keys or incompatible.unexpected_keys:
+            raise RuntimeError(
+                f"Failed to strictly load {directory}: missing={incompatible.missing_keys}, "
+                f"unexpected={incompatible.unexpected_keys}"
+            )
+        del state_dict
+        model = model.to(dtype=torch.bfloat16)
+        loading_info = {}
+    else:
+        model, loading_info = AutoModel.from_pretrained(
+            str(model_dir),
+            config=config,
+            local_files_only=True,
+            torch_dtype=torch.bfloat16,
+            output_loading_info=True,
+            **model_kwargs,
+        )
     loading_errors = {
         key: loading_info.get(key, [])
         for key in ("missing_keys", "unexpected_keys", "mismatched_keys", "error_msgs")
