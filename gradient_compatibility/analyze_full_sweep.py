@@ -156,10 +156,26 @@ def protocol_scores(
         if len(members) >= 3
     }
 
-    regrets = []
+    # Within-family regret: can the score pick the best member of one family?
+    within_regrets = []
     for members in by_family.values():
         best_by_score = members[int(np.argmax(score[members]))]
-        regrets.append(float(truth[members].max() - truth[best_by_score]))
+        within_regrets.append(float(truth[members].max() - truth[best_by_score]))
+
+    # Cross-family regret, matching outputs/analysis/family_offset/c4_final.py so the
+    # numbers are comparable with the readout battery: draw one candidate from each of
+    # five random families, then pay for picking the score's argmax.
+    family_names = list(by_family)
+    cross_regrets = []
+    if len(family_names) >= 2:
+        picked_count = min(5, len(family_names))
+        for _ in range(8000):
+            families_drawn = rng.choice(len(family_names), picked_count, replace=False)
+            candidates = [
+                int(rng.choice(by_family[family_names[j]])) for j in families_drawn
+            ]
+            chosen = candidates[int(np.argmax(score[candidates]))]
+            cross_regrets.append(float(truth[candidates].max() - truth[chosen]))
 
     lofo_spearman = []
     lofo_regret = []
@@ -182,8 +198,11 @@ def protocol_scores(
         "one_per_family_spearman_std": float(sampled_array.std()),
         "one_per_family_draws": int(sampled_array.size),
         "within_family_spearman": within,
-        "family_stratified_top1_regret_mean": float(np.mean(regrets)),
-        "family_stratified_top1_regret_max": float(np.max(regrets)),
+        "within_family_top1_regret_mean": float(np.mean(within_regrets)),
+        "within_family_top1_regret_max": float(np.max(within_regrets)),
+        "cross_family_top1_regret_mean": (
+            float(np.mean(cross_regrets)) if cross_regrets else float("nan")
+        ),
         "leave_one_family_out_spearman_mean": (
             float(np.nanmean(lofo_spearman)) if lofo_spearman else float("nan")
         ),
@@ -352,7 +371,8 @@ def analyze(
             print(
                 f"  {name}: whole={protocols['whole_table_spearman']:.3f} "
                 f"one-per-family={protocols['one_per_family_spearman_mean']:.3f} "
-                f"regret={protocols['family_stratified_top1_regret_mean']:.2f} "
+                f"cross-fam-regret={protocols['cross_family_top1_regret_mean']:.2f} "
+                f"within-fam-regret={protocols['within_family_top1_regret_mean']:.2f} "
                 f"family-residual={offsets['residual_variance_explained_by_family']:.3f}"
             )
     return output_path
