@@ -8,6 +8,9 @@ MATCH_BUDGET_DATA="${MATCH_BUDGET_DATA:-$MATCH_BUDGET_WORKSPACE/data/imagenet1k}
 MATCH_BUDGET_EXTRA="${MATCH_BUDGET_EXTRA:-$MATCH_BUDGET_DATA/extra}"
 MATCH_BUDGET_OUT_ROOT="${MATCH_BUDGET_OUT_ROOT:-$MATCH_BUDGET_WORKSPACE/outputs/vae_linear_probing_match_budget_4shot}"
 MATCH_BUDGET_NUM_WORKERS="${MATCH_BUDGET_NUM_WORKERS:-8}"
+# Keep the validation batch at 1,024 while avoiding up to 16 prefetched copies
+# of a multi-GiB 512px batch in host memory.
+MATCH_BUDGET_EVAL_NUM_WORKERS="${MATCH_BUDGET_EVAL_NUM_WORKERS:-0}"
 MATCH_BUDGET_CONDA_ENV="${MATCH_BUDGET_CONDA_ENV:-dino}"
 MATCH_BUDGET_SEED="${MATCH_BUDGET_SEED:-0}"
 MATCH_BUDGET_SUPPORT_SEED="${MATCH_BUDGET_SUPPORT_SEED:-0}"
@@ -44,6 +47,7 @@ run_match_budget_probe() {
     echo "   support=4/class (4,000 total); optimization batch=1,000; updates=4"
     echo "   Pixio/Web-SSL-MAE head=non-affine BN -> Linear; all others=Linear"
     echo "   support_seed=$MATCH_BUDGET_SUPPORT_SEED; train_seed=$MATCH_BUDGET_SEED"
+    echo "   train_workers=$MATCH_BUDGET_NUM_WORKERS; eval_workers=$MATCH_BUDGET_EVAL_NUM_WORKERS; eval_batch=1,024"
     echo "   output_root=$MATCH_BUDGET_OUT_ROOT"
 
     if [[ "$MATCH_BUDGET_DRY_RUN" == "1" ]]; then
@@ -76,6 +80,7 @@ run_match_budget_probe() {
         --extra-root "$MATCH_BUDGET_EXTRA" \
         --output-root "$MATCH_BUDGET_OUT_ROOT" \
         --num-workers "$MATCH_BUDGET_NUM_WORKERS" \
+        --eval-num-workers "$MATCH_BUDGET_EVAL_NUM_WORKERS" \
         --seed "$MATCH_BUDGET_SEED" \
         --support-seed "$MATCH_BUDGET_SUPPORT_SEED" \
         --stop-after-epoch 1 \

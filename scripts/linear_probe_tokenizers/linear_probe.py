@@ -295,6 +295,15 @@ def _build_parser():
     parser.add_argument("--output-dir", default=None)
     parser.add_argument("--num-workers", type=int, default=8)
     parser.add_argument(
+        "--eval-num-workers",
+        type=int,
+        default=None,
+        help=(
+            "Validation DataLoader workers. Defaults to --num-workers; set to 0 "
+            "to avoid multiprocessing prefetch without changing validation batches."
+        ),
+    )
+    parser.add_argument(
         "--feature-microbatch-size",
         type=int,
         default=FEATURE_MICROBATCH_SIZE,
@@ -758,6 +767,10 @@ def main() -> int:
         )
     if args.num_workers < 0:
         raise ValueError("--num-workers must be non-negative")
+    if args.eval_num_workers is None:
+        args.eval_num_workers = args.num_workers
+    if args.eval_num_workers < 0:
+        raise ValueError("--eval-num-workers must be non-negative")
     if args.feature_microbatch_size <= 0:
         raise ValueError("--feature-microbatch-size must be positive")
     if not 1 <= args.stop_after_epoch <= EPOCHS:
@@ -852,7 +865,7 @@ def main() -> int:
     val_loader = make_data_loader(
         dataset=val_dataset,
         batch_size=EVAL_BATCH_SIZE,
-        num_workers=args.num_workers,
+        num_workers=args.eval_num_workers,
         shuffle=False,
         seed=SEED,
         sampler_type=SamplerType.DISTRIBUTED,
