@@ -21,6 +21,23 @@ Run all models on one GPU:
 bash scripts/linear_probe_match_budget/run_all.sh
 ```
 
+Run the additional requested 23-model panel on one GPU:
+
+```bash
+bash scripts/linear_probe_match_budget/run_extra_23.sh
+```
+
+The extra panel accepts its 1-based order, requested alias, or internal model
+ID when selecting individual models. For example:
+
+```bash
+bash scripts/linear_probe_match_budget/run_extra_23.sh 6 vilau_256 mc2_b16_384
+```
+
+The aliases `unitok_attn`, `vilau_256`, `toklip_s_256`, and `toklip_l_384`
+map to the existing probe model IDs `unitok`, `vilau`, `toklip_s`, and
+`toklip_l`. All 23 use the plain Linear head.
+
 Run on several GPUs with static round-robin sharding:
 
 ```bash

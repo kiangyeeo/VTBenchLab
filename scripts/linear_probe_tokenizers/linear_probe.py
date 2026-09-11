@@ -313,6 +313,15 @@ def _build_parser():
         ),
     )
     parser.add_argument(
+        "--eval-feature-microbatch-size",
+        type=int,
+        default=None,
+        help=(
+            "Frozen-backbone chunk size used only during validation. Defaults to "
+            "--feature-microbatch-size and does not change the validation batch."
+        ),
+    )
+    parser.add_argument(
         "--stop-after-epoch",
         type=int,
         default=EPOCHS,
@@ -526,6 +535,32 @@ def _write_or_validate_protocol(output_dir: Path, protocol: dict) -> None:
         with protocol_path.open("r", encoding="utf-8") as handle:
             previous = json.load(handle)
         if previous != protocol:
+            # Validation-only chunking is an execution detail: every official
+            # validation example, outer batch, forward FLOP and metric remains
+            # unchanged. It is therefore safe to lower after a validation OOM,
+            # including when a completed training checkpoint already exists.
+            validation_runtime_keys = {
+                "validation_feature_extraction_microbatch_size",
+                "fingerprint",
+            }
+            previous_validation_core = {
+                key: value
+                for key, value in previous.items()
+                if key not in validation_runtime_keys
+            }
+            protocol_validation_core = {
+                key: value
+                for key, value in protocol.items()
+                if key not in validation_runtime_keys
+            }
+            if previous_validation_core == protocol_validation_core:
+                LOGGER.warning(
+                    "Updating validation-only feature microbatch from %s to %s",
+                    previous.get("validation_feature_extraction_microbatch_size"),
+                    protocol.get("validation_feature_extraction_microbatch_size"),
+                )
+                _atomic_json_dump(protocol_path, protocol)
+                return
             # A feature microbatch only chunks independent frozen-backbone forwards;
             # it does not change the optimization batch or schedule. Permit a failed
             # pre-training attempt to retry with a safer chunk size, but never mix
@@ -577,6 +612,9 @@ def _make_protocol(args, bundle: FeatureBundle, effective_lrs: list[float]) -> d
         "single_gpu": True,
         "global_batch_size": BATCH_SIZE,
         "feature_extraction_microbatch_size": args.feature_microbatch_size,
+        "validation_feature_extraction_microbatch_size": (
+            args.eval_feature_microbatch_size
+        ),
         "feature_microbatch_semantics": (
             "frozen backbone only; concatenate one FP32 [global_batch,D] tensor before linear heads"
         ),
@@ -694,12 +732,16 @@ def _evaluate_heads(
     iteration: int,
     output_dir: Path,
     metric=None,
+    feature_microbatch_size: int | None = None,
 ):
     if metric is None:
         metric = build_metric(MetricType.MEAN_ACCURACY, num_classes=NUM_CLASSES)
     postprocessors = {name: LinearPostprocessor(head) for name, head in head_grid.heads.items()}
     metrics = {name: metric.clone() for name in head_grid.heads}
     was_training = head_grid.training
+    training_microbatch_size = feature_model.microbatch_size
+    if feature_microbatch_size is not None:
+        feature_model.microbatch_size = feature_microbatch_size
     head_grid.eval()
     try:
         _stats, raw_results = evaluate(
@@ -710,6 +752,7 @@ def _evaluate_heads(
             torch.cuda.current_device(),
         )
     finally:
+        feature_model.microbatch_size = training_microbatch_size
         head_grid.train(was_training)
 
     classifiers = []
@@ -773,6 +816,10 @@ def main() -> int:
         raise ValueError("--eval-num-workers must be non-negative")
     if args.feature_microbatch_size <= 0:
         raise ValueError("--feature-microbatch-size must be positive")
+    if args.eval_feature_microbatch_size is None:
+        args.eval_feature_microbatch_size = args.feature_microbatch_size
+    if args.eval_feature_microbatch_size <= 0:
+        raise ValueError("--eval-feature-microbatch-size must be positive")
     if not 1 <= args.stop_after_epoch <= EPOCHS:
         raise ValueError(f"--stop-after-epoch must be in [1, {EPOCHS}]")
     if args.model not in PIXIO_SPECS and args.pixio_readout != "post-ln":
@@ -876,7 +923,7 @@ def main() -> int:
     LOGGER.info(
         "Starting %s from update %d/%d with requested cutoff epoch=%d "
         "(%d updates), optimization global batch %d, and frozen-backbone "
-        "feature microbatch %d",
+        "feature microbatch %d (validation %d)",
         args.model,
         start_update,
         MAX_UPDATES,
@@ -884,6 +931,7 @@ def main() -> int:
         stop_update,
         BATCH_SIZE,
         args.feature_microbatch_size,
+        args.eval_feature_microbatch_size,
     )
     if (
         0 < start_update < MAX_UPDATES
@@ -896,7 +944,14 @@ def main() -> int:
             "Recovered checkpoint is missing validation at update %d; evaluating before training",
             start_update,
         )
-        _evaluate_heads(feature_model, head_grid, val_loader, start_update, output_dir)
+        _evaluate_heads(
+            feature_model,
+            head_grid,
+            val_loader,
+            start_update,
+            output_dir,
+            feature_microbatch_size=args.eval_feature_microbatch_size,
+        )
 
     if start_update < stop_update:
         metric_logger = MetricLogger(delimiter="  ")
@@ -939,7 +994,14 @@ def main() -> int:
                 and completed_updates < MAX_UPDATES
                 and completed_updates != stop_update
             ):
-                _evaluate_heads(feature_model, head_grid, val_loader, completed_updates, output_dir)
+                _evaluate_heads(
+                    feature_model,
+                    head_grid,
+                    val_loader,
+                    completed_updates,
+                    output_dir,
+                    feature_microbatch_size=args.eval_feature_microbatch_size,
+                )
             update += 1
             del images, labels, features, logits, losses, loss
 
@@ -957,7 +1019,14 @@ def main() -> int:
         if not _metrics_history_has_iteration(
             output_dir / "metrics_history.jsonl", stop_update
         ):
-            _evaluate_heads(feature_model, head_grid, val_loader, stop_update, output_dir)
+            _evaluate_heads(
+                feature_model,
+                head_grid,
+                val_loader,
+                stop_update,
+                output_dir,
+                feature_microbatch_size=args.eval_feature_microbatch_size,
+            )
         LOGGER.info(
             "Stopped at epoch %d/%d (update %d); checkpoint and validation are "
             "complete. Re-run with a larger --stop-after-epoch to resume.",
@@ -968,7 +1037,14 @@ def main() -> int:
         return 0
 
     checkpointer.save("model_final", iteration=MAX_UPDATES - 1)
-    final_results = _evaluate_heads(feature_model, head_grid, val_loader, MAX_UPDATES, output_dir)
+    final_results = _evaluate_heads(
+        feature_model,
+        head_grid,
+        val_loader,
+        MAX_UPDATES,
+        output_dir,
+        feature_microbatch_size=args.eval_feature_microbatch_size,
+    )
     LOGGER.info("Final result: %s", final_results["best_classifier"])
     return 0
 

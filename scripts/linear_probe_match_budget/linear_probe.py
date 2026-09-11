@@ -21,6 +21,7 @@ from torch.utils.data import Dataset
 WORKSPACE = Path(__file__).resolve().parents[2]
 SCRIPT_DIR = Path(__file__).resolve().parent
 MANIFEST_PATH = SCRIPT_DIR / "tokenizers.tsv"
+EXTRA_MANIFEST_PATH = SCRIPT_DIR / "tokenizers_extra_23.tsv"
 BASE_DIR = WORKSPACE / "scripts/linear_probe_tokenizers"
 BASE_PATH = BASE_DIR / "linear_probe.py"
 BN_PATH = WORKSPACE / "scripts/linear_probe_tokenizers_bn/linear_probe.py"
@@ -54,9 +55,11 @@ base = _load_module("tokenizer_match_budget_base", BASE_PATH)
 bn_source = _load_module("tokenizer_match_budget_bn_source", BN_PATH)
 
 
-def _load_manifest() -> tuple[tuple[int, str, str, str], ...]:
+def _load_manifest(
+    path: Path, expected_count: int
+) -> tuple[tuple[int, str, str, str], ...]:
     rows = []
-    with MANIFEST_PATH.open("r", encoding="utf-8") as handle:
+    with path.open("r", encoding="utf-8") as handle:
         for line_number, line in enumerate(handle, start=1):
             line = line.rstrip("\n")
             if not line or line.startswith("#"):
@@ -64,14 +67,16 @@ def _load_manifest() -> tuple[tuple[int, str, str, str], ...]:
             columns = line.split("\t")
             if len(columns) != 4:
                 raise RuntimeError(
-                    f"Expected four TSV columns at {MANIFEST_PATH}:{line_number}"
+                    f"Expected four TSV columns at {path}:{line_number}"
                 )
             rank, label, model, head = columns
             rows.append((int(rank), label, model, head))
-    if len(rows) != 42:
-        raise RuntimeError(f"Expected 42 tokenizer rows, found {len(rows)}")
-    if [rank for rank, *_rest in rows] != list(range(1, 43)):
-        raise RuntimeError("Tokenizer ranks must be exactly 1..42")
+    if len(rows) != expected_count:
+        raise RuntimeError(
+            f"Expected {expected_count} tokenizer rows in {path}, found {len(rows)}"
+        )
+    if [rank for rank, *_rest in rows] != list(range(1, expected_count + 1)):
+        raise RuntimeError(f"Tokenizer ranks in {path} must be exactly 1..{expected_count}")
     models = [model for _rank, _label, model, _head in rows]
     if len(set(models)) != len(models):
         raise RuntimeError("Tokenizer manifest contains duplicate model ids")
@@ -91,12 +96,17 @@ def _load_manifest() -> tuple[tuple[int, str, str, str], ...]:
     return tuple(rows)
 
 
-MANIFEST = _load_manifest()
-MODEL_CHOICES = tuple(model for _rank, _label, model, _head in MANIFEST)
-MODEL_METADATA = {
-    model: {"rank": rank, "vision_encoder": label, "head": head}
-    for rank, label, model, head in MANIFEST
-}
+MANIFEST = _load_manifest(MANIFEST_PATH, 42)
+EXTRA_MANIFEST = _load_manifest(EXTRA_MANIFEST_PATH, 23)
+MODEL_CHOICES = tuple(
+    dict.fromkeys(model for _rank, _label, model, _head in (*MANIFEST, *EXTRA_MANIFEST))
+)
+MODEL_METADATA = {}
+for rank, label, model, head in (*MANIFEST, *EXTRA_MANIFEST):
+    # Preserve the original-panel metadata for the one overlapping model.
+    MODEL_METADATA.setdefault(
+        model, {"rank": rank, "vision_encoder": label, "head": head}
+    )
 
 # Conservative frozen-encoder chunk sizes. They affect memory and throughput,
 # but not the 1,000-example optimization batch or the FLOPs budget.
@@ -125,6 +135,28 @@ FEATURE_MICROBATCH_SIZES = {
     "pe_lang_l14_448": 32,
     "pe_core_b16_224": 512,
     "mc1_b16_224_400m": 512,
+    "mc1_b32_224_2.5b": 512,
+    "mc1_b32_224_400m": 512,
+    "mc1_l14_224_400m": 256,
+    "mc2_b16_224": 512,
+    "unitok": 256,
+    "vilau": 256,
+    "toklip_s": 256,
+    "toklip_l": 256,
+    "uniar_bsq": 1024,
+    "mc2_b16_384": 256,
+    "mc2_b32_224": 1024,
+    "mc2_b32_224_mt5": 1024,
+    "mc2_b32_384": 512,
+    "mc2_h14_378": 32,
+    "mc2_m16_224": 1024,
+    "mc2_m16_224_mt5": 1024,
+    "mc2_m16_384": 512,
+    "mc2_s16_224_mt5": 1024,
+    "mc2_s16_384": 512,
+    "siglip2_b16_384": 256,
+    "siglip2_b32_256": 1024,
+    "siglip2_l16_512": 64,
     "mc1_b16_224_2.5b": 512,
     "pixio_vitl16": 128,
     "dinov2_giant": 64,
