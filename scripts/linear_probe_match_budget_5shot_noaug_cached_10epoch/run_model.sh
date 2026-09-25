@@ -32,4 +32,4 @@ for argument in "$@"; do
     fi
 done
 
-run_match_budget_5shot_probe "$resolved" "$@"
+run_cached_10e_probe "$resolved" "$@"

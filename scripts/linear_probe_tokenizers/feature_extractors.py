@@ -221,6 +221,13 @@ RAEV2_SPECS = {
             "multi-layer tokenizer latent"
         ),
     },
+    "raev2_dinov3l_k7": {
+        "stats": "stage1/imagenet/dinov3l-k7/stats.pt",
+        "representation": (
+            "spatial mean of the normalized RAEv2 DINOv3-L/16 K=7 "
+            "multi-layer tokenizer latent"
+        ),
+    },
     "ijepa": {
         "stats": "stage1/imagenet/jepa-h-k1/stats.pt",
         "representation": (
@@ -364,6 +371,7 @@ DINOV3_L_CHECKPOINT = (
 )
 IJEPA_H_CHECKPOINT = "encoders/ijepa/ijepa_vith.pth"
 RAEV2_K23_LAYERS = tuple(range(1, 24))
+RAEV2_K7_LAYERS = (11, 13, 15, 17, 19, 21, 23)
 
 
 @dataclass
@@ -861,9 +869,14 @@ class RAEv2LatentEncoder(nn.Module):
         if self.variant == "dinov3":
             return self.model.forward_features(images)["x_norm_patchtokens"]
 
+        layers = (
+            RAEV2_K7_LAYERS
+            if self.variant == "raev2_dinov3l_k7"
+            else RAEV2_K23_LAYERS
+        )
         outputs = self.model.get_intermediate_layers(
             images,
-            n=RAEV2_K23_LAYERS,
+            n=layers,
             reshape=False,
             return_class_token=False,
             norm=True,
@@ -1414,7 +1427,7 @@ def _load_raev2_variant(args, device: torch.device, variant: str) -> FeatureBund
     if not stats_path.is_file():
         raise FileNotFoundError(f"Missing {variant} normalization statistics: {stats_path}")
 
-    if variant in {"dinov3", "raev2"}:
+    if variant in {"dinov3", "raev2", "raev2_dinov3l_k7"}:
         checkpoint = model_root / DINOV3_L_CHECKPOINT
         if not checkpoint.is_file():
             raise FileNotFoundError(f"Missing DINOv3-L checkpoint: {checkpoint}")
@@ -1467,7 +1480,7 @@ def _load_raev2_variant(args, device: torch.device, variant: str) -> FeatureBund
         std=IDENTITY_STD,
     )
     source_paths = [str(raev2_path)]
-    if variant in {"dinov3", "raev2"}:
+    if variant in {"dinov3", "raev2", "raev2_dinov3l_k7"}:
         source_paths.append(str(dinov3_path))
     return FeatureBundle(
         encoder=encoder,

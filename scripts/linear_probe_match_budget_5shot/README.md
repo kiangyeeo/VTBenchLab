@@ -1,7 +1,7 @@
 # ImageNet-1K 5-shot match-budget probing
 
-This directory runs the 64 unique tokenizers from the original 42-model panel
-plus the additional 23-model request (one model occurs in both lists).
+This directory runs the canonical 70-tokenizer panel. The earlier 64 completed
+entries are reused; ranks 10, 16, 51, 67, 68, and 69 are the added runs.
 
 - Train support: exactly 5 distinct images per ImageNet-1K class (5,000 total).
 - Training: a fresh Linear/BN-Linear head, batch size 1,000, one epoch, exactly
@@ -14,7 +14,7 @@ plus the additional 23-model request (one model occurs in both lists).
   other tokenizer uses plain `Linear`.
 - Output: `outputs/vae_linear_probing_match_budget_5shot`.
 
-Run all 64 models on one GPU:
+Run all 70 models on one GPU (completed result files are skipped):
 
 ```bash
 bash scripts/linear_probe_match_budget_5shot/run_all.sh
@@ -31,6 +31,12 @@ Run selected models by combined rank, requested alias, or internal model ID:
 
 ```bash
 bash scripts/linear_probe_match_budget_5shot/run_all.sh 1 unitok_attn mc2_b16_384
+```
+
+Run only the six additions needed to complete the canonical panel:
+
+```bash
+bash scripts/linear_probe_match_budget_5shot/run_all.sh 10 16 51 67 68 69
 ```
 
 Dry-run the complete panel:

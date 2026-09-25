@@ -2,8 +2,8 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-MATCH_BUDGET_5SHOT_GPUS="${MATCH_BUDGET_5SHOT_GPUS:-}"
-MATCH_BUDGET_5SHOT_DRY_RUN="${MATCH_BUDGET_5SHOT_DRY_RUN:-0}"
+CACHED_10E_GPUS="${CACHED_10E_GPUS:-}"
+CACHED_10E_DRY_RUN="${CACHED_10E_DRY_RUN:-0}"
 
 all_labels=()
 all_models=()
@@ -14,7 +14,7 @@ while IFS=$'\t' read -r rank label model head; do
 done < "$SCRIPT_DIR/tokenizers.tsv"
 
 if [[ ${#all_models[@]} -ne 70 ]]; then
-    echo "!! expected 70 unique models in tokenizers.tsv, found ${#all_models[@]}" >&2
+    echo "!! expected 70 unique models, found ${#all_models[@]}" >&2
     exit 2
 fi
 
@@ -31,7 +31,7 @@ if [[ $# -gt 0 ]]; then
             fi
         done
         if [[ -z "$resolved" ]]; then
-            echo "!! unknown 5-shot tokenizer '$requested'" >&2
+            echo "!! unknown tokenizer '$requested'" >&2
             exit 2
         fi
         models+=("$resolved")
@@ -41,14 +41,8 @@ else
 fi
 
 gpu_ids=()
-if [[ -n "$MATCH_BUDGET_5SHOT_GPUS" ]]; then
-    IFS=',' read -r -a gpu_ids <<< "$MATCH_BUDGET_5SHOT_GPUS"
-    for gpu_id in "${gpu_ids[@]}"; do
-        if [[ -z "$gpu_id" || ! "$gpu_id" =~ ^[0-9]+$ ]]; then
-            echo "!! MATCH_BUDGET_5SHOT_GPUS must be comma-separated numeric ids" >&2
-            exit 2
-        fi
-    done
+if [[ -n "$CACHED_10E_GPUS" ]]; then
+    IFS=',' read -r -a gpu_ids <<< "$CACHED_10E_GPUS"
 elif [[ -n "${CUDA_VISIBLE_DEVICES:-}" ]]; then
     if [[ "$CUDA_VISIBLE_DEVICES" == *,* ]]; then
         IFS=',' read -r -a gpu_ids <<< "$CUDA_VISIBLE_DEVICES"
@@ -58,9 +52,14 @@ elif [[ -n "${CUDA_VISIBLE_DEVICES:-}" ]]; then
 else
     gpu_ids=("0")
 fi
+for gpu_id in "${gpu_ids[@]}"; do
+    if [[ "$gpu_id" != "inherit" && ! "$gpu_id" =~ ^[0-9]+$ ]]; then
+        echo "!! CACHED_10E_GPUS must be comma-separated numeric ids" >&2
+        exit 2
+    fi
+done
 
-echo ">> 5-shot match-budget panel: models=${#models[@]}, workers=${#gpu_ids[@]}, GPUs=${MATCH_BUDGET_5SHOT_GPUS:-${CUDA_VISIBLE_DEVICES:-0}}"
-echo ">> protocol: ImageNet-1K class-balanced 5-shot, exactly one epoch"
+echo ">> no-augmentation cached 5-shot/10-epoch panel: models=${#models[@]}, workers=${#gpu_ids[@]}"
 
 worker_pids=()
 terminate_workers() {
@@ -79,11 +78,9 @@ for ((worker_index = 0; worker_index < worker_count; worker_index += 1)); do
         for ((model_index = worker_index; model_index < ${#models[@]}; model_index += worker_count)); do
             model="${models[$model_index]}"
             if [[ "$gpu_id" == "inherit" ]]; then
-                MATCH_BUDGET_5SHOT_DRY_RUN="$MATCH_BUDGET_5SHOT_DRY_RUN" \
-                    bash "$SCRIPT_DIR/run_model.sh" "$model"
+                CACHED_10E_DRY_RUN="$CACHED_10E_DRY_RUN" bash "$SCRIPT_DIR/run_model.sh" "$model"
             else
-                CUDA_VISIBLE_DEVICES="$gpu_id" \
-                MATCH_BUDGET_5SHOT_DRY_RUN="$MATCH_BUDGET_5SHOT_DRY_RUN" \
+                CUDA_VISIBLE_DEVICES="$gpu_id" CACHED_10E_DRY_RUN="$CACHED_10E_DRY_RUN" \
                     bash "$SCRIPT_DIR/run_model.sh" "$model"
             fi
         done
@@ -100,7 +97,7 @@ done
 worker_pids=()
 
 if ((failed)); then
-    echo "!! one or more 5-shot workers failed" >&2
+    echo "!! one or more cached 10-epoch workers failed" >&2
     exit 1
 fi
-echo ">> all requested 5-shot probes completed"
+echo ">> all requested cached 10-epoch probes completed"

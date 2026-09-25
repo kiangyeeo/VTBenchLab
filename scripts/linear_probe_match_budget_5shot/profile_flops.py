@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Profile the actual frozen feature surface for the 64-model 5-shot panel."""
+"""Profile the actual frozen feature surface for the 70-model 5-shot panel."""
 
 from __future__ import annotations
 
@@ -36,8 +36,8 @@ def _manifest_models() -> list[str]:
                 continue
             _rank, _label, model, _head = line.rstrip("\n").split("\t")
             models.append(model)
-    if len(models) != 64 or len(set(models)) != 64:
-        raise RuntimeError("Expected exactly 64 unique models")
+    if len(models) != 70 or len(set(models)) != 70:
+        raise RuntimeError("Expected exactly 70 unique models")
     return models
 
 
@@ -93,14 +93,14 @@ def _profile_all() -> int:
             None,
         )
         if process.returncode or payload_line is None:
-            print(f"[{index:02d}/64] FAILED {model}", flush=True)
+            print(f"[{index:02d}/70] FAILED {model}", flush=True)
             print(process.stdout[-4000:], flush=True)
             print(process.stderr[-4000:], flush=True)
             return process.returncode or 1
         payload = json.loads(payload_line)
         rows.append(payload)
         print(
-            f"[{index:02d}/64] {model}: {payload['gflops_per_image']:.6f} GFLOPs/image",
+            f"[{index:02d}/70] {model}: {payload['gflops_per_image']:.6f} GFLOPs/image",
             flush=True,
         )
 
@@ -111,7 +111,7 @@ def _profile_all() -> int:
         "mean_flops_per_image": mean_flops_per_image,
         "mean_gflops_per_image": mean_flops_per_image / 1e9,
         "mean_training_pflops_5shot": mean_flops_per_image * 5000 / 1e15,
-        "total_training_pflops_64_models": sum(
+        "total_training_pflops_70_models": sum(
             row["flops_per_image"] * 5000 for row in rows
         )
         / 1e15,

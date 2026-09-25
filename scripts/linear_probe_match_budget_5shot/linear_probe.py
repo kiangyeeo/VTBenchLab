@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Five-shot ImageNet-1K match-budget probing for the combined 64-model panel."""
+"""Five-shot ImageNet-1K match-budget probing for the canonical 70-model panel."""
 
 from __future__ import annotations
 
@@ -46,10 +46,10 @@ def _load_manifest() -> tuple[tuple[int, str, str, str], ...]:
                 )
             rank, label, model, head = columns
             rows.append((int(rank), label, model, head))
-    if len(rows) != 64:
-        raise RuntimeError(f"Expected 64 unique tokenizer rows, found {len(rows)}")
-    if [rank for rank, *_rest in rows] != list(range(1, 65)):
-        raise RuntimeError("Tokenizer ranks must be exactly 1..64")
+    if len(rows) != 70:
+        raise RuntimeError(f"Expected 70 unique tokenizer rows, found {len(rows)}")
+    if [rank for rank, *_rest in rows] != list(range(1, 71)):
+        raise RuntimeError("Tokenizer ranks must be exactly 1..70")
     models = [model for _rank, _label, model, _head in rows]
     if len(set(models)) != len(models):
         raise RuntimeError("The combined 5-shot manifest contains duplicate model ids")
@@ -59,14 +59,24 @@ def _load_manifest() -> tuple[tuple[int, str, str, str], ...]:
 driver = _load_module("tokenizer_match_budget_4shot_driver", FOUR_SHOT_PATH)
 MANIFEST = _load_manifest()
 MODEL_CHOICES = tuple(model for _rank, _label, model, _head in MANIFEST)
-if set(MODEL_CHOICES) != set(driver.MODEL_CHOICES):
-    missing = sorted(set(MODEL_CHOICES) - set(driver.MODEL_CHOICES))
-    unexpected = sorted(set(driver.MODEL_CHOICES) - set(MODEL_CHOICES))
-    raise RuntimeError(
-        f"5-shot/base model-set mismatch: missing={missing}, unexpected={unexpected}"
-    )
+unsupported = sorted(set(MODEL_CHOICES) - set(driver.base.MODEL_NAMES))
+if unsupported:
+    raise RuntimeError(f"Base probing code does not support: {unsupported}")
+
+# These six entries extend the already completed 64-model panel. Chunking only
+# bounds frozen-encoder memory; it does not alter the optimization batch/budget.
+driver.FEATURE_MICROBATCH_SIZES.update(
+    {
+        "dinov3_vitl16_lvd1689m": 256,
+        "eupe_convnext_b": 512,
+        "raev2_dinov3l_k7": 128,
+        "webssl_dino1b_full2b_224": 32,
+        "webssl_mae1b_full2b_224": 32,
+        "webssl_mae300m_full2b_224": 128,
+    }
+)
 if set(driver.FEATURE_MICROBATCH_SIZES) != set(MODEL_CHOICES):
-    raise RuntimeError("Feature-microbatch defaults must cover all 64 models")
+    raise RuntimeError("Feature-microbatch defaults must cover all 70 models")
 
 MODEL_METADATA = {
     model: {"rank": rank, "vision_encoder": label, "head": head}

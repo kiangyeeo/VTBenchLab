@@ -126,6 +126,10 @@ class CachedFeatureTransfer(nn.Module):
     def __init__(self, device: torch.device):
         super().__init__()
         self.device = device
+        # The shared evaluator temporarily reads/overrides this attribute on
+        # frozen feature models. Cached transfers do not chunk anything, but
+        # exposing the same interface keeps evaluation behavior compatible.
+        self.microbatch_size = 1
 
     def forward(self, features: torch.Tensor) -> torch.Tensor:
         return features.to(self.device, non_blocking=True)
@@ -575,17 +579,40 @@ def _build_parser():
         default=base.BATCH_SIZE,
         help="Image loader batch size while extracting each split once.",
     )
-    parser.add_argument(
-        "--stop-after-epoch",
-        type=int,
-        default=base.EPOCHS,
-        help=(
-            "Stop at this epoch while retaining the original 10-epoch cosine "
-            "schedule (default: 10). A smaller value can be used for screening; "
-            "re-run with a larger value to resume the same probe."
-        ),
+    cutoff_action = next(
+        (action for action in parser._actions if action.dest == "stop_after_epoch"),
+        None,
     )
+    if cutoff_action is None:
+        parser.add_argument(
+            "--stop-after-epoch",
+            type=int,
+            default=base.EPOCHS,
+            help=(
+                "Stop at this epoch while retaining the original 10-epoch cosine "
+                "schedule (default: 10). A smaller value can be used for screening; "
+                "re-run with a larger value to resume the same probe."
+            ),
+        )
+    else:
+        cutoff_action.default = base.EPOCHS
+        cutoff_action.help = (
+            "Stop at this epoch while retaining the full cosine schedule "
+            f"(default: {base.EPOCHS})."
+        )
     return parser
+
+
+def _parse_args():
+    """Parse arguments through an overridable hook for protocol adapters."""
+
+    return _build_parser().parse_args()
+
+
+def _linear_head_class(_model_name: str):
+    """Return the cached baseline's default BN head implementation."""
+
+    return BatchNormalizedLinearHead
 
 
 def _json_fingerprint(payload: dict) -> str:
@@ -894,7 +921,7 @@ def _read_latest_result(output_dir: Path):
 
 
 def main() -> int:
-    args = _build_parser().parse_args()
+    args = _parse_args()
     if not torch.cuda.is_available():
         raise RuntimeError("This protocol requires one CUDA GPU")
     if torch.cuda.device_count() != 1:
@@ -910,7 +937,7 @@ def main() -> int:
         raise ValueError(f"--stop-after-epoch must be in [1, {base.EPOCHS}]")
 
     base.PROTOCOL_VERSION = PROTOCOL_VERSION
-    base.LinearHead = BatchNormalizedLinearHead
+    base.LinearHead = _linear_head_class(args.model)
     base.distributed.enable(overwrite=True)
     if base.distributed.get_global_size() != 1:
         raise RuntimeError(f"Expected world_size=1, got {base.distributed.get_global_size()}")

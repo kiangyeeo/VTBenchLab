@@ -20,7 +20,7 @@ match_budget_5shot_output_name() {
         pixio_vitb16|pixio_vitl16|pixio_vith16)
             echo "${model}_mae_bn"
             ;;
-        webssl_mae3b_full2b_224)
+        webssl_mae*_full2b_224)
             echo "${model}_cls"
             ;;
         unitok)

@@ -95,6 +95,7 @@ SIGLIP2_MODEL_NAMES = (
 RAEV2_MODEL_NAMES = (
     "dinov3",
     "raev2",
+    "raev2_dinov3l_k7",
     "ijepa",
 )
 NEW_CONTINUOUS_MODEL_NAMES = (
