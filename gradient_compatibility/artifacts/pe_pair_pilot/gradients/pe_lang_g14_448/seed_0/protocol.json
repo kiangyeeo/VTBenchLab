@@ -1,0 +1,78 @@
+{
+  "complete": true,
+  "domain_counts": {
+    "caption": 256,
+    "generic": 512,
+    "ocr": 256,
+    "reasoning": 256,
+    "vqa": 256
+  },
+  "feature_files": {
+    "caption": "caption.safetensors",
+    "generic": "generic.safetensors",
+    "ocr": "ocr.safetensors",
+    "reasoning": "reasoning.safetensors",
+    "vqa": "vqa.safetensors"
+  },
+  "fingerprint": "2b5262ab8d65af430f0bdb0150cfd66e213b18b800b989e6d95a80ba4d3ddeb9",
+  "gradient_dim": 57344,
+  "probe": {
+    "domains": [
+      "generic",
+      "caption",
+      "vqa",
+      "ocr",
+      "reasoning"
+    ],
+    "generic_domain": "generic",
+    "last_n_layers": 4,
+    "log_every_examples": 16,
+    "lora_rank": 8,
+    "lora_seed": 20260902,
+    "shuffle_seed": 20260903,
+    "target_modules": [
+      "q_proj",
+      "v_proj"
+    ]
+  },
+  "probe_parameter_names": [
+    "model.layers.24.self_attn.q_proj.lora_b",
+    "model.layers.24.self_attn.v_proj.lora_b",
+    "model.layers.25.self_attn.q_proj.lora_b",
+    "model.layers.25.self_attn.v_proj.lora_b",
+    "model.layers.26.self_attn.q_proj.lora_b",
+    "model.layers.26.self_attn.v_proj.lora_b",
+    "model.layers.27.self_attn.q_proj.lora_b",
+    "model.layers.27.self_attn.v_proj.lora_b"
+  ],
+  "projector_identity": {
+    "fingerprint": "bf98a70d29847d16a047f7d7fc6987d651e334dd635125a367743bfc6f59d09e",
+    "hidden_dim": 1536,
+    "input_dim": 1536,
+    "llm_path": "/cache/ma-user/hf_cache/hub/models--Qwen--Qwen2.5-1.5B/snapshots/8faed761d45a263340a0528343f099c05c9a4323",
+    "schema_version": 1,
+    "seed": 0,
+    "token_cache_fingerprint": "afc656c02dc9e41dfbfce369f84c67afbcd3eeda7a736de85e7d412cc052136e",
+    "tokenizer": "pe_lang_g14_448",
+    "training": {
+      "checkpoint_examples": [
+        256,
+        1024,
+        4096
+      ],
+      "gradient_accumulation_steps": 8,
+      "learning_rate": 0.001,
+      "log_every_optimizer_steps": 20,
+      "max_gradient_norm": 1.0,
+      "microbatch_size": 1,
+      "seeds": [
+        0
+      ],
+      "weight_decay": 0.0
+    },
+    "warmup_examples": 4096
+  },
+  "projector_seed": 0,
+  "schema_version": 1,
+  "tokenizer": "pe_lang_g14_448"
+}

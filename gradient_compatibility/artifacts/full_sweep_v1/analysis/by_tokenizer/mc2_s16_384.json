@@ -1,0 +1,56 @@
+{
+  "batch_size": 4,
+  "complete": true,
+  "domains": [
+    "caption",
+    "reasoning"
+  ],
+  "fingerprint": "bb48573031262358e728a804c1f214fda2ddae85b3200c93e83f4a5bbe2157f4",
+  "frozen_protocol": {
+    "calibration_tokenizers": [
+      "pe_lang_g14_448",
+      "pe_core_g14_448",
+      "siglip2_b16_256",
+      "mc1_b16_224_2.5b",
+      "RAE v2"
+    ],
+    "name": "frozen_reliability_gated_loss_proxy_v1",
+    "notes": "Domains and 4096-example warmup were frozen after the five-tokenizer calibration. No full-sweep MLLM scores are read before predictions are written.",
+    "reliability_threshold": 0.2,
+    "reliable_domains": [
+      "caption",
+      "reasoning"
+    ],
+    "selection_uses_mllm_labels": false
+  },
+  "projector_fingerprint": "cde25a01e3a73b23f359047c13f916cabb123a565b13a3b27d47adb31cd6316f",
+  "projector_seen": 4096,
+  "rows": [
+    {
+      "count": 256,
+      "domain": "caption",
+      "real": 2.387745037674904,
+      "real_minus_shuffled": -0.733917411416769,
+      "real_minus_zero": -1.3391197584569454,
+      "seed": 0,
+      "shuffled": 3.121662449091673,
+      "tokenizer": "mc2_s16_384",
+      "zero": 3.7268647961318493
+    },
+    {
+      "count": 256,
+      "domain": "reasoning",
+      "real": 1.5046365251764655,
+      "real_minus_shuffled": 0.0017760195769369602,
+      "real_minus_zero": 0.0668683871626854,
+      "seed": 0,
+      "shuffled": 1.5028605055995286,
+      "tokenizer": "mc2_s16_384",
+      "zero": 1.4377681380137801
+    }
+  ],
+  "schema_version": 1,
+  "seed": 0,
+  "token_cache_fingerprint": "0293f5ca29bb293e693eac5751a4c53e61cf727ebcd7226a30d410a36cb98866",
+  "tokenizer": "mc2_s16_384"
+}

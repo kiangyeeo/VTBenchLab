@@ -122,7 +122,29 @@ outputs/**
 !outputs/**/*.svg
 !outputs/**/*.pdf
 !outputs/**/*.py
+!outputs/**/*.npz
+!outputs/**/events.out.tfevents.*
+
+# Small index arrays needed to reproduce dataset/sample selection. Keep these
+# explicitly; other .npy files under outputs are generated feature caches.
+!outputs/vae_linear_probing_200shot_features_fp32/labels.npy
+!outputs/vae_linear_probing_200shot_features_fp32/source_indices.npy
+!outputs/vae_linear_probing_flop_sweep_noaug_cached_1epoch_allbn_val5k_seed42/validation_indices_n5000_seed42.npy
 
 # This raw sweep log exceeds GitHub's per-file limit; compact result JSONs from
 # the same experiment remain included above.
 outputs/vae_linear_probing_flop_sweep_noaug_cached_5epoch_allbn/run.log
+
+# Compact summaries from other generated-result trees. Raw reconstructions and
+# per-sample prediction JSONs in these directories remain ignored.
+!TokBench/image_outputs/
+TokBench/image_outputs/**
+!TokBench/image_outputs/**/
+!TokBench/image_outputs/**/image_summary_*.txt
+!TokBench/video_outputs/
+TokBench/video_outputs/**
+!TokBench/video_outputs/**/
+!TokBench/video_outputs/**/video_summary_*.txt
+
+# Contains useful measurements before the final failed model invocation.
+!mechanistic/out_addr_full.log
