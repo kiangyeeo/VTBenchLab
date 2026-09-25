@@ -1,0 +1,61 @@
+Models: [['ViT-B-32', 'openai'], ['ViT-B-16', 'openai'], ['ViT-L-14', 'openai'], ['ViT-L-14-336', 'openai'], ['ViT-B-32-quickgelu', 'laion400m_e32'], ['ViT-B-32', 'laion2b_e16'], ['ViT-B-32', 'laion2b_s34b_b79k'], ['ViT-B-16', 'laion400m_e32'], ['ViT-B-16-plus-240', 'laion400m_e32'], ['ViT-L-14', 'laion400m_e32'], ['ViT-L-14', 'laion2b_s32b_b82k'], ['ViT-H-14', 'laion2b_s32b_b79k'], ['ViT-g-14', 'laion2b_s12b_b42k']]
+Datasets: ['wds/vtab/resisc45']
+Languages: ['en']
+Running 'zeroshot_classification' on 'vtab/resisc45' with the model 'openai' on language 'en'
+/home/ma-user/miniconda3/envs/clipbench/lib/python3.10/site-packages/webdataset/compat.py:379: UserWarning: WebDataset(shardshuffle=...) is None; set explicitly to False or a number
+  warnings.warn("WebDataset(shardshuffle=...) is None; set explicitly to False or a number")
+IterableDataset has no len()
+Dataset split: test
+Dataset classes: ['airplane', 'airport', 'baseball_diamond', 'basketball_court', 'beach', 'bridge', 'chaparral', 'church', 'circular_farmland', 'cloud', 'commercial_area', 'dense_residential', 'desert', 'forest', 'freeway', 'golf_course', 'ground_track_field', 'harbor', 'industrial_area', 'intersection', 'island', 'lake', 'meadow', 'medium_residential', 'mobile_home_park', 'mountain', 'overpass', 'palace', 'parking_lot', 'railway', 'railway_station', 'rectangular_farmland', 'river', 'roundabout', 'runway', 'sea_ice', 'ship', 'snowberg', 'sparse_residential', 'stadium', 'storage_tank', 'tennis_court', 'terrace', 'thermal_power_station', 'wetland']
+Dataset number of classes: 45
+Zero-shot templates: ['a sattelite image of {c}', 'an aerial view of {c}', 'a sattelite photo of {c}', '{c} from above']
+  0%|          | 0/45 [00:00<?, ?it/s]  2%|▏         | 1/45 [00:00<00:15,  2.90it/s] 33%|███▎      | 15/45 [00:00<00:00, 42.65it/s] 67%|██████▋   | 30/45 [00:00<00:00, 73.79it/s]100%|██████████| 45/45 [00:00<00:00, 95.85it/s]100%|██████████| 45/45 [00:00<00:00, 69.13it/s]
+0it [00:00, ?it/s]1it [00:06,  6.08s/it]2it [00:06,  2.79s/it]3it [00:07,  1.75s/it]3it [00:07,  2.36s/it]
+Traceback (most recent call last):
+  File "/home/ma-user/miniconda3/envs/clipbench/lib/python3.10/runpy.py", line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/home/ma-user/miniconda3/envs/clipbench/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/cache/ma-user/VTBenchLab/CLIP_benchmark/clip_benchmark/cli.py", line 445, in <module>
+    sys.exit(main())  # pragma: no cover
+  File "/cache/ma-user/VTBenchLab/CLIP_benchmark/clip_benchmark/cli.py", line 85, in main
+    main_eval(base)
+  File "/cache/ma-user/VTBenchLab/CLIP_benchmark/clip_benchmark/cli.py", line 191, in main_eval
+    run(args)
+  File "/cache/ma-user/VTBenchLab/CLIP_benchmark/clip_benchmark/cli.py", line 309, in run
+    metrics = zeroshot_classification.evaluate(
+  File "/cache/ma-user/VTBenchLab/CLIP_benchmark/clip_benchmark/metrics/zeroshot_classification.py", line 209, in evaluate
+    logits, target = run_classification(model, classifier, dataloader, device, amp=amp)
+  File "/cache/ma-user/VTBenchLab/CLIP_benchmark/clip_benchmark/metrics/zeroshot_classification.py", line 107, in run_classification
+    for images, target in tqdm(dataloader):
+  File "/home/ma-user/miniconda3/envs/clipbench/lib/python3.10/site-packages/tqdm/std.py", line 1181, in __iter__
+    for obj in iterable:
+  File "/home/ma-user/miniconda3/envs/clipbench/lib/python3.10/site-packages/torch/utils/data/dataloader.py", line 708, in __next__
+    data = self._next_data()
+  File "/home/ma-user/miniconda3/envs/clipbench/lib/python3.10/site-packages/torch/utils/data/dataloader.py", line 1455, in _next_data
+    return self._process_data(data)
+  File "/home/ma-user/miniconda3/envs/clipbench/lib/python3.10/site-packages/torch/utils/data/dataloader.py", line 1505, in _process_data
+    data.reraise()
+  File "/home/ma-user/miniconda3/envs/clipbench/lib/python3.10/site-packages/torch/_utils.py", line 733, in reraise
+    raise exception
+ValueError: Caught ValueError in DataLoader worker process 3.
+Original Traceback (most recent call last):
+  File "/home/ma-user/miniconda3/envs/clipbench/lib/python3.10/site-packages/torch/utils/data/_utils/worker.py", line 349, in _worker_loop
+    data = fetcher.fetch(index)  # type: ignore[possibly-undefined]
+  File "/home/ma-user/miniconda3/envs/clipbench/lib/python3.10/site-packages/torch/utils/data/_utils/fetch.py", line 42, in fetch
+    data = next(self.dataset_iter)
+  File "/home/ma-user/miniconda3/envs/clipbench/lib/python3.10/site-packages/webdataset/pipeline.py", line 105, in iterator
+    for sample in self.iterator1():
+  File "/home/ma-user/miniconda3/envs/clipbench/lib/python3.10/site-packages/webdataset/filters.py", line 783, in _batched
+    for sample in data:
+  File "/home/ma-user/miniconda3/envs/clipbench/lib/python3.10/site-packages/webdataset/filters.py", line 692, in _map_tuple
+    for sample in data:
+  File "/home/ma-user/miniconda3/envs/clipbench/lib/python3.10/site-packages/webdataset/filters.py", line 658, in _to_tuple
+    for sample in data:
+  File "/home/ma-user/miniconda3/envs/clipbench/lib/python3.10/site-packages/webdataset/filters.py", line 520, in _map
+    for sample in data:
+  File "/home/ma-user/miniconda3/envs/clipbench/lib/python3.10/site-packages/webdataset/compat.py", line 318, in check_empty
+    raise ValueError(
+ValueError: No samples found in dataset; perhaps you have fewer shards than workers.
+Turn off using empty_check=False in the WebDataset constructor.
+

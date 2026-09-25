@@ -1,0 +1,83 @@
+{
+  "protocol": "OpenAI CLIP README logistic-regression linear probe",
+  "model": "metaclip",
+  "dataset": "ImageNet-1K",
+  "seed": 0,
+  "shots": [
+    1,
+    2,
+    4,
+    8,
+    16
+  ],
+  "support_split": "/cache/ma-user/VTBenchLab/outputs/imagenet_kshot_linear_clip/splits/imagenet1k_seed0_max16.npz",
+  "feature_dim": 768,
+  "feature_surface": "final MetaCLIP class token after norm, before the 768-to-512 projection",
+  "feature_normalized": false,
+  "preprocessing": "deterministic model-native resize/center-crop",
+  "feature_extraction_batch_size": 100,
+  "classifier": "sklearn.linear_model.LogisticRegression(solver='lbfgs')",
+  "classifier_config": {
+    "random_state": 0,
+    "C": 0.316,
+    "max_iter": 1000,
+    "tol": 0.0001
+  },
+  "results": [
+    {
+      "shot": 1,
+      "train_samples": 1000,
+      "top1": 33.57,
+      "top5": 58.32,
+      "C": 0.316,
+      "max_iter": 1000,
+      "n_iter_max": 25,
+      "converged": true,
+      "elapsed_seconds": 8.186300992965698
+    },
+    {
+      "shot": 2,
+      "train_samples": 2000,
+      "top1": 45.906,
+      "top5": 73.164,
+      "C": 0.316,
+      "max_iter": 1000,
+      "n_iter_max": 20,
+      "converged": true,
+      "elapsed_seconds": 8.898634910583496
+    },
+    {
+      "shot": 4,
+      "train_samples": 4000,
+      "top1": 56.54,
+      "top5": 82.708,
+      "C": 0.316,
+      "max_iter": 1000,
+      "n_iter_max": 31,
+      "converged": true,
+      "elapsed_seconds": 15.813684940338135
+    },
+    {
+      "shot": 8,
+      "train_samples": 8000,
+      "top1": 63.696,
+      "top5": 87.658,
+      "C": 0.316,
+      "max_iter": 1000,
+      "n_iter_max": 38,
+      "converged": true,
+      "elapsed_seconds": 27.697948694229126
+    },
+    {
+      "shot": 16,
+      "train_samples": 16000,
+      "top1": 68.426,
+      "top5": 90.296,
+      "C": 0.316,
+      "max_iter": 1000,
+      "n_iter_max": 50,
+      "converged": true,
+      "elapsed_seconds": 59.178961992263794
+    }
+  ]
+}

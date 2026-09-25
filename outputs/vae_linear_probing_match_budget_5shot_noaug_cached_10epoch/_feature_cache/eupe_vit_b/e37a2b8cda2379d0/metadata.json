@@ -1,0 +1,45 @@
+{
+  "fingerprint": "e37a2b8cda2379d092e1bd0bbc5422f13457173d41982c171e96e3c70b5530f0",
+  "identity": {
+    "backbone_precision": "bfloat16 weights and autocast",
+    "checkpoints": [
+      {
+        "kind": "file",
+        "mtime_ns": 1786896312129501939,
+        "path": "/cache/ma-user/VTBenchLab/TokBench/tokenizer_modelzoo/continuous/EUPE-ViT-B/EUPE-ViT-B.pt",
+        "size": 399519863
+      }
+    ],
+    "data_root": "/cache/ma-user/VTBenchLab/data/imagenet1k",
+    "deterministic_transform": "bundle.eval_transform for both ImageNet TRAIN and VAL; train=RandomResizedCrop(256)+HorizontalFlip(0.5), eval=direct square Resize((256,256)) per EUPE release, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)",
+    "dtype": "float32",
+    "extra_root": "/cache/ma-user/VTBenchLab/data/imagenet1k/extra",
+    "model": "eupe_vit_b",
+    "representation": "concat(final normalized EUPE CLS, mean(final normalized patch tokens)); excludes 4 storage tokens",
+    "support_indices_sha256": "681151991440c47050719cb1908502ca841f995f0965577403e9f163a99abf8f",
+    "support_samples": 5000,
+    "support_seed": 0,
+    "train_split": "fixed class-balanced five-shot support subset",
+    "version": "imagenet_5shot_deterministic_frozen_features_v1"
+  },
+  "splits": {
+    "train": {
+      "feature_shape": [
+        5000,
+        1536
+      ],
+      "label_shape": [
+        5000
+      ]
+    },
+    "val": {
+      "feature_shape": [
+        50000,
+        1536
+      ],
+      "label_shape": [
+        50000
+      ]
+    }
+  }
+}

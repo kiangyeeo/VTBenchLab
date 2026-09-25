@@ -1,0 +1,83 @@
+{
+  "protocol": "OpenAI CLIP README logistic-regression linear probe",
+  "model": "unitok",
+  "dataset": "ImageNet-1K",
+  "seed": 0,
+  "shots": [
+    1,
+    2,
+    4,
+    8,
+    16
+  ],
+  "support_split": "/cache/ma-user/VTBenchLab/outputs/imagenet_kshot_linear_clip/splits/imagenet1k_seed0_max16.npz",
+  "feature_dim": 1024,
+  "feature_surface": "mean-pooled quantized tokens after fc_norm, before UniTok projection",
+  "feature_normalized": false,
+  "preprocessing": "deterministic model-native resize/center-crop",
+  "feature_extraction_batch_size": 100,
+  "classifier": "sklearn.linear_model.LogisticRegression(solver='lbfgs')",
+  "classifier_config": {
+    "random_state": 0,
+    "C": 0.316,
+    "max_iter": 1000,
+    "tol": 0.0001
+  },
+  "results": [
+    {
+      "shot": 1,
+      "train_samples": 1000,
+      "top1": 39.868,
+      "top5": 66.476,
+      "C": 0.316,
+      "max_iter": 1000,
+      "n_iter_max": 27,
+      "converged": true,
+      "elapsed_seconds": 10.869341135025024
+    },
+    {
+      "shot": 2,
+      "train_samples": 2000,
+      "top1": 52.272,
+      "top5": 79.282,
+      "C": 0.316,
+      "max_iter": 1000,
+      "n_iter_max": 33,
+      "converged": true,
+      "elapsed_seconds": 14.193061113357544
+    },
+    {
+      "shot": 4,
+      "train_samples": 4000,
+      "top1": 61.682,
+      "top5": 86.464,
+      "C": 0.316,
+      "max_iter": 1000,
+      "n_iter_max": 44,
+      "converged": true,
+      "elapsed_seconds": 23.901246786117554
+    },
+    {
+      "shot": 8,
+      "train_samples": 8000,
+      "top1": 67.046,
+      "top5": 89.718,
+      "C": 0.316,
+      "max_iter": 1000,
+      "n_iter_max": 56,
+      "converged": true,
+      "elapsed_seconds": 45.6042902469635
+    },
+    {
+      "shot": 16,
+      "train_samples": 16000,
+      "top1": 70.626,
+      "top5": 91.528,
+      "C": 0.316,
+      "max_iter": 1000,
+      "n_iter_max": 80,
+      "converged": true,
+      "elapsed_seconds": 114.4914538860321
+    }
+  ]
+}

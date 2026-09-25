@@ -1,0 +1,61 @@
+Models: [['ViT-B-32', 'openai'], ['ViT-B-16', 'openai'], ['ViT-L-14', 'openai'], ['ViT-L-14-336', 'openai'], ['ViT-B-32-quickgelu', 'laion400m_e32'], ['ViT-B-32', 'laion2b_e16'], ['ViT-B-32', 'laion2b_s34b_b79k'], ['ViT-B-16', 'laion400m_e32'], ['ViT-B-16-plus-240', 'laion400m_e32'], ['ViT-L-14', 'laion400m_e32'], ['ViT-L-14', 'laion2b_s32b_b82k'], ['ViT-H-14', 'laion2b_s32b_b79k'], ['ViT-g-14', 'laion2b_s12b_b42k']]
+Datasets: ['wds/vtab/flowers']
+Languages: ['en']
+Running 'zeroshot_classification' on 'vtab/flowers' with the model 'openai' on language 'en'
+/home/ma-user/miniconda3/envs/clipbench/lib/python3.10/site-packages/webdataset/compat.py:379: UserWarning: WebDataset(shardshuffle=...) is None; set explicitly to False or a number
+  warnings.warn("WebDataset(shardshuffle=...) is None; set explicitly to False or a number")
+IterableDataset has no len()
+Dataset split: test
+Dataset classes: ['pink primrose', 'hard-leaved pocket orchid', 'canterbury bells', 'sweet pea', 'english marigold', 'tiger lily', 'moon orchid', 'bird of paradise', 'monkshood', 'globe thistle', 'snapdragon', "colt's foot", 'king protea', 'spear thistle', 'yellow iris', 'globe-flower', 'purple coneflower', 'peruvian lily', 'balloon flower', 'giant white arum lily', 'fire lily', 'pincushion flower', 'fritillary', 'red ginger', 'grape hyacinth', 'corn poppy', 'prince of wales feathers', 'stemless gentian', 'artichoke', 'sweet william', 'carnation', 'garden phlox', 'love in the mist', 'mexican aster', 'alpine sea holly', 'ruby-lipped cattleya', 'cape flower', 'great masterwort', 'siam tulip', 'lenten rose', 'barbeton daisy', 'daffodil', 'sword lily', 'poinsettia', 'bolero deep blue', 'wallflower', 'marigold', 'buttercup', 'oxeye daisy', 'common dandelion', 'petunia', 'wild pansy', 'primula', 'sunflower', 'pelargonium', 'bishop of llandaff', 'gaura', 'geranium', 'orange dahlia', 'pink-yellow dahlia?', 'cautleya spicata', 'japanese anemone', 'black-eyed susan', 'silverbush', 'californian poppy', 'osteospermum', 'spring crocus', 'bearded iris', 'windflower', 'tree poppy', 'gazania', 'azalea', 'water lily', 'rose', 'thorn apple', 'morning glory', 'passion flower', 'lotus', 'toad lily', 'anthurium', 'frangipani', 'clematis', 'hibiscus', 'columbine', 'desert-rose', 'tree mallow', 'magnolia', 'cyclamen', 'watercress', 'canna lily', 'hippeastrum', 'bee balm', 'ball moss', 'foxglove', 'bougainvillea', 'camellia', 'mallow', 'mexican petunia', 'bromelia', 'blanket flower', 'trumpet creeper', 'blackberry lily']
+Dataset number of classes: 102
+Zero-shot templates: ['a photo of a {c}, a type of flower.']
+  0%|          | 0/102 [00:00<?, ?it/s]  1%|          | 1/102 [00:00<01:14,  1.36it/s] 18%|█▊        | 18/102 [00:00<00:02, 28.58it/s] 34%|███▍      | 35/102 [00:00<00:01, 54.78it/s] 50%|█████     | 51/102 [00:01<00:00, 76.59it/s] 67%|██████▋   | 68/102 [00:01<00:00, 97.38it/s] 82%|████████▏ | 84/102 [00:01<00:00, 112.09it/s] 99%|█████████▉| 101/102 [00:01<00:00, 126.13it/s]100%|██████████| 102/102 [00:01<00:00, 75.02it/s] 
+0it [00:00, ?it/s]1it [00:13, 13.52s/it]2it [00:14,  5.85s/it]3it [00:14,  3.40s/it]3it [00:14,  4.83s/it]
+Traceback (most recent call last):
+  File "/home/ma-user/miniconda3/envs/clipbench/lib/python3.10/runpy.py", line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/home/ma-user/miniconda3/envs/clipbench/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/cache/ma-user/VTBenchLab/CLIP_benchmark/clip_benchmark/cli.py", line 445, in <module>
+    sys.exit(main())  # pragma: no cover
+  File "/cache/ma-user/VTBenchLab/CLIP_benchmark/clip_benchmark/cli.py", line 85, in main
+    main_eval(base)
+  File "/cache/ma-user/VTBenchLab/CLIP_benchmark/clip_benchmark/cli.py", line 191, in main_eval
+    run(args)
+  File "/cache/ma-user/VTBenchLab/CLIP_benchmark/clip_benchmark/cli.py", line 309, in run
+    metrics = zeroshot_classification.evaluate(
+  File "/cache/ma-user/VTBenchLab/CLIP_benchmark/clip_benchmark/metrics/zeroshot_classification.py", line 209, in evaluate
+    logits, target = run_classification(model, classifier, dataloader, device, amp=amp)
+  File "/cache/ma-user/VTBenchLab/CLIP_benchmark/clip_benchmark/metrics/zeroshot_classification.py", line 107, in run_classification
+    for images, target in tqdm(dataloader):
+  File "/home/ma-user/miniconda3/envs/clipbench/lib/python3.10/site-packages/tqdm/std.py", line 1181, in __iter__
+    for obj in iterable:
+  File "/home/ma-user/miniconda3/envs/clipbench/lib/python3.10/site-packages/torch/utils/data/dataloader.py", line 708, in __next__
+    data = self._next_data()
+  File "/home/ma-user/miniconda3/envs/clipbench/lib/python3.10/site-packages/torch/utils/data/dataloader.py", line 1455, in _next_data
+    return self._process_data(data)
+  File "/home/ma-user/miniconda3/envs/clipbench/lib/python3.10/site-packages/torch/utils/data/dataloader.py", line 1505, in _process_data
+    data.reraise()
+  File "/home/ma-user/miniconda3/envs/clipbench/lib/python3.10/site-packages/torch/_utils.py", line 733, in reraise
+    raise exception
+ValueError: Caught ValueError in DataLoader worker process 3.
+Original Traceback (most recent call last):
+  File "/home/ma-user/miniconda3/envs/clipbench/lib/python3.10/site-packages/torch/utils/data/_utils/worker.py", line 349, in _worker_loop
+    data = fetcher.fetch(index)  # type: ignore[possibly-undefined]
+  File "/home/ma-user/miniconda3/envs/clipbench/lib/python3.10/site-packages/torch/utils/data/_utils/fetch.py", line 42, in fetch
+    data = next(self.dataset_iter)
+  File "/home/ma-user/miniconda3/envs/clipbench/lib/python3.10/site-packages/webdataset/pipeline.py", line 105, in iterator
+    for sample in self.iterator1():
+  File "/home/ma-user/miniconda3/envs/clipbench/lib/python3.10/site-packages/webdataset/filters.py", line 783, in _batched
+    for sample in data:
+  File "/home/ma-user/miniconda3/envs/clipbench/lib/python3.10/site-packages/webdataset/filters.py", line 692, in _map_tuple
+    for sample in data:
+  File "/home/ma-user/miniconda3/envs/clipbench/lib/python3.10/site-packages/webdataset/filters.py", line 658, in _to_tuple
+    for sample in data:
+  File "/home/ma-user/miniconda3/envs/clipbench/lib/python3.10/site-packages/webdataset/filters.py", line 520, in _map
+    for sample in data:
+  File "/home/ma-user/miniconda3/envs/clipbench/lib/python3.10/site-packages/webdataset/compat.py", line 318, in check_empty
+    raise ValueError(
+ValueError: No samples found in dataset; perhaps you have fewer shards than workers.
+Turn off using empty_check=False in the WebDataset constructor.
+

@@ -1,0 +1,152 @@
+I20260829 01:09:52 4113265 dinov2 loaders.py:96] using dataset: "ImageNet:split=TRAIN:root=/cache/ma-user/VTBenchLab/data/imagenet1k:extra=/cache/ma-user/VTBenchLab/data/imagenet1k/extra"
+I20260829 01:09:52 4113265 dinov2 loaders.py:101] # of dataset samples: 1,281,167
+I20260829 01:09:52 4113265 dinov2 loaders.py:96] using dataset: "ImageNet:split=VAL:root=/cache/ma-user/VTBenchLab/data/imagenet1k:extra=/cache/ma-user/VTBenchLab/data/imagenet1k/extra"
+I20260829 01:09:52 4113265 dinov2 loaders.py:101] # of dataset samples: 50,000
+I20260829 01:09:54 4113265 dinov2 linear_probe.py:676] Protocol: {"backbone_precision": "bfloat16 weights and autocast", "base_learning_rates": [0.0001, 0.0002, 0.0005, 0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.3, 0.5], "bias": true, "checkpoint_paths": ["/cache/ma-user/VTBenchLab/TokBench/tokenizer_modelzoo/continuous/EUPE-ConvNeXt-S/EUPE-ConvNeXt-S.pt"], "cuda_matmul_tf32": true, "cudnn_tf32": true, "dataset": "ImageNet-1k", "effective_learning_rates": [0.0004, 0.0008, 0.002, 0.004, 0.008, 0.02, 0.04, 0.08, 0.2, 0.4, 0.8, 1.2, 2.0], "epoch_length_updates": 1250, "epochs": 10, "eval_period_updates": 1250, "feature_extraction_microbatch_size": 1024, "feature_microbatch_semantics": "frozen backbone only; concatenate one FP32 [global_batch,D] tensor before linear heads", "feature_normalization": false, "fingerprint": "f841867461b0327bba19ce8073ea2fc0b82169e5422281156cb67eff872e49c4", "global_batch_size": 1024, "gradient_accumulation_steps": 1, "head_bias_init": 0.0, "head_weight_init": "normal(mean=0,std=0.01)", "linear_head_precision": "float32", "loss": "cross_entropy", "lr_scaling": "effective_lr = base_lr * global_batch_size / 256", "lr_schedule": "cosine_to_zero", "max_updates": 12500, "model": "eupe_convnext_s", "momentum": 0.9, "multi_block_search": false, "num_classes": 1000, "optimizer": "SGD", "readout_search": false, "representation": "EUPE ConvNeXt final-stage global average pooling after the released final LayerNorm", "seed": 0, "single_gpu": true, "transform": "train=RandomResizedCrop(256)+HorizontalFlip(0.5), eval=direct square Resize((256,256)) per EUPE release, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)", "validation_batch_size": 1024, "version": "tokenizer_linear_probe_dinov2_single_surface_v2", "warmup_updates": 0, "weight_decay": 0.0}
+I20260829 01:09:54 4113265 dinov2 linear_probe.py:677] Feature dimension=768; heads=13
+I20260829 01:09:54 4113265 fvcore.common.checkpoint checkpoint.py:148] No checkpoint found. Initializing model from scratch
+I20260829 01:09:54 4113265 dinov2 loaders.py:134] sampler: sharded infinite
+I20260829 01:09:54 4113265 dinov2 loaders.py:218] using PyTorch data loader
+I20260829 01:09:54 4113265 dinov2 loaders.py:233] infinite data loader
+I20260829 01:09:54 4113265 dinov2 loaders.py:159] sampler: distributed
+I20260829 01:09:54 4113265 dinov2 loaders.py:218] using PyTorch data loader
+I20260829 01:09:54 4113265 dinov2 loaders.py:231] # of batches: 49
+I20260829 01:09:54 4113265 dinov2 linear_probe.py:723] Starting eupe_convnext_s from update 0/12500 with requested cutoff epoch=1 (1250 updates), optimization global batch 1024, and frozen-backbone feature microbatch 1024
+I20260829 01:10:12 4113265 dinov2 helpers.py:102] Training  [   0/1250]  eta: 2:59:02  loss: 90.8109 (90.8109)  lr: 0.0004 (0.0004)  time: 8.593769  data: 6.595242  max mem: 10130
+I20260829 01:10:20 4113265 dinov2 helpers.py:102] Training  [  10/1250]  eta: 0:30:29  loss: 90.8109 (93.3716)  lr: 0.0004 (0.0004)  time: 1.475282  data: 0.600981  max mem: 10281
+I20260829 01:10:27 4113265 dinov2 helpers.py:102] Training  [  20/1250]  eta: 0:23:15  loss: 93.9260 (93.5564)  lr: 0.0004 (0.0004)  time: 0.761195  data: 0.001598  max mem: 10281
+I20260829 01:10:35 4113265 dinov2 helpers.py:102] Training  [  30/1250]  eta: 0:20:37  loss: 90.8109 (91.9867)  lr: 0.0004 (0.0004)  time: 0.760390  data: 0.001734  max mem: 10281
+I20260829 01:10:43 4113265 dinov2 helpers.py:102] Training  [  40/1250]  eta: 0:19:11  loss: 90.8109 (89.6198)  lr: 0.0004 (0.0004)  time: 0.760334  data: 0.001776  max mem: 10282
+I20260829 01:10:50 4113265 dinov2 helpers.py:102] Training  [  50/1250]  eta: 0:18:16  loss: 87.2777 (86.2901)  lr: 0.0004 (0.0004)  time: 0.758878  data: 0.001849  max mem: 10282
+I20260829 01:10:58 4113265 dinov2 helpers.py:102] Training  [  60/1250]  eta: 0:17:37  loss: 87.2777 (83.7458)  lr: 0.0004 (0.0004)  time: 0.758921  data: 0.001922  max mem: 10282
+I20260829 01:11:05 4113265 dinov2 helpers.py:102] Training  [  70/1250]  eta: 0:17:06  loss: 80.1520 (81.6443)  lr: 0.0004 (0.0004)  time: 0.758969  data: 0.001810  max mem: 10282
+I20260829 01:11:13 4113265 dinov2 helpers.py:102] Training  [  80/1250]  eta: 0:16:42  loss: 80.1520 (79.7767)  lr: 0.0004 (0.0004)  time: 0.758872  data: 0.001755  max mem: 10282
+I20260829 01:11:21 4113265 dinov2 helpers.py:102] Training  [  90/1250]  eta: 0:16:21  loss: 69.6418 (77.8764)  lr: 0.0004 (0.0004)  time: 0.758761  data: 0.001858  max mem: 10282
+I20260829 01:11:28 4113265 dinov2 helpers.py:102] Training  [ 100/1250]  eta: 0:16:02  loss: 69.6418 (76.1901)  lr: 0.0004 (0.0004)  time: 0.758823  data: 0.001892  max mem: 10282
+I20260829 01:11:36 4113265 dinov2 helpers.py:102] Training  [ 110/1250]  eta: 0:15:46  loss: 68.4797 (74.7483)  lr: 0.0004 (0.0004)  time: 0.758846  data: 0.001808  max mem: 10282
+I20260829 01:11:43 4113265 dinov2 helpers.py:102] Training  [ 120/1250]  eta: 0:15:31  loss: 68.4797 (73.5453)  lr: 0.0004 (0.0004)  time: 0.758829  data: 0.001776  max mem: 10282
+I20260829 01:11:51 4113265 dinov2 helpers.py:102] Training  [ 130/1250]  eta: 0:15:17  loss: 66.9342 (72.2076)  lr: 0.0004 (0.0004)  time: 0.758842  data: 0.003238  max mem: 10282
+I20260829 01:11:59 4113265 dinov2 helpers.py:102] Training  [ 140/1250]  eta: 0:15:04  loss: 66.9342 (71.1869)  lr: 0.0004 (0.0004)  time: 0.758896  data: 0.003279  max mem: 10282
+I20260829 01:12:06 4113265 dinov2 helpers.py:102] Training  [ 150/1250]  eta: 0:14:52  loss: 64.8361 (70.1034)  lr: 0.0004 (0.0004)  time: 0.758915  data: 0.001821  max mem: 10282
+I20260829 01:12:14 4113265 dinov2 helpers.py:102] Training  [ 160/1250]  eta: 0:14:40  loss: 64.8361 (69.1731)  lr: 0.0004 (0.0004)  time: 0.758882  data: 0.001792  max mem: 10282
+I20260829 01:12:21 4113265 dinov2 helpers.py:102] Training  [ 170/1250]  eta: 0:14:29  loss: 60.7733 (68.2528)  lr: 0.0004 (0.0004)  time: 0.758879  data: 0.001782  max mem: 10282
+I20260829 01:12:29 4113265 dinov2 helpers.py:102] Training  [ 180/1250]  eta: 0:14:18  loss: 60.7733 (67.4251)  lr: 0.0004 (0.0004)  time: 0.758884  data: 0.001779  max mem: 10282
+I20260829 01:12:37 4113265 dinov2 helpers.py:102] Training  [ 190/1250]  eta: 0:14:08  loss: 59.3270 (66.7920)  lr: 0.0004 (0.0004)  time: 0.758892  data: 0.001788  max mem: 10282
+I20260829 01:12:44 4113265 dinov2 helpers.py:102] Training  [ 200/1250]  eta: 0:13:58  loss: 59.1098 (66.1903)  lr: 0.0004 (0.0004)  time: 0.758903  data: 0.002560  max mem: 10282
+I20260829 01:12:52 4113265 dinov2 helpers.py:102] Training  [ 210/1250]  eta: 0:13:48  loss: 58.8886 (65.5898)  lr: 0.0004 (0.0004)  time: 0.758905  data: 0.002559  max mem: 10282
+I20260829 01:12:59 4113265 dinov2 helpers.py:102] Training  [ 220/1250]  eta: 0:13:38  loss: 56.8976 (65.0971)  lr: 0.0004 (0.0004)  time: 0.758926  data: 0.001909  max mem: 10282
+I20260829 01:13:07 4113265 dinov2 helpers.py:102] Training  [ 230/1250]  eta: 0:13:28  loss: 54.8171 (64.5027)  lr: 0.0004 (0.0004)  time: 0.758890  data: 0.002836  max mem: 10283
+I20260829 01:13:14 4113265 dinov2 helpers.py:102] Training  [ 240/1250]  eta: 0:13:19  loss: 54.7637 (63.9936)  lr: 0.0004 (0.0004)  time: 0.758789  data: 0.002727  max mem: 10283
+I20260829 01:13:22 4113265 dinov2 helpers.py:102] Training  [ 250/1250]  eta: 0:13:10  loss: 54.2885 (63.4881)  lr: 0.0004 (0.0004)  time: 0.758896  data: 0.001855  max mem: 10283
+I20260829 01:13:30 4113265 dinov2 helpers.py:102] Training  [ 260/1250]  eta: 0:13:01  loss: 54.2593 (63.0293)  lr: 0.0004 (0.0004)  time: 0.759355  data: 0.001837  max mem: 10283
+I20260829 01:13:37 4113265 dinov2 helpers.py:102] Training  [ 270/1250]  eta: 0:12:52  loss: 54.1564 (62.5506)  lr: 0.0004 (0.0004)  time: 0.759298  data: 0.003578  max mem: 10283
+I20260829 01:13:45 4113265 dinov2 helpers.py:102] Training  [ 280/1250]  eta: 0:12:43  loss: 53.8510 (62.1827)  lr: 0.0004 (0.0004)  time: 0.758875  data: 0.003590  max mem: 10283
+I20260829 01:13:52 4113265 dinov2 helpers.py:102] Training  [ 290/1250]  eta: 0:12:34  loss: 52.9778 (61.7116)  lr: 0.0004 (0.0004)  time: 0.758812  data: 0.001775  max mem: 10283
+I20260829 01:14:00 4113265 dinov2 helpers.py:102] Training  [ 300/1250]  eta: 0:12:25  loss: 52.6066 (61.2716)  lr: 0.0004 (0.0004)  time: 0.758869  data: 0.001753  max mem: 10283
+I20260829 01:14:08 4113265 dinov2 helpers.py:102] Training  [ 310/1250]  eta: 0:12:17  loss: 52.5271 (60.9298)  lr: 0.0004 (0.0004)  time: 0.758890  data: 0.001784  max mem: 10283
+I20260829 01:14:15 4113265 dinov2 helpers.py:102] Training  [ 320/1250]  eta: 0:12:08  loss: 51.8819 (60.5711)  lr: 0.0004 (0.0004)  time: 0.758858  data: 0.002942  max mem: 10283
+I20260829 01:14:23 4113265 dinov2 helpers.py:102] Training  [ 330/1250]  eta: 0:12:00  loss: 51.7761 (60.2071)  lr: 0.0004 (0.0004)  time: 0.758847  data: 0.004207  max mem: 10283
+I20260829 01:14:30 4113265 dinov2 helpers.py:102] Training  [ 340/1250]  eta: 0:11:51  loss: 51.0988 (59.8615)  lr: 0.0004 (0.0004)  time: 0.758843  data: 0.003204  max mem: 10283
+I20260829 01:14:38 4113265 dinov2 helpers.py:102] Training  [ 350/1250]  eta: 0:11:43  loss: 50.8515 (59.5663)  lr: 0.0004 (0.0004)  time: 0.758893  data: 0.003398  max mem: 10283
+I20260829 01:14:46 4113265 dinov2 helpers.py:102] Training  [ 360/1250]  eta: 0:11:34  loss: 50.8296 (59.2510)  lr: 0.0004 (0.0004)  time: 0.758955  data: 0.003236  max mem: 10283
+I20260829 01:14:53 4113265 dinov2 helpers.py:102] Training  [ 370/1250]  eta: 0:11:26  loss: 50.3359 (58.9254)  lr: 0.0004 (0.0004)  time: 0.758999  data: 0.001906  max mem: 10283
+I20260829 01:15:01 4113265 dinov2 helpers.py:102] Training  [ 380/1250]  eta: 0:11:18  loss: 49.6272 (58.6358)  lr: 0.0004 (0.0004)  time: 0.758877  data: 0.001930  max mem: 10283
+I20260829 01:15:08 4113265 dinov2 helpers.py:102] Training  [ 390/1250]  eta: 0:11:10  loss: 49.2366 (58.3283)  lr: 0.0004 (0.0004)  time: 0.758837  data: 0.001789  max mem: 10283
+I20260829 01:15:16 4113265 dinov2 helpers.py:102] Training  [ 400/1250]  eta: 0:11:01  loss: 49.0912 (58.0305)  lr: 0.0004 (0.0004)  time: 0.758978  data: 0.001767  max mem: 10283
+I20260829 01:15:23 4113265 dinov2 helpers.py:102] Training  [ 410/1250]  eta: 0:10:53  loss: 48.1970 (57.7841)  lr: 0.0004 (0.0004)  time: 0.759019  data: 0.001785  max mem: 10283
+I20260829 01:15:31 4113265 dinov2 helpers.py:102] Training  [ 420/1250]  eta: 0:10:45  loss: 48.1081 (57.5086)  lr: 0.0004 (0.0004)  time: 0.758986  data: 0.001890  max mem: 10283
+I20260829 01:15:39 4113265 dinov2 helpers.py:102] Training  [ 430/1250]  eta: 0:10:37  loss: 48.0699 (57.2536)  lr: 0.0004 (0.0004)  time: 0.758960  data: 0.001881  max mem: 10283
+I20260829 01:15:46 4113265 dinov2 helpers.py:102] Training  [ 440/1250]  eta: 0:10:29  loss: 48.0496 (56.9493)  lr: 0.0004 (0.0004)  time: 0.758975  data: 0.001812  max mem: 10283
+I20260829 01:15:54 4113265 dinov2 helpers.py:102] Training  [ 450/1250]  eta: 0:10:21  loss: 47.8999 (56.7463)  lr: 0.0004 (0.0004)  time: 0.758934  data: 0.002669  max mem: 10283
+I20260829 01:16:01 4113265 dinov2 helpers.py:102] Training  [ 460/1250]  eta: 0:10:13  loss: 47.8999 (56.5626)  lr: 0.0004 (0.0004)  time: 0.758887  data: 0.002649  max mem: 10283
+I20260829 01:16:09 4113265 dinov2 helpers.py:102] Training  [ 470/1250]  eta: 0:10:05  loss: 47.6833 (56.3179)  lr: 0.0004 (0.0004)  time: 0.758928  data: 0.001924  max mem: 10283
+I20260829 01:16:17 4113265 dinov2 helpers.py:102] Training  [ 480/1250]  eta: 0:09:57  loss: 47.6315 (56.1209)  lr: 0.0004 (0.0004)  time: 0.758926  data: 0.001996  max mem: 10283
+I20260829 01:16:24 4113265 dinov2 helpers.py:102] Training  [ 490/1250]  eta: 0:09:49  loss: 47.6113 (55.8321)  lr: 0.0004 (0.0004)  time: 0.758918  data: 0.002912  max mem: 10283
+I20260829 01:16:32 4113265 dinov2 helpers.py:102] Training  [ 500/1250]  eta: 0:09:41  loss: 46.8768 (55.6327)  lr: 0.0004 (0.0004)  time: 0.759053  data: 0.002938  max mem: 10283
+I20260829 01:16:39 4113265 dinov2 helpers.py:102] Training  [ 510/1250]  eta: 0:09:33  loss: 46.6660 (55.4576)  lr: 0.0004 (0.0004)  time: 0.759072  data: 0.002023  max mem: 10283
+I20260829 01:16:47 4113265 dinov2 helpers.py:102] Training  [ 520/1250]  eta: 0:09:25  loss: 46.5273 (55.2567)  lr: 0.0004 (0.0004)  time: 0.759012  data: 0.002333  max mem: 10283
+I20260829 01:16:55 4113265 dinov2 helpers.py:102] Training  [ 530/1250]  eta: 0:09:17  loss: 46.3352 (55.0543)  lr: 0.0004 (0.0004)  time: 0.759054  data: 0.002182  max mem: 10283
+I20260829 01:17:02 4113265 dinov2 helpers.py:102] Training  [ 540/1250]  eta: 0:09:09  loss: 46.2913 (54.8403)  lr: 0.0004 (0.0004)  time: 0.759062  data: 0.001817  max mem: 10283
+I20260829 01:17:10 4113265 dinov2 helpers.py:102] Training  [ 550/1250]  eta: 0:09:01  loss: 46.1181 (54.6675)  lr: 0.0004 (0.0004)  time: 0.759120  data: 0.001838  max mem: 10283
+I20260829 01:17:17 4113265 dinov2 helpers.py:102] Training  [ 560/1250]  eta: 0:08:53  loss: 45.9356 (54.4666)  lr: 0.0004 (0.0004)  time: 0.759067  data: 0.001884  max mem: 10283
+I20260829 01:17:25 4113265 dinov2 helpers.py:102] Training  [ 570/1250]  eta: 0:08:45  loss: 45.6592 (54.3036)  lr: 0.0004 (0.0004)  time: 0.759015  data: 0.001901  max mem: 10283
+I20260829 01:17:33 4113265 dinov2 helpers.py:102] Training  [ 580/1250]  eta: 0:08:37  loss: 45.1833 (54.1490)  lr: 0.0004 (0.0004)  time: 0.759031  data: 0.001845  max mem: 10283
+I20260829 01:17:40 4113265 dinov2 helpers.py:102] Training  [ 590/1250]  eta: 0:08:29  loss: 45.1635 (53.9616)  lr: 0.0004 (0.0004)  time: 0.759015  data: 0.001832  max mem: 10283
+I20260829 01:17:48 4113265 dinov2 helpers.py:102] Training  [ 600/1250]  eta: 0:08:21  loss: 45.0134 (53.8009)  lr: 0.0004 (0.0004)  time: 0.759022  data: 0.001836  max mem: 10283
+I20260829 01:17:55 4113265 dinov2 helpers.py:102] Training  [ 610/1250]  eta: 0:08:14  loss: 44.8150 (53.6408)  lr: 0.0004 (0.0004)  time: 0.758983  data: 0.001816  max mem: 10283
+I20260829 01:18:03 4113265 dinov2 helpers.py:102] Training  [ 620/1250]  eta: 0:08:06  loss: 44.8133 (53.4786)  lr: 0.0004 (0.0004)  time: 0.758957  data: 0.001808  max mem: 10283
+I20260829 01:18:10 4113265 dinov2 helpers.py:102] Training  [ 630/1250]  eta: 0:07:58  loss: 44.3248 (53.3248)  lr: 0.0004 (0.0004)  time: 0.758969  data: 0.001834  max mem: 10283
+I20260829 01:18:18 4113265 dinov2 helpers.py:102] Training  [ 640/1250]  eta: 0:07:50  loss: 44.3248 (53.1439)  lr: 0.0004 (0.0004)  time: 0.759040  data: 0.001850  max mem: 10283
+I20260829 01:18:26 4113265 dinov2 helpers.py:102] Training  [ 650/1250]  eta: 0:07:42  loss: 44.1579 (52.9503)  lr: 0.0004 (0.0004)  time: 0.759043  data: 0.001908  max mem: 10283
+I20260829 01:18:33 4113265 dinov2 helpers.py:102] Training  [ 660/1250]  eta: 0:07:34  loss: 43.8754 (52.7990)  lr: 0.0004 (0.0004)  time: 0.759009  data: 0.001891  max mem: 10283
+I20260829 01:18:41 4113265 dinov2 helpers.py:102] Training  [ 670/1250]  eta: 0:07:27  loss: 43.6337 (52.6431)  lr: 0.0004 (0.0004)  time: 0.759103  data: 0.001999  max mem: 10283
+I20260829 01:18:48 4113265 dinov2 helpers.py:102] Training  [ 680/1250]  eta: 0:07:19  loss: 43.4216 (52.4862)  lr: 0.0004 (0.0004)  time: 0.759102  data: 0.001973  max mem: 10283
+I20260829 01:18:56 4113265 dinov2 helpers.py:102] Training  [ 690/1250]  eta: 0:07:11  loss: 43.6337 (52.3907)  lr: 0.0004 (0.0004)  time: 0.759019  data: 0.001700  max mem: 10283
+I20260829 01:19:04 4113265 dinov2 helpers.py:102] Training  [ 700/1250]  eta: 0:07:03  loss: 43.6337 (52.2861)  lr: 0.0004 (0.0004)  time: 0.759695  data: 0.001759  max mem: 10283
+I20260829 01:19:11 4113265 dinov2 helpers.py:102] Training  [ 710/1250]  eta: 0:06:55  loss: 43.5400 (52.1646)  lr: 0.0004 (0.0004)  time: 0.759660  data: 0.001861  max mem: 10283
+I20260829 01:19:19 4113265 dinov2 helpers.py:102] Training  [ 720/1250]  eta: 0:06:48  loss: 43.4216 (52.0012)  lr: 0.0004 (0.0004)  time: 0.758908  data: 0.001819  max mem: 10283
+I20260829 01:19:26 4113265 dinov2 helpers.py:102] Training  [ 730/1250]  eta: 0:06:40  loss: 43.2834 (51.8645)  lr: 0.0004 (0.0004)  time: 0.758838  data: 0.001843  max mem: 10283
+I20260829 01:19:34 4113265 dinov2 helpers.py:102] Training  [ 740/1250]  eta: 0:06:32  loss: 43.2176 (51.7189)  lr: 0.0004 (0.0004)  time: 0.758897  data: 0.002284  max mem: 10283
+I20260829 01:19:42 4113265 dinov2 helpers.py:102] Training  [ 750/1250]  eta: 0:06:24  loss: 43.2176 (51.6115)  lr: 0.0004 (0.0004)  time: 0.758968  data: 0.002235  max mem: 10283
+I20260829 01:19:49 4113265 dinov2 helpers.py:102] Training  [ 760/1250]  eta: 0:06:16  loss: 42.9051 (51.4916)  lr: 0.0004 (0.0004)  time: 0.758894  data: 0.001788  max mem: 10283
+I20260829 01:19:57 4113265 dinov2 helpers.py:102] Training  [ 770/1250]  eta: 0:06:09  loss: 42.9051 (51.3851)  lr: 0.0004 (0.0004)  time: 0.758895  data: 0.001795  max mem: 10283
+I20260829 01:20:04 4113265 dinov2 helpers.py:102] Training  [ 780/1250]  eta: 0:06:01  loss: 42.9051 (51.2848)  lr: 0.0004 (0.0004)  time: 0.758965  data: 0.001980  max mem: 10283
+I20260829 01:20:12 4113265 dinov2 helpers.py:102] Training  [ 790/1250]  eta: 0:05:53  loss: 42.8136 (51.1334)  lr: 0.0004 (0.0004)  time: 0.758977  data: 0.002064  max mem: 10283
+I20260829 01:20:20 4113265 dinov2 helpers.py:102] Training  [ 800/1250]  eta: 0:05:45  loss: 42.8136 (51.0575)  lr: 0.0004 (0.0004)  time: 0.758998  data: 0.001891  max mem: 10283
+I20260829 01:20:27 4113265 dinov2 helpers.py:102] Training  [ 810/1250]  eta: 0:05:38  loss: 42.3792 (50.9361)  lr: 0.0004 (0.0004)  time: 0.759423  data: 0.003470  max mem: 10283
+I20260829 01:20:35 4113265 dinov2 helpers.py:102] Training  [ 820/1250]  eta: 0:05:30  loss: 42.3792 (50.8529)  lr: 0.0004 (0.0004)  time: 0.759419  data: 0.003452  max mem: 10283
+I20260829 01:20:42 4113265 dinov2 helpers.py:102] Training  [ 830/1250]  eta: 0:05:22  loss: 42.1962 (50.7417)  lr: 0.0004 (0.0004)  time: 0.759066  data: 0.001781  max mem: 10283
+I20260829 01:20:50 4113265 dinov2 helpers.py:102] Training  [ 840/1250]  eta: 0:05:15  loss: 42.1962 (50.6105)  lr: 0.0004 (0.0004)  time: 0.759095  data: 0.001817  max mem: 10283
+I20260829 01:20:58 4113265 dinov2 helpers.py:102] Training  [ 850/1250]  eta: 0:05:07  loss: 42.1962 (50.5069)  lr: 0.0004 (0.0004)  time: 0.758982  data: 0.001854  max mem: 10283
+I20260829 01:21:05 4113265 dinov2 helpers.py:102] Training  [ 860/1250]  eta: 0:04:59  loss: 41.8908 (50.3904)  lr: 0.0004 (0.0004)  time: 0.758927  data: 0.001854  max mem: 10283
+I20260829 01:21:13 4113265 dinov2 helpers.py:102] Training  [ 870/1250]  eta: 0:04:51  loss: 41.8908 (50.3085)  lr: 0.0004 (0.0004)  time: 0.760742  data: 0.003602  max mem: 10283
+I20260829 01:21:20 4113265 dinov2 helpers.py:102] Training  [ 880/1250]  eta: 0:04:44  loss: 42.1491 (50.2168)  lr: 0.0004 (0.0004)  time: 0.760801  data: 0.003572  max mem: 10283
+I20260829 01:21:28 4113265 dinov2 helpers.py:102] Training  [ 890/1250]  eta: 0:04:36  loss: 41.8908 (50.1029)  lr: 0.0004 (0.0004)  time: 0.759026  data: 0.001786  max mem: 10283
+I20260829 01:21:35 4113265 dinov2 helpers.py:102] Training  [ 900/1250]  eta: 0:04:28  loss: 41.8908 (50.0273)  lr: 0.0004 (0.0004)  time: 0.758899  data: 0.001835  max mem: 10283
+I20260829 01:21:43 4113265 dinov2 helpers.py:102] Training  [ 910/1250]  eta: 0:04:21  loss: 41.8908 (49.9449)  lr: 0.0004 (0.0004)  time: 0.758867  data: 0.002893  max mem: 10283
+I20260829 01:21:51 4113265 dinov2 helpers.py:102] Training  [ 920/1250]  eta: 0:04:13  loss: 41.8908 (49.8499)  lr: 0.0004 (0.0004)  time: 0.758973  data: 0.002878  max mem: 10283
+I20260829 01:21:58 4113265 dinov2 helpers.py:102] Training  [ 930/1250]  eta: 0:04:05  loss: 41.7032 (49.7476)  lr: 0.0004 (0.0004)  time: 0.758929  data: 0.001860  max mem: 10283
+I20260829 01:22:06 4113265 dinov2 helpers.py:102] Training  [ 940/1250]  eta: 0:03:57  loss: 41.7032 (49.6383)  lr: 0.0004 (0.0004)  time: 0.758916  data: 0.001849  max mem: 10283
+I20260829 01:22:13 4113265 dinov2 helpers.py:102] Training  [ 950/1250]  eta: 0:03:50  loss: 41.6682 (49.5552)  lr: 0.0004 (0.0004)  time: 0.758987  data: 0.001824  max mem: 10283
+I20260829 01:22:21 4113265 dinov2 helpers.py:102] Training  [ 960/1250]  eta: 0:03:42  loss: 41.6682 (49.4828)  lr: 0.0004 (0.0004)  time: 0.758954  data: 0.001801  max mem: 10283
+I20260829 01:22:29 4113265 dinov2 helpers.py:102] Training  [ 970/1250]  eta: 0:03:34  loss: 41.6682 (49.4286)  lr: 0.0004 (0.0004)  time: 0.758942  data: 0.001796  max mem: 10283
+I20260829 01:22:36 4113265 dinov2 helpers.py:102] Training  [ 980/1250]  eta: 0:03:27  loss: 41.5105 (49.3334)  lr: 0.0004 (0.0004)  time: 0.760464  data: 0.001832  max mem: 10283
+I20260829 01:22:44 4113265 dinov2 helpers.py:102] Training  [ 990/1250]  eta: 0:03:19  loss: 41.6682 (49.2691)  lr: 0.0004 (0.0004)  time: 0.760528  data: 0.001878  max mem: 10283
+I20260829 01:22:51 4113265 dinov2 helpers.py:102] Training  [1000/1250]  eta: 0:03:11  loss: 41.5105 (49.1844)  lr: 0.0004 (0.0004)  time: 0.759107  data: 0.001839  max mem: 10283
+I20260829 01:22:59 4113265 dinov2 helpers.py:102] Training  [1010/1250]  eta: 0:03:04  loss: 41.6682 (49.1172)  lr: 0.0004 (0.0004)  time: 0.759096  data: 0.001787  max mem: 10283
+I20260829 01:23:07 4113265 dinov2 helpers.py:102] Training  [1020/1250]  eta: 0:02:56  loss: 41.5105 (49.0218)  lr: 0.0004 (0.0004)  time: 0.759001  data: 0.001825  max mem: 10283
+I20260829 01:23:14 4113265 dinov2 helpers.py:102] Training  [1030/1250]  eta: 0:02:48  loss: 41.1105 (48.9368)  lr: 0.0004 (0.0004)  time: 0.758999  data: 0.001811  max mem: 10283
+I20260829 01:23:22 4113265 dinov2 helpers.py:102] Training  [1040/1250]  eta: 0:02:40  loss: 41.6682 (48.8720)  lr: 0.0004 (0.0004)  time: 0.759096  data: 0.001770  max mem: 10283
+I20260829 01:23:29 4113265 dinov2 helpers.py:102] Training  [1050/1250]  eta: 0:02:33  loss: 41.1105 (48.7733)  lr: 0.0004 (0.0004)  time: 0.759001  data: 0.003417  max mem: 10283
+I20260829 01:23:37 4113265 dinov2 helpers.py:102] Training  [1060/1250]  eta: 0:02:25  loss: 41.1105 (48.6875)  lr: 0.0004 (0.0004)  time: 0.758968  data: 0.003429  max mem: 10283
+I20260829 01:23:45 4113265 dinov2 helpers.py:102] Training  [1070/1250]  eta: 0:02:17  loss: 41.1105 (48.6187)  lr: 0.0004 (0.0004)  time: 0.759047  data: 0.002111  max mem: 10283
+I20260829 01:23:52 4113265 dinov2 helpers.py:102] Training  [1080/1250]  eta: 0:02:10  loss: 40.7152 (48.5337)  lr: 0.0004 (0.0004)  time: 0.758914  data: 0.002119  max mem: 10283
+I20260829 01:24:00 4113265 dinov2 helpers.py:102] Training  [1090/1250]  eta: 0:02:02  loss: 40.7152 (48.4412)  lr: 0.0004 (0.0004)  time: 0.758885  data: 0.001842  max mem: 10283
+I20260829 01:24:07 4113265 dinov2 helpers.py:102] Training  [1100/1250]  eta: 0:01:54  loss: 40.7152 (48.3810)  lr: 0.0004 (0.0004)  time: 0.758971  data: 0.001833  max mem: 10283
+I20260829 01:24:15 4113265 dinov2 helpers.py:102] Training  [1110/1250]  eta: 0:01:47  loss: 40.2347 (48.3033)  lr: 0.0004 (0.0004)  time: 0.760312  data: 0.003843  max mem: 10283
+I20260829 01:24:23 4113265 dinov2 helpers.py:102] Training  [1120/1250]  eta: 0:01:39  loss: 40.1810 (48.2258)  lr: 0.0004 (0.0004)  time: 0.760275  data: 0.003846  max mem: 10283
+I20260829 01:24:30 4113265 dinov2 helpers.py:102] Training  [1130/1250]  eta: 0:01:31  loss: 40.1810 (48.1581)  lr: 0.0004 (0.0004)  time: 0.758930  data: 0.001805  max mem: 10283
+I20260829 01:24:38 4113265 dinov2 helpers.py:102] Training  [1140/1250]  eta: 0:01:24  loss: 40.5043 (48.0937)  lr: 0.0004 (0.0004)  time: 0.759494  data: 0.003069  max mem: 10283
+I20260829 01:24:45 4113265 dinov2 helpers.py:102] Training  [1150/1250]  eta: 0:01:16  loss: 40.1810 (48.0083)  lr: 0.0004 (0.0004)  time: 0.759439  data: 0.004239  max mem: 10283
+I20260829 01:24:53 4113265 dinov2 helpers.py:102] Training  [1160/1250]  eta: 0:01:08  loss: 39.9965 (47.9331)  lr: 0.0004 (0.0004)  time: 0.758884  data: 0.002940  max mem: 10283
+I20260829 01:25:01 4113265 dinov2 helpers.py:102] Training  [1170/1250]  eta: 0:01:01  loss: 39.9965 (47.8722)  lr: 0.0004 (0.0004)  time: 0.758884  data: 0.001732  max mem: 10283
+I20260829 01:25:08 4113265 dinov2 helpers.py:102] Training  [1180/1250]  eta: 0:00:53  loss: 39.7208 (47.8037)  lr: 0.0004 (0.0004)  time: 0.758829  data: 0.001744  max mem: 10283
+I20260829 01:25:16 4113265 dinov2 helpers.py:102] Training  [1190/1250]  eta: 0:00:45  loss: 39.6784 (47.7323)  lr: 0.0004 (0.0004)  time: 0.758896  data: 0.001821  max mem: 10283
+I20260829 01:25:23 4113265 dinov2 helpers.py:102] Training  [1200/1250]  eta: 0:00:38  loss: 39.5836 (47.6621)  lr: 0.0004 (0.0004)  time: 0.758910  data: 0.001831  max mem: 10283
+I20260829 01:25:31 4113265 dinov2 helpers.py:102] Training  [1210/1250]  eta: 0:00:30  loss: 39.5836 (47.6017)  lr: 0.0004 (0.0004)  time: 0.758864  data: 0.001760  max mem: 10283
+I20260829 01:25:38 4113265 dinov2 helpers.py:102] Training  [1220/1250]  eta: 0:00:22  loss: 39.5836 (47.5302)  lr: 0.0004 (0.0004)  time: 0.758928  data: 0.001740  max mem: 10283
+I20260829 01:25:46 4113265 dinov2 helpers.py:102] Training  [1230/1250]  eta: 0:00:15  loss: 39.5471 (47.4610)  lr: 0.0004 (0.0004)  time: 0.759098  data: 0.001878  max mem: 10283
+I20260829 01:26:03 4113265 dinov2 helpers.py:102] Training  [1240/1250]  eta: 0:00:07  loss: 39.3544 (47.3838)  lr: 0.0004 (0.0004)  time: 1.203944  data: 0.493483  max mem: 10283
+I20260829 01:26:08 4113265 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing_dinov2_single_paperlr/eupe_convnext_s/running_checkpoint_linear_eval.pth
+I20260829 01:26:20 4113265 dinov2 helpers.py:102] Test:  [ 0/49]  eta: 0:08:11    time: 10.034302  data: 8.896001  max mem: 10283
+I20260829 01:26:27 4113265 dinov2 helpers.py:102] Test:  [10/49]  eta: 0:01:03    time: 1.627645  data: 0.809081  max mem: 10284
+I20260829 01:26:35 4113265 dinov2 helpers.py:102] Test:  [20/49]  eta: 0:00:35    time: 0.776565  data: 0.000386  max mem: 10284
+I20260829 01:26:43 4113265 dinov2 helpers.py:102] Test:  [30/49]  eta: 0:00:20    time: 0.766230  data: 0.000401  max mem: 10284
+I20260829 01:26:51 4113265 dinov2 helpers.py:102] Test:  [40/49]  eta: 0:00:09    time: 0.778895  data: 0.000342  max mem: 10284
+I20260829 01:26:57 4113265 dinov2 helpers.py:102] Test:  [48/49]  eta: 0:00:00    time: 0.772196  data: 0.000249  max mem: 10284
+I20260829 01:26:57 4113265 dinov2 helpers.py:130] Test: Total time: 0:00:47 (0.966283 s / it)
+I20260829 01:26:57 4113265 dinov2 utils.py:83] Averaged stats: 
+I20260829 01:26:57 4113265 dinov2 linear_probe.py:615] Validation at update 1250: best={'name': 'classifier_fixed_readout_lr_0_08', 'accuracy': 0.7442600131034851, 'top5_accuracy': 0.9376599788665771, 'base_lr': 0.02, 'configured_lr': 0.02, 'effective_lr': 0.08, 'lr_boundary': 'interior', 'readout': 'fixed_preselected_representation'}
+I20260829 01:26:57 4113265 dinov2 helpers.py:102] Training  [1249/1250]  eta: 0:00:00  loss: 39.3544 (47.3838)  lr: 0.0004 (0.0004)  time: 3.627059  data: 0.493365  max mem: 10284
+I20260829 01:26:57 4113265 dinov2 helpers.py:130] Training Total time: 0:16:53 (0.810602 s / it)
+I20260829 01:26:57 4113265 dinov2 linear_probe.py:790] Stopped at epoch 1/10 (update 1250); checkpoint and validation are complete. Re-run with a larger --stop-after-epoch to resume.

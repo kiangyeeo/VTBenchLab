@@ -1,0 +1,38 @@
+I20260908 18:27:15 4055321 dinov3 vision_transformer.py:112] using base=100 for rope new
+I20260908 18:27:15 4055321 dinov3 vision_transformer.py:113] using min_period=None for rope new
+I20260908 18:27:15 4055321 dinov3 vision_transformer.py:114] using max_period=None for rope new
+I20260908 18:27:15 4055321 dinov3 vision_transformer.py:115] using normalize_coords=separate for rope new
+I20260908 18:27:15 4055321 dinov3 vision_transformer.py:116] using shift_coords=None for rope new
+I20260908 18:27:15 4055321 dinov3 vision_transformer.py:117] using rescale_coords=2 for rope new
+I20260908 18:27:15 4055321 dinov3 vision_transformer.py:118] using jitter_coords=None for rope new
+I20260908 18:27:15 4055321 dinov3 vision_transformer.py:119] using dtype=fp32 for rope new
+I20260908 18:27:15 4055321 dinov3 vision_transformer.py:133] using mlp layer as FFN
+I20260908 18:27:17 4055321 dinov2 loaders.py:96] using dataset: "ImageNet:split=TRAIN:root=/cache/ma-user/VTBenchLab/data/imagenet1k:extra=/cache/ma-user/VTBenchLab/data/imagenet1k/extra"
+I20260908 18:27:17 4055321 dinov2 loaders.py:101] # of dataset samples: 1,281,167
+I20260908 18:27:17 4055321 dinov2 loaders.py:96] using dataset: "ImageNet:split=VAL:root=/cache/ma-user/VTBenchLab/data/imagenet1k:extra=/cache/ma-user/VTBenchLab/data/imagenet1k/extra"
+I20260908 18:27:17 4055321 dinov2 loaders.py:101] # of dataset samples: 50,000
+I20260908 18:27:18 4055321 dinov2 linear_probe.py:829] Protocol: {"backbone_precision": "bfloat16 weights and autocast", "base_learning_rates": [0.0001, 0.0002, 0.0005, 0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.3, 0.5], "bias": true, "budget_scope": "4,000 frozen-tokenizer training forwards; official validation forwards are reported separately", "checkpoint_paths": ["/cache/ma-user/VTBenchLab/TokBench/tokenizer_modelzoo/continuous/EUPE-ViT-B/EUPE-ViT-B.pt"], "cuda_matmul_tf32": true, "cudnn_tf32": true, "dataset": "ImageNet-1k", "effective_learning_rates": [0.000390625, 0.00078125, 0.001953125, 0.00390625, 0.0078125, 0.01953125, 0.0390625, 0.078125, 0.1953125, 0.390625, 0.78125, 1.171875, 1.953125], "epoch_length_updates": 4, "epochs": 1, "eval_period_updates": 4, "feature_extraction_microbatch_size": 512, "feature_microbatch_semantics": "frozen backbone only; concatenate one FP32 [global_batch,D] tensor before linear heads", "feature_normalization": false, "fingerprint": "643d88172a8ec3115ecf2b94927a6a1c3c44f82bda07bc32ced4b58832f625ff", "global_batch_size": 1000, "gradient_accumulation_steps": 1, "head_bias_init": 0.0, "head_weight_init": "normal(mean=0,std=0.01)", "linear_head_precision": "float32", "loss": "cross_entropy", "lr_scaling": "effective_lr = base_lr * global_batch_size / 256", "lr_schedule": "cosine_to_zero", "max_updates": 4, "model": "eupe_vit_b", "model_rank": 30, "momentum": 0.9, "multi_block_search": false, "num_classes": 1000, "official_train_samples": 1281167, "optimizer": "SGD", "probe_head": "Linear", "probe_head_source": "scripts/linear_probe_tokenizers/linear_probe.py", "readout_search": false, "representation": "concat(final normalized EUPE CLS, mean(final normalized patch tokens)); excludes 4 storage tokens", "samples_drawn_per_epoch": 4000, "seed": 0, "shots_per_class": 4, "single_gpu": true, "support_indices_sha256": "b3f3c68aa6d80f3a2ee3b399586ec5c4aace13c79deef86e0416c52a02de5b92", "support_seed": 0, "train_samples": 4000, "train_sampling": "exactly 4 distinct images per class without replacement", "train_split": "fixed class-balanced subset of official train", "transform": "train=RandomResizedCrop(256)+HorizontalFlip(0.5), eval=direct square Resize((256,256)) per EUPE release, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)", "validation_batch_size": 1024, "validation_samples": 50000, "validation_split": "official ImageNet-1k validation (50,000 images)", "version": "tokenizer_linear_probe_imagenet_4shot_1epoch_v1", "vision_encoder": "EUPE ViT-B", "warmup_updates": 0, "weight_decay": 0.0}
+I20260908 18:27:18 4055321 dinov2 linear_probe.py:830] Feature dimension=1536; heads=13
+I20260908 18:27:18 4055321 fvcore.common.checkpoint checkpoint.py:148] No checkpoint found. Initializing model from scratch
+I20260908 18:27:18 4055321 dinov2 loaders.py:134] sampler: sharded infinite
+I20260908 18:27:18 4055321 dinov2 loaders.py:218] using PyTorch data loader
+I20260908 18:27:18 4055321 dinov2 loaders.py:233] infinite data loader
+I20260908 18:27:18 4055321 dinov2 loaders.py:159] sampler: distributed
+I20260908 18:27:18 4055321 dinov2 loaders.py:218] using PyTorch data loader
+I20260908 18:27:18 4055321 dinov2 loaders.py:231] # of batches: 49
+I20260908 18:27:18 4055321 dinov2 linear_probe.py:876] Starting eupe_vit_b from update 0/4 with requested cutoff epoch=1 (4 updates), optimization global batch 1000, and frozen-backbone feature microbatch 512
+I20260908 18:27:29 4055321 dinov2 helpers.py:102] Training  [0/4]  eta: 0:00:42  loss: 90.0446 (90.0446)  lr: 0.0003 (0.0003)  time: 10.642974  data: 9.234348  max mem: 4338
+I20260908 18:27:31 4055321 dinov2 helpers.py:102] Training  [3/4]  eta: 0:00:03  loss: 90.0446 (90.0446)  lr: 0.0003 (0.0003)  time: 3.043534  data: 2.318635  max mem: 4499
+I20260908 18:27:31 4055321 dinov2 helpers.py:130] Training Total time: 0:00:12 (3.052241 s / it)
+I20260908 18:27:35 4055321 dinov2 linear_probe.py:952] Released training batches and DataLoader workers before cutoff validation
+I20260908 18:27:35 4055321 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing_match_budget_4shot/eupe_vit_b/model_final.pth
+I20260908 18:28:02 4055321 dinov2 helpers.py:102] Test:  [ 0/49]  eta: 0:21:47    time: 26.688349  data: 25.723030  max mem: 4814
+I20260908 18:32:18 4055321 dinov2 helpers.py:102] Test:  [10/49]  eta: 0:16:41    time: 25.672308  data: 24.955153  max mem: 4825
+I20260908 18:36:18 4055321 dinov2 helpers.py:102] Test:  [20/49]  eta: 0:12:01    time: 24.780483  data: 24.088955  max mem: 4825
+I20260908 18:40:22 4055321 dinov2 helpers.py:102] Test:  [30/49]  eta: 0:07:49    time: 24.215427  data: 23.524324  max mem: 4825
+I20260908 18:44:32 4055321 dinov2 helpers.py:102] Test:  [40/49]  eta: 0:03:43    time: 24.730125  data: 24.040031  max mem: 4825
+I20260908 18:47:52 4055321 dinov2 helpers.py:102] Test:  [48/49]  eta: 0:00:24    time: 24.999104  data: 24.316061  max mem: 4825
+I20260908 18:47:52 4055321 dinov2 helpers.py:130] Test: Total time: 0:20:16 (24.836459 s / it)
+I20260908 18:47:52 4055321 dinov2 utils.py:83] Averaged stats: 
+I20260908 18:47:52 4055321 dinov2 linear_probe.py:755] Validation at update 4: best={'name': 'classifier_fixed_readout_lr_1_953125', 'accuracy': 0.25266000628471375, 'top5_accuracy': 0.46129998564720154, 'base_lr': 0.5, 'configured_lr': 0.5, 'effective_lr': 1.953125, 'lr_boundary': 'high', 'readout': 'fixed_preselected_representation'}
+I20260908 18:47:52 4055321 dinov2 linear_probe.py:972] Final result: {'name': 'classifier_fixed_readout_lr_1_953125', 'accuracy': 0.25266000628471375, 'top5_accuracy': 0.46129998564720154, 'base_lr': 0.5, 'configured_lr': 0.5, 'effective_lr': 1.953125, 'lr_boundary': 'high', 'readout': 'fixed_preselected_representation'}

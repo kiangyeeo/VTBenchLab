@@ -1,0 +1,82 @@
+>> COCO-2014 multi-label tokenizer linear probing: siglip2_sm14_384
+   train/val=82081/40137 labeled images; classes=80; batch=1024; epochs=1
+   loss=BCEWithLogits; LR grid/SGD/cosine/readout follow the ImageNet probe
+   training augmentation follows each tokenizer's ImageNet linear-probe transform
+   WebSSL and Pixio: non-affine BatchNorm; all other models: no BatchNorm
+   output_root=/cache/ma-user/VTBenchLab/outputs/coco2014_multilabel_linear_probing
+Could not import `tifffile`, TIFFImageDataDecoder will be disabled
+/home/ma-user/miniconda3/envs/dino/lib/python3.10/site-packages/transformers/utils/hub.py:110: FutureWarning: Using `TRANSFORMERS_CACHE` is deprecated and will be removed in v5 of Transformers. Use `HF_HOME` instead.
+  warnings.warn(
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:3085857:3085857 [0] NCCL INFO Bootstrap : Using eth0:172.16.1.54<0>
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:3085857:3085857 [0] NCCL INFO Plugin name set by env to libnccl-net-none.so
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:3085857:3085857 [0] NCCL INFO NET/Plugin : dlerror=libnccl-net-none.so: cannot open shared object file: No such file or directory No plugin found (libnccl-net-none.so), using internal implementation
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:3085857:3085857 [0] NCCL INFO cudaDriverVersion 12040
+NCCL version 2.20.5+cuda12.4
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:3085857:3086053 [0] NCCL INFO NET/IB : Using [0]={[0] mlx5_0:1/RoCE, [1] mlx5_1:1/RoCE} [1]={[2] mlx5_2:1/RoCE, [3] mlx5_3:1/RoCE} [2]={[4] mlx5_4:1/RoCE, [5] mlx5_5:1/RoCE} [3]={[6] mlx5_6:1/RoCE, [7] mlx5_7:1/RoCE} [RO]; OOB eth0:172.16.1.54<0>
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:3085857:3086053 [0] NCCL INFO Using non-device net plugin version 0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:3085857:3086053 [0] NCCL INFO Using network IB
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:3085857:3086053 [0] NCCL INFO comm 0x55aa93032130 rank 0 nranks 1 cudaDev 0 nvmlDev 0 busId 5e000 commId 0x510aa3e071aa70a - Init START
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:3085857:3086053 [0] NCCL INFO Setting affinity for GPU 0 to ffffffff,00000000,ffffffff
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:3085857:3086053 [0] NCCL INFO comm 0x55aa93032130 rank 0 nRanks 1 nNodes 1 localRanks 1 localRank 0 MNNVL 0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:3085857:3086053 [0] NCCL INFO Channel 00/32 :    0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:3085857:3086053 [0] NCCL INFO Channel 01/32 :    0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:3085857:3086053 [0] NCCL INFO Channel 02/32 :    0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:3085857:3086053 [0] NCCL INFO Channel 03/32 :    0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:3085857:3086053 [0] NCCL INFO Channel 04/32 :    0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:3085857:3086053 [0] NCCL INFO Channel 05/32 :    0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:3085857:3086053 [0] NCCL INFO Channel 06/32 :    0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:3085857:3086053 [0] NCCL INFO Channel 07/32 :    0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:3085857:3086053 [0] NCCL INFO Channel 08/32 :    0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:3085857:3086053 [0] NCCL INFO Channel 09/32 :    0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:3085857:3086053 [0] NCCL INFO Channel 10/32 :    0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:3085857:3086053 [0] NCCL INFO Channel 11/32 :    0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:3085857:3086053 [0] NCCL INFO Channel 12/32 :    0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:3085857:3086053 [0] NCCL INFO Channel 13/32 :    0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:3085857:3086053 [0] NCCL INFO Channel 14/32 :    0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:3085857:3086053 [0] NCCL INFO Channel 15/32 :    0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:3085857:3086053 [0] NCCL INFO Channel 16/32 :    0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:3085857:3086053 [0] NCCL INFO Channel 17/32 :    0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:3085857:3086053 [0] NCCL INFO Channel 18/32 :    0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:3085857:3086053 [0] NCCL INFO Channel 19/32 :    0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:3085857:3086053 [0] NCCL INFO Channel 20/32 :    0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:3085857:3086053 [0] NCCL INFO Channel 21/32 :    0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:3085857:3086053 [0] NCCL INFO Channel 22/32 :    0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:3085857:3086053 [0] NCCL INFO Channel 23/32 :    0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:3085857:3086053 [0] NCCL INFO Channel 24/32 :    0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:3085857:3086053 [0] NCCL INFO Channel 25/32 :    0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:3085857:3086053 [0] NCCL INFO Channel 26/32 :    0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:3085857:3086053 [0] NCCL INFO Channel 27/32 :    0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:3085857:3086053 [0] NCCL INFO Channel 28/32 :    0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:3085857:3086053 [0] NCCL INFO Channel 29/32 :    0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:3085857:3086053 [0] NCCL INFO Channel 30/32 :    0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:3085857:3086053 [0] NCCL INFO Channel 31/32 :    0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:3085857:3086053 [0] NCCL INFO Trees [0] -1/-1/-1->0->-1 [1] -1/-1/-1->0->-1 [2] -1/-1/-1->0->-1 [3] -1/-1/-1->0->-1 [4] -1/-1/-1->0->-1 [5] -1/-1/-1->0->-1 [6] -1/-1/-1->0->-1 [7] -1/-1/-1->0->-1 [8] -1/-1/-1->0->-1 [9] -1/-1/-1->0->-1 [10] -1/-1/-1->0->-1 [11] -1/-1/-1->0->-1 [12] -1/-1/-1->0->-1 [13] -1/-1/-1->0->-1 [14] -1/-1/-1->0->-1 [15] -1/-1/-1->0->-1 [16] -1/-1/-1->0->-1 [17] -1/-1/-1->0->-1 [18] -1/-1/-1->0->-1 [19] -1/-1/-1->0->-1 [20] -1/-1/-1->0->-1 [21] -1/-1/-1->0->-1 [22] -1/-1/-1->0->-1 [23] -1/-1/-1->0->-1 [24] -1/-1/-1->0->-1 [25] -1/-1/-1->0->-1 [26] -1/-1/-1->0->-1 [27] -1/-1/-1->0->-1 [28] -1/-1/-1->0->-1 [29] -1/-1/-1->0->-1 [30] -1/-1/-1->0->-1 [31] -1/-1/-1->0->-1
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:3085857:3086053 [0] NCCL INFO P2P Chunksize set to 131072
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:3085857:3086053 [0] NCCL INFO Connected all rings
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:3085857:3086053 [0] NCCL INFO Connected all trees
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:3085857:3086053 [0] NCCL INFO 32 coll channels, 0 collnet channels, 0 nvls channels, 32 p2p channels, 32 p2p channels per peer
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:3085857:3086053 [0] NCCL INFO comm 0x55aa93032130 rank 0 nranks 1 cudaDev 0 nvmlDev 0 busId 5e000 commId 0x510aa3e071aa70a - Init COMPLETE
+I20260904 05:02:18 3085857 timm.models._helpers _helpers.py:129] Loaded  from checkpoint '/cache/ma-user/VTBenchLab/TokBench/tokenizer_modelzoo/continuous/siglip2_sm14_384/model.safetensors'
+I20260904 05:02:36 3085857 dinov2 coco_multilabel_probe.py:494] Protocol: {"backbone_precision": "float32", "base_learning_rates": [0.0001, 0.0002, 0.0005, 0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.3, 0.5], "bias": true, "category_order": "ascending official COCO category_id", "checkpoint_paths": ["/cache/ma-user/VTBenchLab/TokBench/tokenizer_modelzoo/continuous/siglip2_sm14_384/model.safetensors", "/cache/ma-user/VTBenchLab/TokBench/tokenizer_modelzoo/continuous/siglip2_sm14_384/config.json"], "cuda_matmul_tf32": true, "cudnn_tf32": true, "dataset": "MS COCO 2014 multi-label classification", "dataset_root": "/cache/ma-user/VTBenchLab/data/gvt/raw/coco", "effective_learning_rates": [0.0004, 0.0008, 0.002, 0.004, 0.008, 0.02, 0.04, 0.08, 0.2, 0.4, 0.8, 1.2, 2.0], "epoch_length_updates": 81, "epoch_semantics": "ceil(train_samples/global_batch_size) shuffled infinite-sampler batches", "epochs": 1, "eval_period_updates": 81, "feature_extraction_microbatch_size": 1024, "feature_microbatch_semantics": "frozen backbone only; concatenate one FP32 [global_batch,D] tensor before heads", "feature_normalization": false, "fingerprint": "55f65f4ba2a8ab41e74e32ecebcd30caf35a861f5f0af5170cd760ef0649519f", "global_batch_size": 1024, "gradient_accumulation_steps": 1, "head_bias_init": 0.0, "head_weight_init": "normal(mean=0,std=0.01)", "include_images_without_instance_labels": false, "linear_head_precision": "float32", "loss": "BCEWithLogits; sum over 80 classes then mean over batch", "lr_scaling": "effective_lr = base_lr * global_batch_size / 256", "lr_schedule": "cosine_to_zero", "max_updates": 81, "model": "siglip2_sm14_384", "momentum": 0.9, "multi_block_search": false, "num_classes": 80, "optimizer": "SGD", "readout_search": false, "reported_metric_units": "percentage points", "representation": "native SigLIP 2 model(images) [B,D] output after MAP attention pooling", "seed": 0, "single_gpu": true, "train_augmentation": "enabled; use the tokenizer's bundle.train_transform exactly as in the ImageNet linear probe", "train_samples": 82081, "train_split": "train2014", "transform": "train=RandomResizedCrop(378)+HorizontalFlip(0.5), eval=timm deterministic native transform, mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5), no ColorJitter", "validation_batch_size": 1024, "validation_head_selection": "highest macro class-wise average precision (mAP)", "validation_note": "val2014 is used both for LR-head selection and reporting, matching the ImageNet linear-probe train/val surface; no independent COCO test labels are available", "validation_samples": 40137, "validation_split": "val2014", "validation_transform": "deterministic bundle.eval_transform", "version": "tokenizer_linear_probe_coco2014_multilabel_v1", "warmup_updates": 0, "weight_decay": 0.0}
+I20260904 05:02:36 3085857 dinov2 coco_multilabel_probe.py:495] Feature dimension=1152; heads=13; BatchNorm=False
+I20260904 05:02:36 3085857 fvcore.common.checkpoint checkpoint.py:148] No checkpoint found. Initializing model from scratch
+I20260904 05:02:36 3085857 dinov2 loaders.py:159] sampler: distributed
+I20260904 05:02:36 3085857 dinov2 loaders.py:218] using PyTorch data loader
+I20260904 05:02:36 3085857 dinov2 loaders.py:231] # of batches: 40
+I20260904 05:02:36 3085857 dinov2 loaders.py:134] sampler: sharded infinite
+I20260904 05:02:36 3085857 dinov2 loaders.py:218] using PyTorch data loader
+I20260904 05:02:36 3085857 dinov2 loaders.py:233] infinite data loader
+I20260904 05:02:36 3085857 dinov2 coco_multilabel_probe.py:582] Starting COCO multi-label siglip2_sm14_384 from update 0/81; stop epoch=1; updates/epoch=81; batch=1024; feature microbatch=1024
+I20260904 05:03:03 3085857 dinov2 helpers.py:102] Training  [ 0/81]  eta: 0:35:20  loss: 724.8549 (724.8549)  lr: 0.0004 (0.0004)  time: 26.177862  data: 13.831551  max mem: 40979
+I20260904 05:05:00 3085857 dinov2 helpers.py:102] Training  [10/81]  eta: 0:15:28  loss: 724.8549 (1728.4318)  lr: 0.0004 (0.0004)  time: 13.078210  data: 1.258766  max mem: 40996
+I20260904 05:06:58 3085857 dinov2 helpers.py:102] Training  [20/81]  eta: 0:12:39  loss: 1333.0806 (1596.6481)  lr: 0.0004 (0.0004)  time: 11.772662  data: 0.001813  max mem: 40996
+I20260904 05:08:56 3085857 dinov2 helpers.py:102] Training  [30/81]  eta: 0:10:24  loss: 724.8549 (1358.7294)  lr: 0.0003 (0.0003)  time: 11.774343  data: 0.001966  max mem: 40996
+I20260904 05:10:54 3085857 dinov2 helpers.py:102] Training  [40/81]  eta: 0:08:17  loss: 724.8549 (1166.9491)  lr: 0.0003 (0.0003)  time: 11.772211  data: 0.001895  max mem: 40996
+I20260904 05:12:51 3085857 dinov2 helpers.py:102] Training  [50/81]  eta: 0:06:13  loss: 644.9732 (1017.7963)  lr: 0.0003 (0.0003)  time: 11.772089  data: 0.001969  max mem: 40996
+I20260904 05:14:49 3085857 dinov2 helpers.py:102] Training  [60/81]  eta: 0:04:12  loss: 644.9732 (905.2266)  lr: 0.0003 (0.0003)  time: 11.773538  data: 0.001961  max mem: 40996
+I20260904 05:16:47 3085857 dinov2 helpers.py:102] Training  [70/81]  eta: 0:02:11  loss: 399.8279 (821.7623)  lr: 0.0002 (0.0002)  time: 11.775044  data: 0.001990  max mem: 40996
+I20260904 05:18:45 3085857 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/coco2014_multilabel_linear_probing/siglip2_sm14_384/model_final.pth
+I20260904 05:18:45 3085857 dinov2 helpers.py:102] Training  [80/81]  eta: 0:00:11  loss: 399.8279 (756.5694)  lr: 0.0002 (0.0002)  time: 11.776285  data: 0.032915  max mem: 40996
+I20260904 05:18:45 3085857 dinov2 helpers.py:130] Training Total time: 0:16:08 (11.951640 s / it)
+I20260904 05:26:54 3085857 dinov2 coco_multilabel_probe.py:309] Validation at update 81: best={'name': 'classifier_fixed_readout_lr_0_2', 'mAP': 72.47681802455571, 'micro_AP': 81.36435476334866, 'OF1': 73.98897509369388, 'base_lr': 0.05, 'configured_lr': 0.05, 'effective_lr': 0.2, 'lr_boundary': 'interior', 'readout': 'fixed_preselected_representation'}
+I20260904 05:26:54 3085857 dinov2 coco_multilabel_probe.py:647] COCO multi-label siglip2_sm14_384 reached epoch 1/1 (update 81)

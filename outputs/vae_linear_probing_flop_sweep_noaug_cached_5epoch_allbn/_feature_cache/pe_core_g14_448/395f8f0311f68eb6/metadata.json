@@ -1,0 +1,56 @@
+{
+  "fingerprint": "395f8f0311f68eb6b86e84f82ab152eeb0a499cf3d4453b9e1fb7d8e44d30b32",
+  "identity": {
+    "backbone_precision": "bfloat16 weights and autocast",
+    "checkpoints": [
+      {
+        "kind": "file",
+        "mtime_ns": 1786898598510565683,
+        "path": "/cache/ma-user/VTBenchLab/TokBench/tokenizer_modelzoo/continuous/PE-Core-G14-448/PE-Core-G14-448.pt",
+        "size": 9677371030
+      }
+    ],
+    "data_root": "/cache/ma-user/VTBenchLab/data/imagenet1k",
+    "deterministic_transform": "bundle.eval_transform for both ImageNet TRAIN and VAL; train=RandomResizedCrop(448)+HorizontalFlip(0.5), eval=Resize(448)+CenterCrop(448), mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5)",
+    "dtype": "float32",
+    "extra_root": "/cache/ma-user/VTBenchLab/data/imagenet1k/extra",
+    "max_cap_shot": 200,
+    "model": "pe_core_g14_448",
+    "representation": "PE-Core learned attention-pool output before the released CLIP projection",
+    "support_indices_sha256": "200d9a05c37f0e816cfed2d5c1a0bea55550fa0b2a9c79f874f9a86c472ce360",
+    "support_samples": 200000,
+    "support_seed": 0,
+    "train_order": "sorted official dataset source indices",
+    "train_split": "nested deterministic class-balanced support subset",
+    "version": "imagenet_cap100_deterministic_features_v1"
+  },
+  "splits": {
+    "train": {
+      "feature_shape": [
+        200000,
+        1536
+      ],
+      "features_path": "/cache/ma-user/VTBenchLab/outputs/vae_linear_probing_flop_sweep_noaug_cached_5epoch_allbn/_feature_cache/pe_core_g14_448/395f8f0311f68eb6/train_features.npy",
+      "label_shape": [
+        200000
+      ],
+      "labels_path": "/cache/ma-user/VTBenchLab/outputs/vae_linear_probing_flop_sweep_noaug_cached_5epoch_allbn/_feature_cache/pe_core_g14_448/395f8f0311f68eb6/train_labels.npy",
+      "newly_encoded_train_samples": 100000,
+      "reused_from": "/cache/ma-user/VTBenchLab/outputs/vae_linear_probing_flop_sweep_noaug_cached_5epoch_allbn/_feature_cache/pe_core_g14_448/f1ee14fc65611843/metadata.json",
+      "seeded_train_samples": 100000,
+      "source_indices_path": "/cache/ma-user/VTBenchLab/outputs/vae_linear_probing_flop_sweep_noaug_cached_5epoch_allbn/_feature_cache/pe_core_g14_448/395f8f0311f68eb6/train_source_indices.npy"
+    },
+    "val": {
+      "feature_shape": [
+        50000,
+        1536
+      ],
+      "features_path": "/cache/ma-user/VTBenchLab/outputs/vae_linear_probing_match_budget_5shot_noaug_cached_10epoch/_feature_cache/pe_core_g14_448/c7d0d2db5bad8700/val_features.npy",
+      "label_shape": [
+        50000
+      ],
+      "labels_path": "/cache/ma-user/VTBenchLab/outputs/vae_linear_probing_match_budget_5shot_noaug_cached_10epoch/_feature_cache/pe_core_g14_448/c7d0d2db5bad8700/val_labels.npy",
+      "reused_from": "/cache/ma-user/VTBenchLab/outputs/vae_linear_probing_match_budget_5shot_noaug_cached_10epoch/_feature_cache/pe_core_g14_448/c7d0d2db5bad8700/metadata.json"
+    }
+  }
+}

@@ -1,0 +1,90 @@
+>> COCO-2014 multi-label tokenizer linear probing: dinov3
+   train/val=82081/40137 labeled images; classes=80; batch=1024; epochs=1
+   loss=BCEWithLogits; LR grid/SGD/cosine/readout follow the ImageNet probe
+   training augmentation follows each tokenizer's ImageNet linear-probe transform
+   WebSSL and Pixio: non-affine BatchNorm; all other models: no BatchNorm
+   output_root=/cache/ma-user/VTBenchLab/outputs/coco2014_multilabel_linear_probing
+Could not import `tifffile`, TIFFImageDataDecoder will be disabled
+/home/ma-user/miniconda3/envs/dino/lib/python3.10/site-packages/transformers/utils/hub.py:110: FutureWarning: Using `TRANSFORMERS_CACHE` is deprecated and will be removed in v5 of Transformers. Use `HF_HOME` instead.
+  warnings.warn(
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:2274900:2274900 [0] NCCL INFO Bootstrap : Using eth0:172.16.1.54<0>
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:2274900:2274900 [0] NCCL INFO Plugin name set by env to libnccl-net-none.so
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:2274900:2274900 [0] NCCL INFO NET/Plugin : dlerror=libnccl-net-none.so: cannot open shared object file: No such file or directory No plugin found (libnccl-net-none.so), using internal implementation
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:2274900:2274900 [0] NCCL INFO cudaDriverVersion 12040
+NCCL version 2.20.5+cuda12.4
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:2274900:2275092 [0] NCCL INFO NET/IB : Using [0]={[0] mlx5_0:1/RoCE, [1] mlx5_1:1/RoCE} [1]={[2] mlx5_2:1/RoCE, [3] mlx5_3:1/RoCE} [2]={[4] mlx5_4:1/RoCE, [5] mlx5_5:1/RoCE} [3]={[6] mlx5_6:1/RoCE, [7] mlx5_7:1/RoCE} [RO]; OOB eth0:172.16.1.54<0>
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:2274900:2275092 [0] NCCL INFO Using non-device net plugin version 0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:2274900:2275092 [0] NCCL INFO Using network IB
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:2274900:2275092 [0] NCCL INFO comm 0x55c60a7120a0 rank 0 nranks 1 cudaDev 0 nvmlDev 0 busId 5e000 commId 0xddbd380e21d121d9 - Init START
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:2274900:2275092 [0] NCCL INFO Setting affinity for GPU 0 to ffffffff,00000000,ffffffff
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:2274900:2275092 [0] NCCL INFO comm 0x55c60a7120a0 rank 0 nRanks 1 nNodes 1 localRanks 1 localRank 0 MNNVL 0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:2274900:2275092 [0] NCCL INFO Channel 00/32 :    0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:2274900:2275092 [0] NCCL INFO Channel 01/32 :    0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:2274900:2275092 [0] NCCL INFO Channel 02/32 :    0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:2274900:2275092 [0] NCCL INFO Channel 03/32 :    0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:2274900:2275092 [0] NCCL INFO Channel 04/32 :    0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:2274900:2275092 [0] NCCL INFO Channel 05/32 :    0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:2274900:2275092 [0] NCCL INFO Channel 06/32 :    0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:2274900:2275092 [0] NCCL INFO Channel 07/32 :    0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:2274900:2275092 [0] NCCL INFO Channel 08/32 :    0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:2274900:2275092 [0] NCCL INFO Channel 09/32 :    0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:2274900:2275092 [0] NCCL INFO Channel 10/32 :    0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:2274900:2275092 [0] NCCL INFO Channel 11/32 :    0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:2274900:2275092 [0] NCCL INFO Channel 12/32 :    0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:2274900:2275092 [0] NCCL INFO Channel 13/32 :    0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:2274900:2275092 [0] NCCL INFO Channel 14/32 :    0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:2274900:2275092 [0] NCCL INFO Channel 15/32 :    0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:2274900:2275092 [0] NCCL INFO Channel 16/32 :    0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:2274900:2275092 [0] NCCL INFO Channel 17/32 :    0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:2274900:2275092 [0] NCCL INFO Channel 18/32 :    0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:2274900:2275092 [0] NCCL INFO Channel 19/32 :    0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:2274900:2275092 [0] NCCL INFO Channel 20/32 :    0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:2274900:2275092 [0] NCCL INFO Channel 21/32 :    0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:2274900:2275092 [0] NCCL INFO Channel 22/32 :    0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:2274900:2275092 [0] NCCL INFO Channel 23/32 :    0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:2274900:2275092 [0] NCCL INFO Channel 24/32 :    0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:2274900:2275092 [0] NCCL INFO Channel 25/32 :    0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:2274900:2275092 [0] NCCL INFO Channel 26/32 :    0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:2274900:2275092 [0] NCCL INFO Channel 27/32 :    0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:2274900:2275092 [0] NCCL INFO Channel 28/32 :    0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:2274900:2275092 [0] NCCL INFO Channel 29/32 :    0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:2274900:2275092 [0] NCCL INFO Channel 30/32 :    0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:2274900:2275092 [0] NCCL INFO Channel 31/32 :    0
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:2274900:2275092 [0] NCCL INFO Trees [0] -1/-1/-1->0->-1 [1] -1/-1/-1->0->-1 [2] -1/-1/-1->0->-1 [3] -1/-1/-1->0->-1 [4] -1/-1/-1->0->-1 [5] -1/-1/-1->0->-1 [6] -1/-1/-1->0->-1 [7] -1/-1/-1->0->-1 [8] -1/-1/-1->0->-1 [9] -1/-1/-1->0->-1 [10] -1/-1/-1->0->-1 [11] -1/-1/-1->0->-1 [12] -1/-1/-1->0->-1 [13] -1/-1/-1->0->-1 [14] -1/-1/-1->0->-1 [15] -1/-1/-1->0->-1 [16] -1/-1/-1->0->-1 [17] -1/-1/-1->0->-1 [18] -1/-1/-1->0->-1 [19] -1/-1/-1->0->-1 [20] -1/-1/-1->0->-1 [21] -1/-1/-1->0->-1 [22] -1/-1/-1->0->-1 [23] -1/-1/-1->0->-1 [24] -1/-1/-1->0->-1 [25] -1/-1/-1->0->-1 [26] -1/-1/-1->0->-1 [27] -1/-1/-1->0->-1 [28] -1/-1/-1->0->-1 [29] -1/-1/-1->0->-1 [30] -1/-1/-1->0->-1 [31] -1/-1/-1->0->-1
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:2274900:2275092 [0] NCCL INFO P2P Chunksize set to 131072
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:2274900:2275092 [0] NCCL INFO Connected all rings
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:2274900:2275092 [0] NCCL INFO Connected all trees
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:2274900:2275092 [0] NCCL INFO 32 coll channels, 0 collnet channels, 0 nvls channels, 32 p2p channels, 32 p2p channels per peer
+modelarts-job-370bef21-a30e-4505-8309-fc1c6a0498a9-worker-0:2274900:2275092 [0] NCCL INFO comm 0x55c60a7120a0 rank 0 nranks 1 cudaDev 0 nvmlDev 0 busId 5e000 commId 0xddbd380e21d121d9 - Init COMPLETE
+I20260903 12:22:41 2274900 dinov3 vision_transformer.py:112] using base=100 for rope new
+I20260903 12:22:41 2274900 dinov3 vision_transformer.py:113] using min_period=None for rope new
+I20260903 12:22:41 2274900 dinov3 vision_transformer.py:114] using max_period=None for rope new
+I20260903 12:22:41 2274900 dinov3 vision_transformer.py:115] using normalize_coords=separate for rope new
+I20260903 12:22:41 2274900 dinov3 vision_transformer.py:116] using shift_coords=None for rope new
+I20260903 12:22:41 2274900 dinov3 vision_transformer.py:117] using rescale_coords=2 for rope new
+I20260903 12:22:41 2274900 dinov3 vision_transformer.py:118] using jitter_coords=None for rope new
+I20260903 12:22:41 2274900 dinov3 vision_transformer.py:119] using dtype=fp32 for rope new
+I20260903 12:22:41 2274900 dinov3 vision_transformer.py:133] using mlp layer as FFN
+I20260903 12:23:02 2274900 dinov2 coco_multilabel_probe.py:494] Protocol: {"backbone_precision": "float32", "base_learning_rates": [0.0001, 0.0002, 0.0005, 0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.3, 0.5], "bias": true, "category_order": "ascending official COCO category_id", "checkpoint_paths": ["/cache/ma-user/VTBenchLab/TokBench/tokenizer_modelzoo/RAEv2-models/encoders/dinov3/dinov3_vitl16_pretrain_lvd1689m-8aa4cbdd.pth", "/cache/ma-user/VTBenchLab/TokBench/tokenizer_modelzoo/RAEv2-models/stage1/imagenet/dinov3l-k1/stats.pt", "/cache/ma-user/VTBenchLab/TokBench/tokenzier_vae_scripts/image_scripts/RAEv2", "/cache/ma-user/VTBenchLab/TokBench/tokenzier_vae_scripts/image_scripts/dinov3"], "cuda_matmul_tf32": true, "cudnn_tf32": true, "dataset": "MS COCO 2014 multi-label classification", "dataset_root": "/cache/ma-user/VTBenchLab/data/gvt/raw/coco", "effective_learning_rates": [0.0004, 0.0008, 0.002, 0.004, 0.008, 0.02, 0.04, 0.08, 0.2, 0.4, 0.8, 1.2, 2.0], "epoch_length_updates": 81, "epoch_semantics": "ceil(train_samples/global_batch_size) shuffled infinite-sampler batches", "epochs": 1, "eval_period_updates": 81, "feature_extraction_microbatch_size": 1024, "feature_microbatch_semantics": "frozen backbone only; concatenate one FP32 [global_batch,D] tensor before heads", "feature_normalization": false, "fingerprint": "3bb7804bc57f094097e904735c3a7ab5791604add93feef69ad25a6807ef3b43", "global_batch_size": 1024, "gradient_accumulation_steps": 1, "head_bias_init": 0.0, "head_weight_init": "normal(mean=0,std=0.01)", "include_images_without_instance_labels": false, "linear_head_precision": "float32", "loss": "BCEWithLogits; sum over 80 classes then mean over batch", "lr_scaling": "effective_lr = base_lr * global_batch_size / 256", "lr_schedule": "cosine_to_zero", "max_updates": 81, "model": "dinov3", "momentum": 0.9, "multi_block_search": false, "num_classes": 80, "optimizer": "SGD", "readout_search": false, "reported_metric_units": "percentage points", "representation": "spatial mean of the normalized RAEv2 DINOv3-L/16 K=1 tokenizer latent", "seed": 0, "single_gpu": true, "train_augmentation": "enabled; use the tokenizer's bundle.train_transform exactly as in the ImageNet linear probe", "train_samples": 82081, "train_split": "train2014", "transform": "train=RandomResizedCrop(256)+HorizontalFlip(0.5), eval=Resize(256)+CenterCrop(256), transform output in [0,1]; encoder-internal normalization mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)", "validation_batch_size": 1024, "validation_head_selection": "highest macro class-wise average precision (mAP)", "validation_note": "val2014 is used both for LR-head selection and reporting, matching the ImageNet linear-probe train/val surface; no independent COCO test labels are available", "validation_samples": 40137, "validation_split": "val2014", "validation_transform": "deterministic bundle.eval_transform", "version": "tokenizer_linear_probe_coco2014_multilabel_v1", "warmup_updates": 0, "weight_decay": 0.0}
+I20260903 12:23:02 2274900 dinov2 coco_multilabel_probe.py:495] Feature dimension=1024; heads=13; BatchNorm=False
+I20260903 12:23:02 2274900 fvcore.common.checkpoint checkpoint.py:148] No checkpoint found. Initializing model from scratch
+I20260903 12:23:02 2274900 dinov2 loaders.py:159] sampler: distributed
+I20260903 12:23:02 2274900 dinov2 loaders.py:218] using PyTorch data loader
+I20260903 12:23:02 2274900 dinov2 loaders.py:231] # of batches: 40
+I20260903 12:23:02 2274900 dinov2 loaders.py:134] sampler: sharded infinite
+I20260903 12:23:02 2274900 dinov2 loaders.py:218] using PyTorch data loader
+I20260903 12:23:02 2274900 dinov2 loaders.py:233] infinite data loader
+I20260903 12:23:02 2274900 dinov2 coco_multilabel_probe.py:582] Starting COCO multi-label dinov3 from update 0/81; stop epoch=1; updates/epoch=81; batch=1024; feature microbatch=1024
+I20260903 12:23:14 2274900 dinov2 helpers.py:102] Training  [ 0/81]  eta: 0:15:37  loss: 726.7618 (726.7618)  lr: 0.0004 (0.0004)  time: 11.574547  data: 8.472217  max mem: 15237
+I20260903 12:23:41 2274900 dinov2 helpers.py:102] Training  [10/81]  eta: 0:04:09  loss: 445.8938 (586.3278)  lr: 0.0004 (0.0004)  time: 3.519271  data: 0.771660  max mem: 15253
+I20260903 12:24:08 2274900 dinov2 helpers.py:102] Training  [20/81]  eta: 0:03:10  loss: 445.8938 (488.5819)  lr: 0.0004 (0.0004)  time: 2.703490  data: 0.001758  max mem: 15253
+I20260903 12:24:35 2274900 dinov2 helpers.py:102] Training  [30/81]  eta: 0:02:32  loss: 293.0901 (430.0900)  lr: 0.0003 (0.0003)  time: 2.695049  data: 0.001885  max mem: 15253
+I20260903 12:25:02 2274900 dinov2 helpers.py:102] Training  [40/81]  eta: 0:01:59  loss: 293.0901 (385.6023)  lr: 0.0003 (0.0003)  time: 2.697224  data: 0.001886  max mem: 15253
+I20260903 12:25:29 2274900 dinov2 helpers.py:102] Training  [50/81]  eta: 0:01:29  loss: 254.6144 (351.0236)  lr: 0.0003 (0.0003)  time: 2.698407  data: 0.001927  max mem: 15253
+I20260903 12:25:56 2274900 dinov2 helpers.py:102] Training  [60/81]  eta: 0:00:59  loss: 254.6144 (324.5972)  lr: 0.0003 (0.0003)  time: 2.699021  data: 0.001974  max mem: 15253
+I20260903 12:26:23 2274900 dinov2 helpers.py:102] Training  [70/81]  eta: 0:00:31  loss: 207.6512 (304.9874)  lr: 0.0002 (0.0002)  time: 2.700059  data: 0.001986  max mem: 15253
+I20260903 12:26:50 2274900 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/coco2014_multilabel_linear_probing/dinov3/model_final.pth
+I20260903 12:26:50 2274900 dinov2 helpers.py:102] Training  [80/81]  eta: 0:00:02  loss: 207.6512 (288.9208)  lr: 0.0002 (0.0002)  time: 2.700871  data: 0.032189  max mem: 15253
+I20260903 12:26:50 2274900 dinov2 helpers.py:130] Training Total time: 0:03:47 (2.809811 s / it)
+I20260903 12:29:02 2274900 dinov2 coco_multilabel_probe.py:309] Validation at update 81: best={'name': 'classifier_fixed_readout_lr_0_8', 'mAP': 69.23403953484669, 'micro_AP': 75.47601194003482, 'OF1': 68.49601079664987, 'base_lr': 0.2, 'configured_lr': 0.2, 'effective_lr': 0.8, 'lr_boundary': 'interior', 'readout': 'fixed_preselected_representation'}
+I20260903 12:29:02 2274900 dinov2 coco_multilabel_probe.py:647] COCO multi-label dinov3 reached epoch 1/1 (update 81)

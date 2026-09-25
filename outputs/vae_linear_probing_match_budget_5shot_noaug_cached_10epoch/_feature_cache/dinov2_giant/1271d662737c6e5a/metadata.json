@@ -1,0 +1,57 @@
+{
+  "fingerprint": "1271d662737c6e5a049c2740a617e0c0b89732864ca037eb6214d6f764f52b61",
+  "identity": {
+    "backbone_precision": "bfloat16 weights and autocast",
+    "checkpoints": [
+      {
+        "kind": "file",
+        "mtime_ns": 1786896973480375194,
+        "path": "/cache/ma-user/VTBenchLab/TokBench/tokenizer_modelzoo/continuous/dinov2-giant/model.safetensors",
+        "size": 4546005432
+      },
+      {
+        "kind": "file",
+        "mtime_ns": 1786896827741193769,
+        "path": "/cache/ma-user/VTBenchLab/TokBench/tokenizer_modelzoo/continuous/dinov2-giant/config.json",
+        "size": 548
+      },
+      {
+        "kind": "file",
+        "mtime_ns": 1786896825881165967,
+        "path": "/cache/ma-user/VTBenchLab/TokBench/tokenizer_modelzoo/continuous/dinov2-giant/preprocessor_config.json",
+        "size": 436
+      }
+    ],
+    "data_root": "/cache/ma-user/VTBenchLab/data/imagenet1k",
+    "deterministic_transform": "bundle.eval_transform for both ImageNet TRAIN and VAL; train=RandomResizedCrop(224)+HorizontalFlip(0.5), eval=Resize(256)+CenterCrop(224), mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)",
+    "dtype": "float32",
+    "extra_root": "/cache/ma-user/VTBenchLab/data/imagenet1k/extra",
+    "model": "dinov2_giant",
+    "representation": "concat(final normalized CLS, mean(final normalized patch tokens)); excludes 0 register token(s)",
+    "support_indices_sha256": "681151991440c47050719cb1908502ca841f995f0965577403e9f163a99abf8f",
+    "support_samples": 5000,
+    "support_seed": 0,
+    "train_split": "fixed class-balanced five-shot support subset",
+    "version": "imagenet_5shot_deterministic_frozen_features_v1"
+  },
+  "splits": {
+    "train": {
+      "feature_shape": [
+        5000,
+        3072
+      ],
+      "label_shape": [
+        5000
+      ]
+    },
+    "val": {
+      "feature_shape": [
+        50000,
+        3072
+      ],
+      "label_shape": [
+        50000
+      ]
+    }
+  }
+}

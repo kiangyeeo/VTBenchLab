@@ -1,0 +1,61 @@
+Models: [['ViT-B-32', 'openai'], ['ViT-B-16', 'openai'], ['ViT-L-14', 'openai'], ['ViT-L-14-336', 'openai'], ['ViT-B-32-quickgelu', 'laion400m_e32'], ['ViT-B-32', 'laion2b_e16'], ['ViT-B-32', 'laion2b_s34b_b79k'], ['ViT-B-16', 'laion400m_e32'], ['ViT-B-16-plus-240', 'laion400m_e32'], ['ViT-L-14', 'laion400m_e32'], ['ViT-L-14', 'laion2b_s32b_b82k'], ['ViT-H-14', 'laion2b_s32b_b79k'], ['ViT-g-14', 'laion2b_s12b_b42k']]
+Datasets: ['wds/gtsrb']
+Languages: ['en']
+Running 'zeroshot_classification' on 'gtsrb' with the model 'openai' on language 'en'
+/home/ma-user/miniconda3/envs/clipbench/lib/python3.10/site-packages/webdataset/compat.py:379: UserWarning: WebDataset(shardshuffle=...) is None; set explicitly to False or a number
+  warnings.warn("WebDataset(shardshuffle=...) is None; set explicitly to False or a number")
+IterableDataset has no len()
+Dataset split: test
+Dataset classes: ['red and white circle 20 kph speed limit', 'red and white circle 30 kph speed limit', 'red and white circle 50 kph speed limit', 'red and white circle 60 kph speed limit', 'red and white circle 70 kph speed limit', 'red and white circle 80 kph speed limit', 'end / de-restriction of 80 kph speed limit', 'red and white circle 100 kph speed limit', 'red and white circle 120 kph speed limit', 'red and white circle red car and black car no passing', 'red and white circle red truck and black car no passing', 'red and white triangle road intersection warning', 'white and yellow diamond priority road', 'red and white upside down triangle yield right-of-way', 'stop', 'empty red and white circle', 'red and white circle no truck entry', 'red circle with white horizonal stripe no entry', 'red and white triangle with exclamation mark warning', 'red and white triangle with black left curve approaching warning', 'red and white triangle with black right curve approaching warning', 'red and white triangle with black double curve approaching warning', 'red and white triangle rough / bumpy road warning', 'red and white triangle car skidding / slipping warning', 'red and white triangle with merging / narrow lanes warning', 'red and white triangle with person digging / construction / road work warning', 'red and white triangle with traffic light approaching warning', 'red and white triangle with person walking warning', 'red and white triangle with child and person walking warning', 'red and white triangle with bicyle warning', 'red and white triangle with snowflake / ice warning', 'red and white triangle with deer warning', 'white circle with gray strike bar no speed limit', 'blue circle with white right turn arrow mandatory', 'blue circle with white left turn arrow mandatory', 'blue circle with white forward arrow mandatory', 'blue circle with white forward or right turn arrow mandatory', 'blue circle with white forward or left turn arrow mandatory', 'blue circle with white keep right arrow mandatory', 'blue circle with white keep left arrow mandatory', 'blue circle with white arrows indicating a traffic circle', 'white circle with gray strike bar indicating no passing for cars has ended', 'white circle with gray strike bar indicating no passing for trucks has ended']
+Dataset number of classes: 43
+Zero-shot templates: ['a zoomed in photo of a "{c}" traffic sign.', 'a centered photo of a "{c}" traffic sign.', 'a close up photo of a "{c}" traffic sign.']
+  0%|          | 0/43 [00:00<?, ?it/s]  2%|▏         | 1/43 [00:00<00:15,  2.76it/s] 23%|██▎       | 10/43 [00:00<00:01, 27.38it/s] 44%|████▍     | 19/43 [00:00<00:00, 44.73it/s] 65%|██████▌   | 28/43 [00:00<00:00, 56.91it/s] 86%|████████▌ | 37/43 [00:00<00:00, 65.54it/s]100%|██████████| 43/43 [00:00<00:00, 50.68it/s]
+0it [00:00, ?it/s]1it [00:03,  3.44s/it]2it [00:03,  1.70s/it]3it [00:04,  1.15s/it]3it [00:04,  1.48s/it]
+Traceback (most recent call last):
+  File "/home/ma-user/miniconda3/envs/clipbench/lib/python3.10/runpy.py", line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/home/ma-user/miniconda3/envs/clipbench/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/cache/ma-user/VTBenchLab/CLIP_benchmark/clip_benchmark/cli.py", line 445, in <module>
+    sys.exit(main())  # pragma: no cover
+  File "/cache/ma-user/VTBenchLab/CLIP_benchmark/clip_benchmark/cli.py", line 85, in main
+    main_eval(base)
+  File "/cache/ma-user/VTBenchLab/CLIP_benchmark/clip_benchmark/cli.py", line 191, in main_eval
+    run(args)
+  File "/cache/ma-user/VTBenchLab/CLIP_benchmark/clip_benchmark/cli.py", line 309, in run
+    metrics = zeroshot_classification.evaluate(
+  File "/cache/ma-user/VTBenchLab/CLIP_benchmark/clip_benchmark/metrics/zeroshot_classification.py", line 209, in evaluate
+    logits, target = run_classification(model, classifier, dataloader, device, amp=amp)
+  File "/cache/ma-user/VTBenchLab/CLIP_benchmark/clip_benchmark/metrics/zeroshot_classification.py", line 107, in run_classification
+    for images, target in tqdm(dataloader):
+  File "/home/ma-user/miniconda3/envs/clipbench/lib/python3.10/site-packages/tqdm/std.py", line 1181, in __iter__
+    for obj in iterable:
+  File "/home/ma-user/miniconda3/envs/clipbench/lib/python3.10/site-packages/torch/utils/data/dataloader.py", line 708, in __next__
+    data = self._next_data()
+  File "/home/ma-user/miniconda3/envs/clipbench/lib/python3.10/site-packages/torch/utils/data/dataloader.py", line 1455, in _next_data
+    return self._process_data(data)
+  File "/home/ma-user/miniconda3/envs/clipbench/lib/python3.10/site-packages/torch/utils/data/dataloader.py", line 1505, in _process_data
+    data.reraise()
+  File "/home/ma-user/miniconda3/envs/clipbench/lib/python3.10/site-packages/torch/_utils.py", line 733, in reraise
+    raise exception
+ValueError: Caught ValueError in DataLoader worker process 3.
+Original Traceback (most recent call last):
+  File "/home/ma-user/miniconda3/envs/clipbench/lib/python3.10/site-packages/torch/utils/data/_utils/worker.py", line 349, in _worker_loop
+    data = fetcher.fetch(index)  # type: ignore[possibly-undefined]
+  File "/home/ma-user/miniconda3/envs/clipbench/lib/python3.10/site-packages/torch/utils/data/_utils/fetch.py", line 42, in fetch
+    data = next(self.dataset_iter)
+  File "/home/ma-user/miniconda3/envs/clipbench/lib/python3.10/site-packages/webdataset/pipeline.py", line 105, in iterator
+    for sample in self.iterator1():
+  File "/home/ma-user/miniconda3/envs/clipbench/lib/python3.10/site-packages/webdataset/filters.py", line 783, in _batched
+    for sample in data:
+  File "/home/ma-user/miniconda3/envs/clipbench/lib/python3.10/site-packages/webdataset/filters.py", line 692, in _map_tuple
+    for sample in data:
+  File "/home/ma-user/miniconda3/envs/clipbench/lib/python3.10/site-packages/webdataset/filters.py", line 658, in _to_tuple
+    for sample in data:
+  File "/home/ma-user/miniconda3/envs/clipbench/lib/python3.10/site-packages/webdataset/filters.py", line 520, in _map
+    for sample in data:
+  File "/home/ma-user/miniconda3/envs/clipbench/lib/python3.10/site-packages/webdataset/compat.py", line 318, in check_empty
+    raise ValueError(
+ValueError: No samples found in dataset; perhaps you have fewer shards than workers.
+Turn off using empty_check=False in the WebDataset constructor.
+

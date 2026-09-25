@@ -1,0 +1,128 @@
+I20260913 11:23:14 1125074 dinov2 loaders.py:96] using dataset: "ImageNet:split=TRAIN:root=/cache/ma-user/VTBenchLab/data/imagenet1k:extra=/cache/ma-user/VTBenchLab/data/imagenet1k/extra"
+I20260913 11:23:14 1125074 dinov2 loaders.py:101] # of dataset samples: 1,281,167
+I20260913 11:23:15 1125074 dinov2 loaders.py:96] using dataset: "ImageNet:split=VAL:root=/cache/ma-user/VTBenchLab/data/imagenet1k:extra=/cache/ma-user/VTBenchLab/data/imagenet1k/extra"
+I20260913 11:23:15 1125074 dinov2 loaders.py:101] # of dataset samples: 50,000
+I20260913 11:23:15 1125074 dinov2 linear_probe_cached.py:751] Extracting deterministic train features once: samples=5000 batches=20
+I20260913 11:23:20 1125074 dinov2 linear_probe_cached.py:772] Cached train batch 1/20
+I20260913 11:23:27 1125074 dinov2 linear_probe_cached.py:751] Extracting deterministic val features once: samples=50000 batches=196
+I20260913 11:23:31 1125074 dinov2 linear_probe_cached.py:772] Cached val batch 1/196
+I20260913 11:24:03 1125074 dinov2 linear_probe_cached.py:772] Cached val batch 101/196
+I20260913 11:24:33 1125074 dinov2 linear_probe_cached.py:827] Completed deterministic feature cache: /cache/ma-user/VTBenchLab/outputs/vae_linear_probing_match_budget_5shot_noaug_cached_10epoch/_feature_cache/mc2_m16_384/44ea9c8bc598fd0c
+I20260913 11:24:33 1125074 dinov2 linear_probe_cached.py:1006] Protocol: {"backbone_precision": "float32", "base_learning_rates": [0.0001, 0.0002, 0.0005, 0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.3, 0.5], "batch_norm_affine": false, "batch_norm_applied_after_feature_cache_load": true, "batch_norm_eps": 1e-06, "batch_norm_fixed_scale": 1.0, "batch_norm_fixed_shift": 0.0, "batch_norm_momentum": 0.1, "batch_norm_track_running_stats": true, "batch_norm_training_batch_size": 1000, "bias": true, "budget_scope": "5,000 frozen-tokenizer training forwards cached once; the cached features are presented to the probe head for 10 epochs; official validation encoder forwards are reported separately", "cache_loader_batch_size": 256, "checkpoint_paths": ["/cache/ma-user/VTBenchLab/TokBench/tokenizer_modelzoo/continuous/mc2_m16_384/metaclip2_m16_384px_worldwide.pt"], "cuda_matmul_tf32": true, "cudnn_tf32": true, "data_augmentation": false, "dataset": "ImageNet-1k", "effective_learning_rates": [0.000390625, 0.00078125, 0.001953125, 0.00390625, 0.0078125, 0.01953125, 0.0390625, 0.078125, 0.1953125, 0.390625, 0.78125, 1.171875, 1.953125], "epoch_length_updates": 5, "epochs": 10, "eval_period_updates": 5, "feature_cache_dtype": "float32", "feature_cache_fingerprint": "44ea9c8bc598fd0c29d9bf4513b0d830a45b29f881d0ba83ccaadd09d2e095ec", "feature_extraction": "once per split, then persistent FP32 cache reuse", "feature_extraction_microbatch_size": 512, "feature_microbatch_semantics": "frozen backbone only; concatenate one FP32 [global_batch,D] tensor before linear heads", "feature_normalization": true, "feature_normalization_placement": "immediately before each linear classifier", "feature_normalization_type": "BatchNorm1d", "fingerprint": "5829acb92d629d9575460a9ba81c7ea88d4f3335fe030281a85a608d0fda9d72", "global_batch_size": 1000, "gradient_accumulation_steps": 1, "head_bias_init": 0.0, "head_weight_init": "normal(mean=0,std=0.01)", "linear_head_precision": "float32", "loss": "cross_entropy", "lr_scaling": "effective_lr = base_lr * global_batch_size / 256", "lr_schedule": "cosine_to_zero", "max_updates": 50, "model": "mc2_m16_384", "model_rank": 41, "momentum": 0.9, "multi_block_search": false, "num_classes": 1000, "official_train_samples": 1281167, "optimizer": "SGD", "probe_head": "BatchNorm1d(affine=False)->Linear", "probe_head_source": "scripts/linear_probe_tokenizers_cached/linear_probe_cached.py", "readout_search": false, "representation": "final normalized CLS before the MetaCLIP 2 512-to-512 projection", "samples_drawn_per_epoch": 5000, "seed": 0, "shots_per_class": 5, "single_gpu": true, "support_indices_sha256": "681151991440c47050719cb1908502ca841f995f0965577403e9f163a99abf8f", "support_seed": 0, "train_samples": 5000, "train_sampling": "exactly 5 distinct images per class without replacement", "train_split": "fixed class-balanced subset of official train", "training_cutoff_semantics": "fixed 10-epoch/50-update cosine schedule", "training_feature_presentations": 50000, "transform": "train=bundle.eval_transform (deterministic, no augmentation); val=bundle.eval_transform; original bundle: train=RandomResizedCrop(384)+HorizontalFlip(0.5), eval=Resize(384)+CenterCrop(384), mean=(0.48145466, 0.4578275, 0.40821073), std=(0.26862954, 0.26130258, 0.27577711)", "validation_batch_size": 1024, "validation_feature_extraction_microbatch_size": 512, "validation_samples": 50000, "validation_split": "official ImageNet-1k validation (50,000 images)", "version": "tokenizer_linear_probe_imagenet_5shot_noaug_cached_10epoch_allbn_v1", "vision_encoder": "mc2_m16_384", "warmup_updates": 0, "weight_decay": 0.0}
+I20260913 11:24:33 1125074 dinov2 linear_probe_cached.py:1007] Cached feature dimension=512; heads=13
+I20260913 11:24:33 1125074 fvcore.common.checkpoint checkpoint.py:148] No checkpoint found. Initializing model from scratch
+I20260913 11:24:33 1125074 dinov2 loaders.py:134] sampler: sharded infinite
+I20260913 11:24:33 1125074 dinov2 loaders.py:218] using PyTorch data loader
+I20260913 11:24:33 1125074 dinov2 loaders.py:233] infinite data loader
+I20260913 11:24:33 1125074 dinov2 loaders.py:159] sampler: distributed
+I20260913 11:24:33 1125074 dinov2 loaders.py:218] using PyTorch data loader
+I20260913 11:24:33 1125074 dinov2 loaders.py:231] # of batches: 49
+I20260913 11:24:33 1125074 dinov2 linear_probe_cached.py:1052] Starting cached mc2_m16_384 from update 0/50; requested cutoff epoch=10 (50 updates)
+I20260913 11:24:34 1125074 dinov2 helpers.py:102] Cached training  [ 0/50]  eta: 0:00:11  loss: 90.1274 (90.1274)  lr: 0.0004 (0.0004)  time: 0.233794  data: 0.003419  max mem: 4052
+I20260913 11:24:34 1125074 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing_match_budget_5shot_noaug_cached_10epoch/mc2_m16_384/running_checkpoint_linear_eval.pth
+I20260913 11:24:35 1125074 dinov2 helpers.py:102] Test:  [ 0/49]  eta: 0:00:20    time: 0.416436  data: 0.226759  max mem: 4052
+I20260913 11:24:35 1125074 dinov2 helpers.py:102] Test:  [10/49]  eta: 0:00:01    time: 0.048143  data: 0.020812  max mem: 4052
+I20260913 11:24:35 1125074 dinov2 helpers.py:102] Test:  [20/49]  eta: 0:00:00    time: 0.010116  data: 0.000206  max mem: 4052
+I20260913 11:24:35 1125074 dinov2 helpers.py:102] Test:  [30/49]  eta: 0:00:00    time: 0.008862  data: 0.000192  max mem: 4052
+I20260913 11:24:35 1125074 dinov2 helpers.py:102] Test:  [40/49]  eta: 0:00:00    time: 0.008648  data: 0.000152  max mem: 4052
+I20260913 11:24:35 1125074 dinov2 helpers.py:102] Test:  [48/49]  eta: 0:00:00    time: 0.008374  data: 0.000102  max mem: 4052
+I20260913 11:24:35 1125074 dinov2 helpers.py:130] Test: Total time: 0:00:00 (0.017551 s / it)
+I20260913 11:24:35 1125074 dinov2 utils.py:83] Averaged stats: 
+I20260913 11:24:35 1125074 dinov2 linear_probe.py:799] Validation at update 5: best={'name': 'classifier_fixed_readout_lr_1_953125', 'accuracy': 0.3898400068283081, 'top5_accuracy': 0.698199987411499, 'base_lr': 0.5, 'configured_lr': 0.5, 'effective_lr': 1.953125, 'lr_boundary': 'high', 'readout': 'fixed_preselected_representation'}
+I20260913 11:24:35 1125074 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing_match_budget_5shot_noaug_cached_10epoch/mc2_m16_384/running_checkpoint_linear_eval.pth
+I20260913 11:24:35 1125074 dinov2 helpers.py:102] Test:  [ 0/49]  eta: 0:00:01    time: 0.023562  data: 0.010237  max mem: 4052
+I20260913 11:24:36 1125074 dinov2 helpers.py:102] Test:  [10/49]  eta: 0:00:00    time: 0.010254  data: 0.001082  max mem: 4052
+I20260913 11:24:36 1125074 dinov2 helpers.py:102] Test:  [20/49]  eta: 0:00:00    time: 0.008862  data: 0.000166  max mem: 4052
+I20260913 11:24:36 1125074 dinov2 helpers.py:102] Test:  [30/49]  eta: 0:00:00    time: 0.008806  data: 0.000168  max mem: 4052
+I20260913 11:24:36 1125074 dinov2 helpers.py:102] Test:  [40/49]  eta: 0:00:00    time: 0.008581  data: 0.000137  max mem: 4052
+I20260913 11:24:36 1125074 dinov2 helpers.py:102] Test:  [48/49]  eta: 0:00:00    time: 0.008311  data: 0.000095  max mem: 4052
+I20260913 11:24:36 1125074 dinov2 helpers.py:130] Test: Total time: 0:00:00 (0.008978 s / it)
+I20260913 11:24:36 1125074 dinov2 utils.py:83] Averaged stats: 
+I20260913 11:24:36 1125074 dinov2 linear_probe.py:799] Validation at update 10: best={'name': 'classifier_fixed_readout_lr_1_953125', 'accuracy': 0.5018399953842163, 'top5_accuracy': 0.7942000031471252, 'base_lr': 0.5, 'configured_lr': 0.5, 'effective_lr': 1.953125, 'lr_boundary': 'high', 'readout': 'fixed_preselected_representation'}
+I20260913 11:24:36 1125074 dinov2 helpers.py:102] Cached training  [10/50]  eta: 0:00:07  loss: 64.3064 (77.2169)  lr: 0.0003 (0.0004)  time: 0.199440  data: 0.009429  max mem: 4052
+I20260913 11:24:36 1125074 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing_match_budget_5shot_noaug_cached_10epoch/mc2_m16_384/running_checkpoint_linear_eval.pth
+I20260913 11:24:36 1125074 dinov2 helpers.py:102] Test:  [ 0/49]  eta: 0:00:01    time: 0.022197  data: 0.007012  max mem: 4052
+I20260913 11:24:36 1125074 dinov2 helpers.py:102] Test:  [10/49]  eta: 0:00:00    time: 0.010353  data: 0.000810  max mem: 4052
+I20260913 11:24:36 1125074 dinov2 helpers.py:102] Test:  [20/49]  eta: 0:00:00    time: 0.009127  data: 0.000174  max mem: 4052
+I20260913 11:24:36 1125074 dinov2 helpers.py:102] Test:  [30/49]  eta: 0:00:00    time: 0.009014  data: 0.000168  max mem: 4052
+I20260913 11:24:36 1125074 dinov2 helpers.py:102] Test:  [40/49]  eta: 0:00:00    time: 0.008840  data: 0.000147  max mem: 4052
+I20260913 11:24:37 1125074 dinov2 helpers.py:102] Test:  [48/49]  eta: 0:00:00    time: 0.008586  data: 0.000101  max mem: 4052
+I20260913 11:24:37 1125074 dinov2 helpers.py:130] Test: Total time: 0:00:00 (0.009195 s / it)
+I20260913 11:24:37 1125074 dinov2 utils.py:83] Averaged stats: 
+I20260913 11:24:37 1125074 dinov2 linear_probe.py:799] Validation at update 15: best={'name': 'classifier_fixed_readout_lr_0_78125', 'accuracy': 0.5372800230979919, 'top5_accuracy': 0.8162999749183655, 'base_lr': 0.2, 'configured_lr': 0.2, 'effective_lr': 0.78125, 'lr_boundary': 'interior', 'readout': 'fixed_preselected_representation'}
+I20260913 11:24:37 1125074 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing_match_budget_5shot_noaug_cached_10epoch/mc2_m16_384/running_checkpoint_linear_eval.pth
+I20260913 11:24:37 1125074 dinov2 helpers.py:102] Test:  [ 0/49]  eta: 0:00:01    time: 0.028214  data: 0.016408  max mem: 4052
+I20260913 11:24:37 1125074 dinov2 helpers.py:102] Test:  [10/49]  eta: 0:00:00    time: 0.010978  data: 0.001651  max mem: 4052
+I20260913 11:24:37 1125074 dinov2 helpers.py:102] Test:  [20/49]  eta: 0:00:00    time: 0.009124  data: 0.000175  max mem: 4052
+I20260913 11:24:37 1125074 dinov2 helpers.py:102] Test:  [30/49]  eta: 0:00:00    time: 0.009162  data: 0.000184  max mem: 4052
+I20260913 11:24:37 1125074 dinov2 helpers.py:102] Test:  [40/49]  eta: 0:00:00    time: 0.008934  data: 0.000152  max mem: 4052
+I20260913 11:24:37 1125074 dinov2 helpers.py:102] Test:  [48/49]  eta: 0:00:00    time: 0.008649  data: 0.000101  max mem: 4052
+I20260913 11:24:37 1125074 dinov2 helpers.py:130] Test: Total time: 0:00:00 (0.009395 s / it)
+I20260913 11:24:37 1125074 dinov2 utils.py:83] Averaged stats: 
+I20260913 11:24:37 1125074 dinov2 linear_probe.py:799] Validation at update 20: best={'name': 'classifier_fixed_readout_lr_0_78125', 'accuracy': 0.5525199770927429, 'top5_accuracy': 0.827239990234375, 'base_lr': 0.2, 'configured_lr': 0.2, 'effective_lr': 0.78125, 'lr_boundary': 'interior', 'readout': 'fixed_preselected_representation'}
+I20260913 11:24:37 1125074 dinov2 helpers.py:102] Cached training  [20/50]  eta: 0:00:05  loss: 64.3064 (69.8264)  lr: 0.0003 (0.0003)  time: 0.163693  data: 0.009936  max mem: 4052
+I20260913 11:24:37 1125074 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing_match_budget_5shot_noaug_cached_10epoch/mc2_m16_384/running_checkpoint_linear_eval.pth
+I20260913 11:24:38 1125074 dinov2 helpers.py:102] Test:  [ 0/49]  eta: 0:00:10    time: 0.213901  data: 0.008242  max mem: 4052
+I20260913 11:24:38 1125074 dinov2 helpers.py:102] Test:  [10/49]  eta: 0:00:01    time: 0.027861  data: 0.000913  max mem: 4052
+I20260913 11:24:38 1125074 dinov2 helpers.py:102] Test:  [20/49]  eta: 0:00:00    time: 0.009186  data: 0.000171  max mem: 4052
+I20260913 11:24:38 1125074 dinov2 helpers.py:102] Test:  [30/49]  eta: 0:00:00    time: 0.009106  data: 0.000163  max mem: 4052
+I20260913 11:24:38 1125074 dinov2 helpers.py:102] Test:  [40/49]  eta: 0:00:00    time: 0.008928  data: 0.000137  max mem: 4052
+I20260913 11:24:38 1125074 dinov2 helpers.py:102] Test:  [48/49]  eta: 0:00:00    time: 0.008622  data: 0.000099  max mem: 4052
+I20260913 11:24:38 1125074 dinov2 helpers.py:130] Test: Total time: 0:00:00 (0.013184 s / it)
+I20260913 11:24:38 1125074 dinov2 utils.py:83] Averaged stats: 
+I20260913 11:24:38 1125074 dinov2 linear_probe.py:799] Validation at update 25: best={'name': 'classifier_fixed_readout_lr_0_78125', 'accuracy': 0.5555800199508667, 'top5_accuracy': 0.8326399922370911, 'base_lr': 0.2, 'configured_lr': 0.2, 'effective_lr': 0.78125, 'lr_boundary': 'interior', 'readout': 'fixed_preselected_representation'}
+I20260913 11:24:38 1125074 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing_match_budget_5shot_noaug_cached_10epoch/mc2_m16_384/running_checkpoint_linear_eval.pth
+I20260913 11:24:38 1125074 dinov2 helpers.py:102] Test:  [ 0/49]  eta: 0:00:01    time: 0.025609  data: 0.013263  max mem: 4052
+I20260913 11:24:38 1125074 dinov2 helpers.py:102] Test:  [10/49]  eta: 0:00:00    time: 0.010605  data: 0.001375  max mem: 4052
+I20260913 11:24:38 1125074 dinov2 helpers.py:102] Test:  [20/49]  eta: 0:00:00    time: 0.009053  data: 0.000176  max mem: 4052
+I20260913 11:24:39 1125074 dinov2 helpers.py:102] Test:  [30/49]  eta: 0:00:00    time: 0.008978  data: 0.000165  max mem: 4052
+I20260913 11:24:39 1125074 dinov2 helpers.py:102] Test:  [40/49]  eta: 0:00:00    time: 0.008743  data: 0.000135  max mem: 4052
+I20260913 11:24:39 1125074 dinov2 helpers.py:102] Test:  [48/49]  eta: 0:00:00    time: 0.008502  data: 0.000096  max mem: 4052
+I20260913 11:24:39 1125074 dinov2 helpers.py:130] Test: Total time: 0:00:00 (0.009201 s / it)
+I20260913 11:24:39 1125074 dinov2 utils.py:83] Averaged stats: 
+I20260913 11:24:39 1125074 dinov2 linear_probe.py:799] Validation at update 30: best={'name': 'classifier_fixed_readout_lr_0_390625', 'accuracy': 0.5609599947929382, 'top5_accuracy': 0.8313800096511841, 'base_lr': 0.1, 'configured_lr': 0.1, 'effective_lr': 0.390625, 'lr_boundary': 'interior', 'readout': 'fixed_preselected_representation'}
+I20260913 11:24:39 1125074 dinov2 helpers.py:102] Cached training  [30/50]  eta: 0:00:03  loss: 55.0454 (65.3076)  lr: 0.0002 (0.0003)  time: 0.141058  data: 0.009767  max mem: 4052
+I20260913 11:24:39 1125074 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing_match_budget_5shot_noaug_cached_10epoch/mc2_m16_384/running_checkpoint_linear_eval.pth
+I20260913 11:24:39 1125074 dinov2 helpers.py:102] Test:  [ 0/49]  eta: 0:00:01    time: 0.026131  data: 0.013449  max mem: 4052
+I20260913 11:24:39 1125074 dinov2 helpers.py:102] Test:  [10/49]  eta: 0:00:00    time: 0.010539  data: 0.001367  max mem: 4052
+I20260913 11:24:39 1125074 dinov2 helpers.py:102] Test:  [20/49]  eta: 0:00:00    time: 0.008989  data: 0.000158  max mem: 4052
+I20260913 11:24:39 1125074 dinov2 helpers.py:102] Test:  [30/49]  eta: 0:00:00    time: 0.008980  data: 0.000159  max mem: 4052
+I20260913 11:24:39 1125074 dinov2 helpers.py:102] Test:  [40/49]  eta: 0:00:00    time: 0.008753  data: 0.000136  max mem: 4052
+I20260913 11:24:39 1125074 dinov2 helpers.py:102] Test:  [48/49]  eta: 0:00:00    time: 0.008631  data: 0.000100  max mem: 4052
+I20260913 11:24:39 1125074 dinov2 helpers.py:130] Test: Total time: 0:00:00 (0.009240 s / it)
+I20260913 11:24:39 1125074 dinov2 utils.py:83] Averaged stats: 
+I20260913 11:24:39 1125074 dinov2 linear_probe.py:799] Validation at update 35: best={'name': 'classifier_fixed_readout_lr_0_390625', 'accuracy': 0.5630800127983093, 'top5_accuracy': 0.833899974822998, 'base_lr': 0.1, 'configured_lr': 0.1, 'effective_lr': 0.390625, 'lr_boundary': 'interior', 'readout': 'fixed_preselected_representation'}
+I20260913 11:24:39 1125074 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing_match_budget_5shot_noaug_cached_10epoch/mc2_m16_384/running_checkpoint_linear_eval.pth
+I20260913 11:24:40 1125074 dinov2 helpers.py:102] Test:  [ 0/49]  eta: 0:00:01    time: 0.024263  data: 0.010918  max mem: 4052
+I20260913 11:24:40 1125074 dinov2 helpers.py:102] Test:  [10/49]  eta: 0:00:00    time: 0.010325  data: 0.001147  max mem: 4052
+I20260913 11:24:40 1125074 dinov2 helpers.py:102] Test:  [20/49]  eta: 0:00:00    time: 0.009158  data: 0.000169  max mem: 4052
+I20260913 11:24:40 1125074 dinov2 helpers.py:102] Test:  [30/49]  eta: 0:00:00    time: 0.009145  data: 0.000163  max mem: 4052
+I20260913 11:24:40 1125074 dinov2 helpers.py:102] Test:  [40/49]  eta: 0:00:00    time: 0.008679  data: 0.000132  max mem: 4052
+I20260913 11:24:40 1125074 dinov2 helpers.py:102] Test:  [48/49]  eta: 0:00:00    time: 0.008396  data: 0.000095  max mem: 4052
+I20260913 11:24:40 1125074 dinov2 helpers.py:130] Test: Total time: 0:00:00 (0.009172 s / it)
+I20260913 11:24:40 1125074 dinov2 utils.py:83] Averaged stats: 
+I20260913 11:24:40 1125074 dinov2 linear_probe.py:799] Validation at update 40: best={'name': 'classifier_fixed_readout_lr_0_390625', 'accuracy': 0.5648000240325928, 'top5_accuracy': 0.8351799845695496, 'base_lr': 0.1, 'configured_lr': 0.1, 'effective_lr': 0.390625, 'lr_boundary': 'interior', 'readout': 'fixed_preselected_representation'}
+I20260913 11:24:40 1125074 dinov2 helpers.py:102] Cached training  [40/50]  eta: 0:00:01  loss: 55.0454 (62.3702)  lr: 0.0002 (0.0002)  time: 0.140372  data: 0.009602  max mem: 4052
+I20260913 11:24:40 1125074 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing_match_budget_5shot_noaug_cached_10epoch/mc2_m16_384/running_checkpoint_linear_eval.pth
+I20260913 11:24:40 1125074 dinov2 helpers.py:102] Test:  [ 0/49]  eta: 0:00:01    time: 0.023654  data: 0.010060  max mem: 4052
+I20260913 11:24:40 1125074 dinov2 helpers.py:102] Test:  [10/49]  eta: 0:00:00    time: 0.010398  data: 0.001065  max mem: 4052
+I20260913 11:24:40 1125074 dinov2 helpers.py:102] Test:  [20/49]  eta: 0:00:00    time: 0.008962  data: 0.000160  max mem: 4052
+I20260913 11:24:41 1125074 dinov2 helpers.py:102] Test:  [30/49]  eta: 0:00:00    time: 0.008849  data: 0.000157  max mem: 4052
+I20260913 11:24:41 1125074 dinov2 helpers.py:102] Test:  [40/49]  eta: 0:00:00    time: 0.008640  data: 0.000135  max mem: 4052
+I20260913 11:24:41 1125074 dinov2 helpers.py:102] Test:  [48/49]  eta: 0:00:00    time: 0.008357  data: 0.000094  max mem: 4052
+I20260913 11:24:41 1125074 dinov2 helpers.py:130] Test: Total time: 0:00:00 (0.009056 s / it)
+I20260913 11:24:41 1125074 dinov2 utils.py:83] Averaged stats: 
+I20260913 11:24:41 1125074 dinov2 linear_probe.py:799] Validation at update 45: best={'name': 'classifier_fixed_readout_lr_0_390625', 'accuracy': 0.5649200081825256, 'top5_accuracy': 0.8359400033950806, 'base_lr': 0.1, 'configured_lr': 0.1, 'effective_lr': 0.390625, 'lr_boundary': 'interior', 'readout': 'fixed_preselected_representation'}
+I20260913 11:24:41 1125074 dinov2 helpers.py:102] Test:  [ 0/49]  eta: 0:00:01    time: 0.022720  data: 0.009383  max mem: 4052
+I20260913 11:24:41 1125074 dinov2 helpers.py:102] Test:  [10/49]  eta: 0:00:00    time: 0.010134  data: 0.000993  max mem: 4052
+I20260913 11:24:41 1125074 dinov2 helpers.py:102] Test:  [20/49]  eta: 0:00:00    time: 0.008850  data: 0.000156  max mem: 4052
+I20260913 11:24:41 1125074 dinov2 helpers.py:102] Test:  [30/49]  eta: 0:00:00    time: 0.008828  data: 0.000158  max mem: 4052
+I20260913 11:24:41 1125074 dinov2 helpers.py:102] Test:  [40/49]  eta: 0:00:00    time: 0.008620  data: 0.000131  max mem: 4052
+I20260913 11:24:41 1125074 dinov2 helpers.py:102] Test:  [48/49]  eta: 0:00:00    time: 0.008372  data: 0.000093  max mem: 4052
+I20260913 11:24:41 1125074 dinov2 helpers.py:130] Test: Total time: 0:00:00 (0.008986 s / it)
+I20260913 11:24:41 1125074 dinov2 utils.py:83] Averaged stats: 
+I20260913 11:24:41 1125074 dinov2 linear_probe.py:799] Validation at update 50: best={'name': 'classifier_fixed_readout_lr_0_390625', 'accuracy': 0.5648199915885925, 'top5_accuracy': 0.836080014705658, 'base_lr': 0.1, 'configured_lr': 0.1, 'effective_lr': 0.390625, 'lr_boundary': 'interior', 'readout': 'fixed_preselected_representation'}
+I20260913 11:24:41 1125074 dinov2 helpers.py:102] Cached training  [49/50]  eta: 0:00:00  loss: 55.0454 (62.3702)  lr: 0.0002 (0.0002)  time: 0.125411  data: 0.009744  max mem: 4052
+I20260913 11:24:41 1125074 dinov2 helpers.py:130] Cached training Total time: 0:00:07 (0.150417 s / it)
+I20260913 11:24:41 1125074 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing_match_budget_5shot_noaug_cached_10epoch/mc2_m16_384/model_final.pth
+I20260913 11:24:41 1125074 dinov2 linear_probe_cached.py:1119] Stopped at epoch 10/10: {'accuracy': 0.5648199915885925, 'base_lr': 0.1, 'configured_lr': 0.1, 'effective_lr': 0.390625, 'lr_boundary': 'interior', 'name': 'classifier_fixed_readout_lr_0_390625', 'readout': 'fixed_preselected_representation', 'top5_accuracy': 0.836080014705658}

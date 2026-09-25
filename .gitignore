@@ -29,7 +29,6 @@ logs/
 runs/
 wandb/
 lightning_logs/
-outputs/
 checkpoints/
 
 # Model/data binaries that should be fetched or generated locally
@@ -103,3 +102,27 @@ torch
 TokBench/tokenzier_vae_scripts/image_scripts/UniFlow/
 TokBench/tokenzier_vae_scripts/image_scripts/RAEv2
 TokBench/tokenzier_vae_scripts/image_scripts/dinov3
+
+# Experiment outputs: keep compact, human-readable results and plots, while
+# excluding generated features, checkpoints, archives, and other bulky data.
+outputs/**
+!outputs/**/
+!outputs/**/*.json
+!outputs/**/*.jsonl
+!outputs/**/*.csv
+!outputs/**/*.tsv
+!outputs/**/*.yaml
+!outputs/**/*.yml
+!outputs/**/*.md
+!outputs/**/*.txt
+!outputs/**/*.log
+!outputs/**/*.png
+!outputs/**/*.jpg
+!outputs/**/*.jpeg
+!outputs/**/*.svg
+!outputs/**/*.pdf
+!outputs/**/*.py
+
+# This raw sweep log exceeds GitHub's per-file limit; compact result JSONs from
+# the same experiment remain included above.
+outputs/vae_linear_probing_flop_sweep_noaug_cached_5epoch_allbn/run.log

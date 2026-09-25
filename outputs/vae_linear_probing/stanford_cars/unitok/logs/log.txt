@@ -1,0 +1,935 @@
+W20260709 07:08:00 2156979 py.warnings warnings.py:109] /home/ma-user/miniconda3/envs/dino/lib/python3.10/site-packages/timm/models/layers/__init__.py:49: FutureWarning: Importing from timm.models.layers is deprecated, please import via timm.layers
+  warnings.warn(f"Importing from {__name__} is deprecated, please import via timm.layers", FutureWarning)
+
+W20260709 07:08:00 2156979 py.warnings warnings.py:109] /cache/ma-user/VTBenchLab/TokBench/tokenzier_vae_scripts/image_scripts/unitok_vae_rec.py:134: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  ckpt = torch.load(ckpt_path, map_location="cpu")
+
+W20260709 07:08:06 2156979 timm.models._builder _builder.py:371] No pretrained configuration specified for vitamin_large model. Using a default. Please add a config to the model pretrained_cfg registry or pass explicitly.
+W20260709 07:08:12 2156979 timm.models._builder _builder.py:371] No pretrained configuration specified for vitamin_large model. Using a default. Please add a config to the model pretrained_cfg registry or pass explicitly.
+I20260709 07:08:22 2156979 dinov2 run_linear_unitok.py:136] Loaded UniTok params=820.3M feature=quantized ckpt=/cache/ma-user/VTBenchLab/TokBench/tokenizer_modelzoo/unitok_20250227/unitok_tokenizer.pth
+I20260709 07:08:22 2156979 dinov2 loaders.py:96] using dataset: "HFDataset:name=stanford_cars:split=TRAIN:root=/cache/ma-user/VTBenchLab/data/hf_datasets"
+I20260709 07:08:25 2156979 dinov2 hf_dataset.py:76] loaded HF dataset name=stanford_cars split=train samples=8144 classes=196 image_column=image target_column=label
+I20260709 07:08:25 2156979 dinov2 loaders.py:101] # of dataset samples: 8,144
+W20260709 07:08:25 2156979 py.warnings warnings.py:109] /cache/ma-user/VTBenchLab/dinov2/dinov2/eval/utils.py:40: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with self.autocast_ctx():
+
+I20260709 07:08:26 2156979 fvcore.common.checkpoint checkpoint.py:148] No checkpoint found. Initializing model from scratch
+I20260709 07:08:26 2156979 dinov2 loaders.py:134] sampler: sharded infinite
+I20260709 07:08:26 2156979 dinov2 loaders.py:218] using PyTorch data loader
+I20260709 07:08:26 2156979 dinov2 loaders.py:233] infinite data loader
+I20260709 07:08:26 2156979 dinov2 loaders.py:96] using dataset: "HFDataset:name=stanford_cars:split=VAL:root=/cache/ma-user/VTBenchLab/data/hf_datasets"
+I20260709 07:08:28 2156979 dinov2 hf_dataset.py:76] loaded HF dataset name=stanford_cars split=test samples=8041 classes=196 image_column=image target_column=label
+I20260709 07:08:28 2156979 dinov2 loaders.py:101] # of dataset samples: 8,041
+I20260709 07:08:28 2156979 dinov2 loaders.py:159] sampler: distributed
+I20260709 07:08:28 2156979 dinov2 loaders.py:218] using PyTorch data loader
+I20260709 07:08:28 2156979 dinov2 loaders.py:231] # of batches: 63
+I20260709 07:08:28 2156979 fvcore.common.checkpoint checkpoint.py:148] No checkpoint found. Initializing model from scratch
+I20260709 07:08:28 2156979 dinov2 linear.py:338] Starting training from iteration 0
+I20260709 07:08:33 2156979 dinov2 helpers.py:102] Training  [   0/6400]  eta: 8:36:16  loss: 258.8662 (258.8662)  lr: 0.0000 (0.0000)  time: 4.840141  data: 2.089257  max mem: 15315
+I20260709 07:08:47 2156979 dinov2 helpers.py:102] Training  [  10/6400]  eta: 3:04:15  loss: 238.9446 (248.9054)  lr: 0.0000 (0.0000)  time: 1.730081  data: 0.190402  max mem: 15684
+I20260709 07:09:01 2156979 dinov2 helpers.py:102] Training  [  20/6400]  eta: 2:47:57  loss: 238.9446 (239.5820)  lr: 0.0000 (0.0000)  time: 1.416479  data: 0.000571  max mem: 15684
+I20260709 07:09:15 2156979 dinov2 helpers.py:102] Training  [  30/6400]  eta: 2:42:01  loss: 220.9353 (231.2762)  lr: 0.0000 (0.0000)  time: 1.414016  data: 0.000626  max mem: 15684
+I20260709 07:09:29 2156979 dinov2 helpers.py:102] Training  [  40/6400]  eta: 2:38:52  loss: 220.9353 (225.7556)  lr: 0.0000 (0.0000)  time: 1.414030  data: 0.000599  max mem: 15684
+I20260709 07:09:43 2156979 dinov2 helpers.py:102] Training  [  50/6400]  eta: 2:36:56  loss: 206.3589 (220.1455)  lr: 0.0000 (0.0000)  time: 1.415810  data: 0.004573  max mem: 15684
+I20260709 07:09:58 2156979 dinov2 helpers.py:102] Training  [  60/6400]  eta: 2:35:29  loss: 206.3589 (215.1812)  lr: 0.0000 (0.0000)  time: 1.415807  data: 0.004607  max mem: 15684
+I20260709 07:10:03 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 07:10:03 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 07:10:12 2156979 dinov2 helpers.py:102] Training  [  70/6400]  eta: 2:34:44  loss: 203.6729 (210.8622)  lr: 0.0000 (0.0000)  time: 1.425663  data: 0.000634  max mem: 15684
+I20260709 07:10:26 2156979 dinov2 helpers.py:102] Training  [  80/6400]  eta: 2:33:48  loss: 203.6729 (207.3890)  lr: 0.0000 (0.0000)  time: 1.425523  data: 0.000663  max mem: 15684
+I20260709 07:10:40 2156979 dinov2 helpers.py:102] Training  [  90/6400]  eta: 2:33:01  loss: 192.0950 (203.6438)  lr: 0.0000 (0.0000)  time: 1.413633  data: 0.000651  max mem: 15684
+I20260709 07:10:54 2156979 dinov2 helpers.py:102] Training  [ 100/6400]  eta: 2:32:21  loss: 192.0950 (200.7043)  lr: 0.0000 (0.0000)  time: 1.413626  data: 0.000604  max mem: 15684
+I20260709 07:11:09 2156979 dinov2 helpers.py:102] Training  [ 110/6400]  eta: 2:31:45  loss: 185.3952 (198.2939)  lr: 0.0000 (0.0000)  time: 1.413591  data: 0.000595  max mem: 15684
+I20260709 07:11:23 2156979 dinov2 helpers.py:102] Training  [ 120/6400]  eta: 2:31:16  loss: 185.3952 (195.9117)  lr: 0.0000 (0.0000)  time: 1.416646  data: 0.003659  max mem: 15684
+I20260709 07:11:34 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 07:11:34 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 07:11:37 2156979 dinov2 helpers.py:102] Training  [ 130/6400]  eta: 2:31:01  loss: 180.6293 (193.4025)  lr: 0.0000 (0.0000)  time: 1.431659  data: 0.003673  max mem: 15684
+I20260709 07:11:51 2156979 dinov2 helpers.py:102] Training  [ 140/6400]  eta: 2:30:32  loss: 180.6293 (191.3668)  lr: 0.0000 (0.0000)  time: 1.428661  data: 0.000600  max mem: 15684
+I20260709 07:12:05 2156979 dinov2 helpers.py:102] Training  [ 150/6400]  eta: 2:30:06  loss: 179.6040 (189.4381)  lr: 0.0000 (0.0000)  time: 1.413600  data: 0.000597  max mem: 15684
+I20260709 07:12:20 2156979 dinov2 helpers.py:102] Training  [ 160/6400]  eta: 2:29:41  loss: 179.6040 (187.6224)  lr: 0.0000 (0.0000)  time: 1.413505  data: 0.000627  max mem: 15684
+I20260709 07:12:34 2156979 dinov2 helpers.py:102] Training  [ 170/6400]  eta: 2:29:17  loss: 171.7789 (185.9706)  lr: 0.0000 (0.0000)  time: 1.413493  data: 0.000646  max mem: 15684
+I20260709 07:12:48 2156979 dinov2 helpers.py:102] Training  [ 180/6400]  eta: 2:28:55  loss: 171.7789 (184.1852)  lr: 0.0000 (0.0000)  time: 1.414282  data: 0.003664  max mem: 15684
+I20260709 07:13:02 2156979 dinov2 helpers.py:102] Training  [ 190/6400]  eta: 2:28:33  loss: 171.3095 (182.6402)  lr: 0.0000 (0.0000)  time: 1.414230  data: 0.003662  max mem: 15684
+I20260709 07:13:05 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 07:13:05 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 07:13:16 2156979 dinov2 helpers.py:102] Training  [ 200/6400]  eta: 2:28:22  loss: 169.9370 (181.3434)  lr: 0.0000 (0.0000)  time: 1.429608  data: 0.000616  max mem: 15684
+I20260709 07:13:31 2156979 dinov2 helpers.py:102] Training  [ 210/6400]  eta: 2:28:01  loss: 167.3248 (180.3544)  lr: 0.0000 (0.0000)  time: 1.429756  data: 0.000621  max mem: 15684
+I20260709 07:13:45 2156979 dinov2 helpers.py:102] Training  [ 220/6400]  eta: 2:27:41  loss: 162.8668 (178.9480)  lr: 0.0000 (0.0000)  time: 1.413627  data: 0.000737  max mem: 15684
+I20260709 07:13:59 2156979 dinov2 helpers.py:102] Training  [ 230/6400]  eta: 2:27:21  loss: 160.7830 (177.7036)  lr: 0.0000 (0.0000)  time: 1.413533  data: 0.000735  max mem: 15684
+I20260709 07:14:13 2156979 dinov2 helpers.py:102] Training  [ 240/6400]  eta: 2:27:02  loss: 160.5076 (176.3662)  lr: 0.0000 (0.0000)  time: 1.414360  data: 0.003705  max mem: 15684
+I20260709 07:14:27 2156979 dinov2 helpers.py:102] Training  [ 250/6400]  eta: 2:26:43  loss: 159.5855 (175.0118)  lr: 0.0000 (0.0000)  time: 1.414527  data: 0.003724  max mem: 15684
+I20260709 07:14:36 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 07:14:36 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 07:14:42 2156979 dinov2 helpers.py:102] Training  [ 260/6400]  eta: 2:26:32  loss: 158.5724 (174.1802)  lr: 0.0000 (0.0000)  time: 1.430154  data: 0.000652  max mem: 15684
+I20260709 07:14:56 2156979 dinov2 helpers.py:102] Training  [ 270/6400]  eta: 2:26:14  loss: 157.8891 (173.3967)  lr: 0.0000 (0.0000)  time: 1.429901  data: 0.000644  max mem: 15684
+I20260709 07:15:10 2156979 dinov2 helpers.py:102] Training  [ 280/6400]  eta: 2:25:56  loss: 155.4084 (172.4720)  lr: 0.0000 (0.0000)  time: 1.413448  data: 0.000646  max mem: 15684
+I20260709 07:15:24 2156979 dinov2 helpers.py:102] Training  [ 290/6400]  eta: 2:25:38  loss: 153.2843 (171.4618)  lr: 0.0000 (0.0000)  time: 1.413576  data: 0.000618  max mem: 15684
+I20260709 07:15:38 2156979 dinov2 helpers.py:102] Training  [ 300/6400]  eta: 2:25:20  loss: 152.5577 (170.3247)  lr: 0.0000 (0.0000)  time: 1.413627  data: 0.000619  max mem: 15684
+I20260709 07:15:52 2156979 dinov2 helpers.py:102] Training  [ 310/6400]  eta: 2:25:03  loss: 152.2435 (169.4022)  lr: 0.0000 (0.0000)  time: 1.414777  data: 0.003810  max mem: 15684
+I20260709 07:16:06 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 07:16:06 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 07:16:07 2156979 dinov2 helpers.py:102] Training  [ 320/6400]  eta: 2:24:52  loss: 152.0487 (168.4423)  lr: 0.0000 (0.0000)  time: 1.430732  data: 0.003804  max mem: 15684
+I20260709 07:16:21 2156979 dinov2 helpers.py:102] Training  [ 330/6400]  eta: 2:24:35  loss: 149.0812 (167.6235)  lr: 0.0000 (0.0000)  time: 1.429356  data: 0.000639  max mem: 15684
+I20260709 07:16:35 2156979 dinov2 helpers.py:102] Training  [ 340/6400]  eta: 2:24:17  loss: 148.0067 (166.7932)  lr: 0.0000 (0.0000)  time: 1.413417  data: 0.000634  max mem: 15684
+I20260709 07:16:49 2156979 dinov2 helpers.py:102] Training  [ 350/6400]  eta: 2:24:01  loss: 146.5811 (166.0431)  lr: 0.0000 (0.0000)  time: 1.413485  data: 0.000613  max mem: 15684
+I20260709 07:17:03 2156979 dinov2 helpers.py:102] Training  [ 360/6400]  eta: 2:23:44  loss: 144.2699 (165.1714)  lr: 0.0000 (0.0000)  time: 1.413437  data: 0.000607  max mem: 15684
+I20260709 07:17:18 2156979 dinov2 helpers.py:102] Training  [ 370/6400]  eta: 2:23:27  loss: 142.1647 (164.4394)  lr: 0.0000 (0.0000)  time: 1.414388  data: 0.003624  max mem: 15684
+I20260709 07:17:32 2156979 dinov2 helpers.py:102] Training  [ 380/6400]  eta: 2:23:11  loss: 141.1513 (163.6117)  lr: 0.0000 (0.0000)  time: 1.414335  data: 0.003616  max mem: 15684
+I20260709 07:17:37 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 07:17:37 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 07:17:46 2156979 dinov2 helpers.py:102] Training  [ 390/6400]  eta: 2:23:00  loss: 140.8042 (162.9131)  lr: 0.0000 (0.0000)  time: 1.430112  data: 0.000576  max mem: 15684
+I20260709 07:18:00 2156979 dinov2 helpers.py:102] Training  [ 400/6400]  eta: 2:22:43  loss: 140.6026 (162.1535)  lr: 0.0000 (0.0000)  time: 1.430137  data: 0.000605  max mem: 15684
+I20260709 07:18:14 2156979 dinov2 helpers.py:102] Training  [ 410/6400]  eta: 2:22:27  loss: 139.7883 (161.4098)  lr: 0.0000 (0.0000)  time: 1.413570  data: 0.000618  max mem: 15684
+I20260709 07:18:29 2156979 dinov2 helpers.py:102] Training  [ 420/6400]  eta: 2:22:11  loss: 138.5883 (160.8790)  lr: 0.0000 (0.0000)  time: 1.413591  data: 0.000586  max mem: 15684
+I20260709 07:18:43 2156979 dinov2 helpers.py:102] Training  [ 430/6400]  eta: 2:21:55  loss: 138.5625 (160.0989)  lr: 0.0000 (0.0000)  time: 1.414565  data: 0.003636  max mem: 15684
+I20260709 07:18:57 2156979 dinov2 helpers.py:102] Training  [ 440/6400]  eta: 2:21:39  loss: 137.7275 (159.5055)  lr: 0.0000 (0.0000)  time: 1.414521  data: 0.003647  max mem: 15684
+I20260709 07:19:08 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 07:19:08 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 07:19:11 2156979 dinov2 helpers.py:102] Training  [ 450/6400]  eta: 2:21:28  loss: 137.3537 (158.7502)  lr: 0.0000 (0.0000)  time: 1.430161  data: 0.000594  max mem: 15684
+I20260709 07:19:25 2156979 dinov2 helpers.py:102] Training  [ 460/6400]  eta: 2:21:12  loss: 136.2122 (158.0723)  lr: 0.0000 (0.0000)  time: 1.430128  data: 0.000579  max mem: 15684
+I20260709 07:19:40 2156979 dinov2 helpers.py:102] Training  [ 470/6400]  eta: 2:20:56  loss: 135.6673 (157.4431)  lr: 0.0000 (0.0000)  time: 1.413456  data: 0.000557  max mem: 15684
+I20260709 07:19:54 2156979 dinov2 helpers.py:102] Training  [ 480/6400]  eta: 2:20:40  loss: 133.7928 (156.7604)  lr: 0.0000 (0.0000)  time: 1.413353  data: 0.000571  max mem: 15684
+I20260709 07:20:08 2156979 dinov2 helpers.py:102] Training  [ 490/6400]  eta: 2:20:24  loss: 133.3967 (156.0767)  lr: 0.0000 (0.0000)  time: 1.413478  data: 0.000594  max mem: 15684
+I20260709 07:20:22 2156979 dinov2 helpers.py:102] Training  [ 500/6400]  eta: 2:20:09  loss: 132.1602 (155.5904)  lr: 0.0000 (0.0000)  time: 1.414544  data: 0.003645  max mem: 15684
+I20260709 07:20:36 2156979 dinov2 helpers.py:102] Training  [ 510/6400]  eta: 2:19:53  loss: 131.7708 (155.0146)  lr: 0.0000 (0.0000)  time: 1.414551  data: 0.003634  max mem: 15684
+I20260709 07:20:39 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 07:20:39 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 07:20:51 2156979 dinov2 helpers.py:102] Training  [ 520/6400]  eta: 2:19:41  loss: 131.7708 (154.6016)  lr: 0.0000 (0.0000)  time: 1.428211  data: 0.000584  max mem: 15684
+I20260709 07:21:05 2156979 dinov2 helpers.py:102] Training  [ 530/6400]  eta: 2:19:25  loss: 131.2771 (154.0659)  lr: 0.0000 (0.0000)  time: 1.428172  data: 0.000582  max mem: 15684
+I20260709 07:21:19 2156979 dinov2 helpers.py:102] Training  [ 540/6400]  eta: 2:19:10  loss: 130.9142 (153.4766)  lr: 0.0000 (0.0000)  time: 1.413671  data: 0.000570  max mem: 15684
+I20260709 07:21:33 2156979 dinov2 helpers.py:102] Training  [ 550/6400]  eta: 2:18:54  loss: 127.8695 (152.9084)  lr: 0.0000 (0.0000)  time: 1.413411  data: 0.000571  max mem: 15684
+I20260709 07:21:47 2156979 dinov2 helpers.py:102] Training  [ 560/6400]  eta: 2:18:39  loss: 127.0311 (152.4544)  lr: 0.0000 (0.0000)  time: 1.414146  data: 0.003638  max mem: 15684
+I20260709 07:22:01 2156979 dinov2 helpers.py:102] Training  [ 570/6400]  eta: 2:18:24  loss: 126.8895 (151.9536)  lr: 0.0000 (0.0000)  time: 1.414276  data: 0.003635  max mem: 15684
+I20260709 07:22:10 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 07:22:10 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 07:22:16 2156979 dinov2 helpers.py:102] Training  [ 580/6400]  eta: 2:18:12  loss: 126.5521 (151.3544)  lr: 0.0000 (0.0000)  time: 1.430355  data: 0.000586  max mem: 15684
+I20260709 07:22:30 2156979 dinov2 helpers.py:102] Training  [ 590/6400]  eta: 2:17:56  loss: 125.9762 (150.9314)  lr: 0.0000 (0.0000)  time: 1.430347  data: 0.000602  max mem: 15684
+I20260709 07:22:44 2156979 dinov2 helpers.py:102] Training  [ 600/6400]  eta: 2:17:41  loss: 125.6725 (150.4117)  lr: 0.0000 (0.0000)  time: 1.413351  data: 0.000590  max mem: 15684
+I20260709 07:22:58 2156979 dinov2 helpers.py:102] Training  [ 610/6400]  eta: 2:17:26  loss: 125.6484 (149.9451)  lr: 0.0000 (0.0000)  time: 1.413231  data: 0.000583  max mem: 15684
+I20260709 07:23:12 2156979 dinov2 helpers.py:102] Training  [ 620/6400]  eta: 2:17:11  loss: 124.8163 (149.5462)  lr: 0.0000 (0.0000)  time: 1.414616  data: 0.003820  max mem: 15684
+I20260709 07:23:26 2156979 dinov2 helpers.py:102] Training  [ 630/6400]  eta: 2:16:56  loss: 124.7609 (149.1522)  lr: 0.0000 (0.0000)  time: 1.414956  data: 0.003823  max mem: 15684
+I20260709 07:23:41 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 07:23:41 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 07:23:41 2156979 dinov2 helpers.py:102] Training  [ 640/6400]  eta: 2:16:43  loss: 124.3308 (148.7121)  lr: 0.0000 (0.0000)  time: 1.430243  data: 0.000667  max mem: 15684
+I20260709 07:23:55 2156979 dinov2 helpers.py:102] Training  [ 650/6400]  eta: 2:16:28  loss: 123.9914 (148.2886)  lr: 0.0000 (0.0000)  time: 1.430041  data: 0.000658  max mem: 15684
+I20260709 07:24:09 2156979 dinov2 helpers.py:102] Training  [ 660/6400]  eta: 2:16:13  loss: 123.4082 (147.8535)  lr: 0.0000 (0.0000)  time: 1.413364  data: 0.000599  max mem: 15684
+I20260709 07:24:23 2156979 dinov2 helpers.py:102] Training  [ 670/6400]  eta: 2:15:58  loss: 122.5767 (147.4302)  lr: 0.0000 (0.0000)  time: 1.413449  data: 0.000611  max mem: 15684
+I20260709 07:24:37 2156979 dinov2 helpers.py:102] Training  [ 680/6400]  eta: 2:15:43  loss: 121.6581 (147.0433)  lr: 0.0000 (0.0000)  time: 1.413625  data: 0.000590  max mem: 15684
+I20260709 07:24:52 2156979 dinov2 helpers.py:102] Training  [ 690/6400]  eta: 2:15:28  loss: 121.6567 (146.6423)  lr: 0.0000 (0.0000)  time: 1.414502  data: 0.003620  max mem: 15684
+I20260709 07:25:06 2156979 dinov2 helpers.py:102] Training  [ 700/6400]  eta: 2:15:13  loss: 121.4780 (146.2032)  lr: 0.0000 (0.0000)  time: 1.414518  data: 0.003635  max mem: 15684
+I20260709 07:25:11 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 07:25:11 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 07:25:20 2156979 dinov2 helpers.py:102] Training  [ 710/6400]  eta: 2:15:00  loss: 120.7585 (145.8140)  lr: 0.0000 (0.0000)  time: 1.428830  data: 0.000596  max mem: 15684
+I20260709 07:25:34 2156979 dinov2 helpers.py:102] Training  [ 720/6400]  eta: 2:14:45  loss: 120.7378 (145.4011)  lr: 0.0000 (0.0000)  time: 1.428634  data: 0.000588  max mem: 15684
+I20260709 07:25:48 2156979 dinov2 helpers.py:102] Training  [ 730/6400]  eta: 2:14:30  loss: 120.5479 (144.9536)  lr: 0.0000 (0.0000)  time: 1.413560  data: 0.000579  max mem: 15684
+I20260709 07:26:03 2156979 dinov2 helpers.py:102] Training  [ 740/6400]  eta: 2:14:15  loss: 119.2318 (144.5266)  lr: 0.0000 (0.0000)  time: 1.413614  data: 0.000591  max mem: 15684
+I20260709 07:26:17 2156979 dinov2 helpers.py:102] Training  [ 750/6400]  eta: 2:14:00  loss: 119.1407 (144.1685)  lr: 0.0000 (0.0000)  time: 1.414524  data: 0.003670  max mem: 15684
+I20260709 07:26:31 2156979 dinov2 helpers.py:102] Training  [ 760/6400]  eta: 2:13:45  loss: 119.0644 (143.7814)  lr: 0.0000 (0.0000)  time: 1.414627  data: 0.003689  max mem: 15684
+I20260709 07:26:42 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 07:26:42 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 07:26:45 2156979 dinov2 helpers.py:102] Training  [ 770/6400]  eta: 2:13:33  loss: 118.9734 (143.4451)  lr: 0.0000 (0.0000)  time: 1.429644  data: 0.000648  max mem: 15684
+I20260709 07:26:59 2156979 dinov2 helpers.py:102] Training  [ 780/6400]  eta: 2:13:18  loss: 118.9734 (143.0905)  lr: 0.0000 (0.0000)  time: 1.429650  data: 0.000634  max mem: 15684
+I20260709 07:27:14 2156979 dinov2 helpers.py:102] Training  [ 790/6400]  eta: 2:13:03  loss: 118.1799 (142.6856)  lr: 0.0000 (0.0000)  time: 1.413597  data: 0.000619  max mem: 15684
+I20260709 07:27:28 2156979 dinov2 helpers.py:102] Training  [ 800/6400]  eta: 2:12:48  loss: 118.1799 (142.4413)  lr: 0.0000 (0.0000)  time: 1.413592  data: 0.000614  max mem: 15684
+I20260709 07:27:42 2156979 dinov2 helpers.py:102] Training  [ 810/6400]  eta: 2:12:33  loss: 117.5515 (142.1159)  lr: 0.0000 (0.0000)  time: 1.413688  data: 0.000613  max mem: 15684
+I20260709 07:27:56 2156979 dinov2 helpers.py:102] Training  [ 820/6400]  eta: 2:12:19  loss: 117.3076 (141.7618)  lr: 0.0000 (0.0000)  time: 1.416781  data: 0.003678  max mem: 15684
+I20260709 07:28:10 2156979 dinov2 helpers.py:102] Training  [ 830/6400]  eta: 2:12:04  loss: 117.3076 (141.4902)  lr: 0.0000 (0.0000)  time: 1.416865  data: 0.003636  max mem: 15684
+I20260709 07:28:13 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 07:28:13 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 07:28:25 2156979 dinov2 helpers.py:102] Training  [ 840/6400]  eta: 2:11:51  loss: 117.3076 (141.2070)  lr: 0.0000 (0.0000)  time: 1.429966  data: 0.000632  max mem: 15684
+I20260709 07:28:39 2156979 dinov2 helpers.py:102] Training  [ 850/6400]  eta: 2:11:36  loss: 117.3076 (140.9751)  lr: 0.0000 (0.0000)  time: 1.429938  data: 0.000681  max mem: 15684
+I20260709 07:28:53 2156979 dinov2 helpers.py:102] Training  [ 860/6400]  eta: 2:11:22  loss: 115.7591 (140.5961)  lr: 0.0000 (0.0000)  time: 1.413846  data: 0.000653  max mem: 15684
+I20260709 07:29:07 2156979 dinov2 helpers.py:102] Training  [ 870/6400]  eta: 2:11:07  loss: 115.6716 (140.3008)  lr: 0.0000 (0.0000)  time: 1.413934  data: 0.000642  max mem: 15684
+I20260709 07:29:21 2156979 dinov2 helpers.py:102] Training  [ 880/6400]  eta: 2:10:52  loss: 115.4669 (139.9886)  lr: 0.0000 (0.0000)  time: 1.414851  data: 0.003672  max mem: 15684
+I20260709 07:29:35 2156979 dinov2 helpers.py:102] Training  [ 890/6400]  eta: 2:10:37  loss: 115.4669 (139.7974)  lr: 0.0000 (0.0000)  time: 1.414536  data: 0.003652  max mem: 15684
+I20260709 07:29:44 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 07:29:44 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 07:29:50 2156979 dinov2 helpers.py:102] Training  [ 900/6400]  eta: 2:10:25  loss: 115.4330 (139.5043)  lr: 0.0000 (0.0000)  time: 1.429931  data: 0.000573  max mem: 15684
+I20260709 07:30:04 2156979 dinov2 helpers.py:102] Training  [ 910/6400]  eta: 2:10:10  loss: 115.4330 (139.2972)  lr: 0.0000 (0.0000)  time: 1.430001  data: 0.000604  max mem: 15684
+I20260709 07:30:18 2156979 dinov2 helpers.py:102] Training  [ 920/6400]  eta: 2:09:55  loss: 114.6829 (139.0325)  lr: 0.0000 (0.0000)  time: 1.413615  data: 0.000614  max mem: 15684
+I20260709 07:30:32 2156979 dinov2 helpers.py:102] Training  [ 930/6400]  eta: 2:09:40  loss: 114.6829 (138.7723)  lr: 0.0000 (0.0000)  time: 1.413703  data: 0.000634  max mem: 15684
+I20260709 07:30:46 2156979 dinov2 helpers.py:102] Training  [ 940/6400]  eta: 2:09:26  loss: 114.6829 (138.5152)  lr: 0.0000 (0.0000)  time: 1.414423  data: 0.003636  max mem: 15684
+I20260709 07:31:01 2156979 dinov2 helpers.py:102] Training  [ 950/6400]  eta: 2:09:11  loss: 114.6089 (138.2618)  lr: 0.0000 (0.0000)  time: 1.414486  data: 0.003607  max mem: 15684
+I20260709 07:31:15 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 07:31:15 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 07:31:15 2156979 dinov2 helpers.py:102] Training  [ 960/6400]  eta: 2:08:58  loss: 114.6829 (138.0358)  lr: 0.0000 (0.0000)  time: 1.430110  data: 0.000621  max mem: 15684
+I20260709 07:31:29 2156979 dinov2 helpers.py:102] Training  [ 970/6400]  eta: 2:08:43  loss: 114.6089 (137.7449)  lr: 0.0000 (0.0000)  time: 1.429964  data: 0.000629  max mem: 15684
+I20260709 07:31:43 2156979 dinov2 helpers.py:102] Training  [ 980/6400]  eta: 2:08:29  loss: 114.5748 (137.4518)  lr: 0.0000 (0.0000)  time: 1.413753  data: 0.000612  max mem: 15684
+I20260709 07:31:57 2156979 dinov2 helpers.py:102] Training  [ 990/6400]  eta: 2:08:14  loss: 114.5748 (137.2029)  lr: 0.0000 (0.0000)  time: 1.413847  data: 0.000599  max mem: 15684
+I20260709 07:32:12 2156979 dinov2 helpers.py:102] Training  [1000/6400]  eta: 2:07:59  loss: 114.3419 (136.9090)  lr: 0.0000 (0.0000)  time: 1.413695  data: 0.000594  max mem: 15684
+I20260709 07:32:26 2156979 dinov2 helpers.py:102] Training  [1010/6400]  eta: 2:07:45  loss: 114.1958 (136.6093)  lr: 0.0000 (0.0000)  time: 1.414454  data: 0.003647  max mem: 15684
+I20260709 07:32:40 2156979 dinov2 helpers.py:102] Training  [1020/6400]  eta: 2:07:30  loss: 114.3419 (136.4044)  lr: 0.0000 (0.0000)  time: 1.414447  data: 0.003655  max mem: 15684
+I20260709 07:32:45 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 07:32:45 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 07:32:54 2156979 dinov2 helpers.py:102] Training  [1030/6400]  eta: 2:07:17  loss: 114.1958 (136.1550)  lr: 0.0000 (0.0000)  time: 1.431553  data: 0.000650  max mem: 15684
+I20260709 07:33:08 2156979 dinov2 helpers.py:102] Training  [1040/6400]  eta: 2:07:03  loss: 113.1177 (135.8174)  lr: 0.0000 (0.0000)  time: 1.431360  data: 0.000642  max mem: 15684
+I20260709 07:33:23 2156979 dinov2 helpers.py:102] Training  [1050/6400]  eta: 2:06:48  loss: 112.5627 (135.4791)  lr: 0.0000 (0.0000)  time: 1.413523  data: 0.000594  max mem: 15684
+I20260709 07:33:37 2156979 dinov2 helpers.py:102] Training  [1060/6400]  eta: 2:06:33  loss: 112.5627 (135.1617)  lr: 0.0000 (0.0000)  time: 1.413897  data: 0.000590  max mem: 15684
+I20260709 07:33:51 2156979 dinov2 helpers.py:102] Training  [1070/6400]  eta: 2:06:19  loss: 112.5161 (134.9460)  lr: 0.0000 (0.0000)  time: 1.414582  data: 0.003624  max mem: 15684
+I20260709 07:34:05 2156979 dinov2 helpers.py:102] Training  [1080/6400]  eta: 2:06:04  loss: 111.8623 (134.6743)  lr: 0.0000 (0.0000)  time: 1.414417  data: 0.003636  max mem: 15684
+I20260709 07:34:16 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 07:34:16 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 07:34:20 2156979 dinov2 helpers.py:102] Training  [1090/6400]  eta: 2:05:51  loss: 110.4641 (134.4253)  lr: 0.0000 (0.0000)  time: 1.430817  data: 0.000585  max mem: 15684
+I20260709 07:34:34 2156979 dinov2 helpers.py:102] Training  [1100/6400]  eta: 2:05:37  loss: 110.4641 (134.2213)  lr: 0.0000 (0.0000)  time: 1.430617  data: 0.000574  max mem: 15684
+I20260709 07:34:48 2156979 dinov2 helpers.py:102] Training  [1110/6400]  eta: 2:05:22  loss: 109.5231 (133.9709)  lr: 0.0000 (0.0000)  time: 1.413525  data: 0.000589  max mem: 15684
+I20260709 07:35:02 2156979 dinov2 helpers.py:102] Training  [1120/6400]  eta: 2:05:07  loss: 109.5231 (133.7643)  lr: 0.0000 (0.0000)  time: 1.413929  data: 0.000581  max mem: 15684
+I20260709 07:35:16 2156979 dinov2 helpers.py:102] Training  [1130/6400]  eta: 2:04:53  loss: 108.7235 (133.5228)  lr: 0.0000 (0.0000)  time: 1.414639  data: 0.003620  max mem: 15684
+I20260709 07:35:30 2156979 dinov2 helpers.py:102] Training  [1140/6400]  eta: 2:04:38  loss: 108.7235 (133.3154)  lr: 0.0000 (0.0000)  time: 1.414443  data: 0.003630  max mem: 15684
+I20260709 07:35:44 2156979 dinov2 helpers.py:102] Training  [1150/6400]  eta: 2:04:24  loss: 107.5266 (133.0514)  lr: 0.0000 (0.0000)  time: 1.413613  data: 0.000579  max mem: 15684
+I20260709 07:35:47 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 07:35:47 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 07:35:59 2156979 dinov2 helpers.py:102] Training  [1160/6400]  eta: 2:04:10  loss: 107.5266 (132.8498)  lr: 0.0000 (0.0000)  time: 1.429538  data: 0.000582  max mem: 15684
+I20260709 07:36:13 2156979 dinov2 helpers.py:102] Training  [1170/6400]  eta: 2:03:56  loss: 107.5266 (132.6999)  lr: 0.0000 (0.0000)  time: 1.429528  data: 0.000606  max mem: 15684
+I20260709 07:36:27 2156979 dinov2 helpers.py:102] Training  [1180/6400]  eta: 2:03:41  loss: 107.2836 (132.4671)  lr: 0.0000 (0.0000)  time: 1.413569  data: 0.000616  max mem: 15684
+I20260709 07:36:41 2156979 dinov2 helpers.py:102] Training  [1190/6400]  eta: 2:03:27  loss: 107.2836 (132.2597)  lr: 0.0000 (0.0000)  time: 1.413686  data: 0.000609  max mem: 15684
+I20260709 07:36:55 2156979 dinov2 helpers.py:102] Training  [1200/6400]  eta: 2:03:12  loss: 106.3376 (132.0000)  lr: 0.0000 (0.0000)  time: 1.414691  data: 0.003646  max mem: 15684
+I20260709 07:37:10 2156979 dinov2 helpers.py:102] Training  [1210/6400]  eta: 2:02:58  loss: 106.2385 (131.7299)  lr: 0.0000 (0.0000)  time: 1.414577  data: 0.003648  max mem: 15684
+I20260709 07:37:18 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 07:37:18 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 07:37:24 2156979 dinov2 helpers.py:102] Training  [1220/6400]  eta: 2:02:45  loss: 106.1831 (131.4975)  lr: 0.0000 (0.0000)  time: 1.431057  data: 0.000609  max mem: 15684
+I20260709 07:37:38 2156979 dinov2 helpers.py:102] Training  [1230/6400]  eta: 2:02:30  loss: 105.3331 (131.2660)  lr: 0.0000 (0.0000)  time: 1.430977  data: 0.000613  max mem: 15684
+I20260709 07:37:52 2156979 dinov2 helpers.py:102] Training  [1240/6400]  eta: 2:02:15  loss: 105.3331 (131.0447)  lr: 0.0000 (0.0000)  time: 1.413579  data: 0.000592  max mem: 15684
+I20260709 07:38:06 2156979 dinov2 helpers.py:102] Training  [1250/6400]  eta: 2:02:01  loss: 105.3331 (130.8286)  lr: 0.0000 (0.0000)  time: 1.413709  data: 0.000579  max mem: 15684
+I20260709 07:38:21 2156979 dinov2 helpers.py:102] Training  [1260/6400]  eta: 2:01:46  loss: 105.3331 (130.5988)  lr: 0.0000 (0.0000)  time: 1.414495  data: 0.003638  max mem: 15684
+I20260709 07:38:35 2156979 dinov2 helpers.py:102] Training  [1270/6400]  eta: 2:01:32  loss: 104.9877 (130.3953)  lr: 0.0000 (0.0000)  time: 1.414297  data: 0.003631  max mem: 15684
+I20260709 07:38:47 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/model_0001279.pth
+I20260709 07:38:49 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 07:38:49 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 07:38:49 2156979 dinov2 helpers.py:102] Training  [1280/6400]  eta: 2:01:20  loss: 104.5492 (130.1341)  lr: 0.0000 (0.0000)  time: 1.440584  data: 0.000579  max mem: 15684
+I20260709 07:39:04 2156979 dinov2 helpers.py:102] Training  [1290/6400]  eta: 2:01:05  loss: 103.8136 (129.9016)  lr: 0.0000 (0.0000)  time: 1.440826  data: 0.000601  max mem: 15684
+I20260709 07:39:18 2156979 dinov2 helpers.py:102] Training  [1300/6400]  eta: 2:00:50  loss: 103.8136 (129.7180)  lr: 0.0000 (0.0000)  time: 1.413760  data: 0.000594  max mem: 15684
+I20260709 07:39:32 2156979 dinov2 helpers.py:102] Training  [1310/6400]  eta: 2:00:36  loss: 103.8136 (129.5311)  lr: 0.0000 (0.0000)  time: 1.413706  data: 0.000577  max mem: 15684
+I20260709 07:39:46 2156979 dinov2 helpers.py:102] Training  [1320/6400]  eta: 2:00:21  loss: 103.8136 (129.3699)  lr: 0.0000 (0.0000)  time: 1.414434  data: 0.003619  max mem: 15684
+I20260709 07:40:00 2156979 dinov2 helpers.py:102] Training  [1330/6400]  eta: 2:00:07  loss: 103.8136 (129.2030)  lr: 0.0000 (0.0000)  time: 1.414397  data: 0.003620  max mem: 15684
+I20260709 07:40:14 2156979 dinov2 helpers.py:102] Training  [1340/6400]  eta: 1:59:52  loss: 103.6064 (128.9769)  lr: 0.0000 (0.0000)  time: 1.413501  data: 0.000595  max mem: 15684
+I20260709 07:40:20 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 07:40:20 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 07:40:29 2156979 dinov2 helpers.py:102] Training  [1350/6400]  eta: 1:59:39  loss: 103.8136 (128.8347)  lr: 0.0000 (0.0000)  time: 1.428835  data: 0.000599  max mem: 15684
+I20260709 07:40:43 2156979 dinov2 helpers.py:102] Training  [1360/6400]  eta: 1:59:25  loss: 103.8136 (128.6573)  lr: 0.0000 (0.0000)  time: 1.428963  data: 0.000591  max mem: 15684
+I20260709 07:40:57 2156979 dinov2 helpers.py:102] Training  [1370/6400]  eta: 1:59:10  loss: 103.6064 (128.4507)  lr: 0.0000 (0.0000)  time: 1.413625  data: 0.000605  max mem: 15684
+I20260709 07:41:11 2156979 dinov2 helpers.py:102] Training  [1380/6400]  eta: 1:58:55  loss: 103.6064 (128.2748)  lr: 0.0000 (0.0000)  time: 1.413363  data: 0.000601  max mem: 15684
+I20260709 07:41:25 2156979 dinov2 helpers.py:102] Training  [1390/6400]  eta: 1:58:41  loss: 103.1400 (128.0787)  lr: 0.0000 (0.0000)  time: 1.414343  data: 0.003637  max mem: 15684
+I20260709 07:41:39 2156979 dinov2 helpers.py:102] Training  [1400/6400]  eta: 1:58:27  loss: 103.1400 (127.8917)  lr: 0.0000 (0.0000)  time: 1.414485  data: 0.003633  max mem: 15684
+I20260709 07:41:51 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 07:41:51 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 07:41:54 2156979 dinov2 helpers.py:102] Training  [1410/6400]  eta: 1:58:13  loss: 103.1400 (127.6874)  lr: 0.0000 (0.0000)  time: 1.430066  data: 0.000564  max mem: 15684
+I20260709 07:42:08 2156979 dinov2 helpers.py:102] Training  [1420/6400]  eta: 1:57:59  loss: 102.7959 (127.4891)  lr: 0.0000 (0.0000)  time: 1.430235  data: 0.000573  max mem: 15684
+I20260709 07:42:22 2156979 dinov2 helpers.py:102] Training  [1430/6400]  eta: 1:57:44  loss: 101.7153 (127.2884)  lr: 0.0000 (0.0000)  time: 1.413798  data: 0.000579  max mem: 15684
+I20260709 07:42:36 2156979 dinov2 helpers.py:102] Training  [1440/6400]  eta: 1:57:30  loss: 101.6475 (127.0949)  lr: 0.0000 (0.0000)  time: 1.413590  data: 0.000584  max mem: 15684
+I20260709 07:42:50 2156979 dinov2 helpers.py:102] Training  [1450/6400]  eta: 1:57:15  loss: 101.6475 (126.9808)  lr: 0.0000 (0.0000)  time: 1.414420  data: 0.003666  max mem: 15684
+I20260709 07:43:05 2156979 dinov2 helpers.py:102] Training  [1460/6400]  eta: 1:57:01  loss: 101.7153 (126.8284)  lr: 0.0000 (0.0000)  time: 1.414524  data: 0.003681  max mem: 15684
+I20260709 07:43:19 2156979 dinov2 helpers.py:102] Training  [1470/6400]  eta: 1:56:46  loss: 101.7153 (126.6785)  lr: 0.0000 (0.0000)  time: 1.413662  data: 0.000629  max mem: 15684
+I20260709 07:43:22 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 07:43:22 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 07:43:33 2156979 dinov2 helpers.py:102] Training  [1480/6400]  eta: 1:56:33  loss: 101.7153 (126.4501)  lr: 0.0000 (0.0000)  time: 1.429767  data: 0.000621  max mem: 15684
+I20260709 07:43:47 2156979 dinov2 helpers.py:102] Training  [1490/6400]  eta: 1:56:19  loss: 101.7153 (126.2622)  lr: 0.0000 (0.0000)  time: 1.429613  data: 0.000632  max mem: 15684
+I20260709 07:44:01 2156979 dinov2 helpers.py:102] Training  [1500/6400]  eta: 1:56:04  loss: 101.7153 (126.1389)  lr: 0.0000 (0.0000)  time: 1.413447  data: 0.000617  max mem: 15684
+I20260709 07:44:16 2156979 dinov2 helpers.py:102] Training  [1510/6400]  eta: 1:55:50  loss: 101.7153 (126.0196)  lr: 0.0000 (0.0000)  time: 1.413540  data: 0.000586  max mem: 15684
+I20260709 07:44:30 2156979 dinov2 helpers.py:102] Training  [1520/6400]  eta: 1:55:35  loss: 101.5457 (125.8596)  lr: 0.0000 (0.0000)  time: 1.416622  data: 0.003643  max mem: 15684
+I20260709 07:44:44 2156979 dinov2 helpers.py:102] Training  [1530/6400]  eta: 1:55:21  loss: 101.5457 (125.7096)  lr: 0.0000 (0.0000)  time: 1.416799  data: 0.003652  max mem: 15684
+I20260709 07:44:52 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 07:44:52 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 07:44:58 2156979 dinov2 helpers.py:102] Training  [1540/6400]  eta: 1:55:07  loss: 101.5457 (125.5532)  lr: 0.0000 (0.0000)  time: 1.429868  data: 0.000601  max mem: 15684
+I20260709 07:45:12 2156979 dinov2 helpers.py:102] Training  [1550/6400]  eta: 1:54:53  loss: 101.4682 (125.3979)  lr: 0.0000 (0.0000)  time: 1.429692  data: 0.000592  max mem: 15684
+I20260709 07:45:27 2156979 dinov2 helpers.py:102] Training  [1560/6400]  eta: 1:54:39  loss: 101.4682 (125.2536)  lr: 0.0000 (0.0000)  time: 1.413608  data: 0.000586  max mem: 15684
+I20260709 07:45:41 2156979 dinov2 helpers.py:102] Training  [1570/6400]  eta: 1:54:24  loss: 101.4682 (125.0761)  lr: 0.0000 (0.0000)  time: 1.413535  data: 0.000571  max mem: 15684
+I20260709 07:45:55 2156979 dinov2 helpers.py:102] Training  [1580/6400]  eta: 1:54:10  loss: 101.3313 (124.8954)  lr: 0.0000 (0.0000)  time: 1.414758  data: 0.003974  max mem: 15684
+I20260709 07:46:09 2156979 dinov2 helpers.py:102] Training  [1590/6400]  eta: 1:53:55  loss: 101.3313 (124.7355)  lr: 0.0000 (0.0000)  time: 1.414818  data: 0.003985  max mem: 15684
+I20260709 07:46:23 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 07:46:23 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 07:46:24 2156979 dinov2 helpers.py:102] Training  [1600/6400]  eta: 1:53:42  loss: 101.3313 (124.6156)  lr: 0.0000 (0.0000)  time: 1.429906  data: 0.000590  max mem: 15684
+I20260709 07:46:38 2156979 dinov2 helpers.py:102] Training  [1610/6400]  eta: 1:53:27  loss: 101.3313 (124.4434)  lr: 0.0000 (0.0000)  time: 1.430057  data: 0.000613  max mem: 15684
+I20260709 07:46:52 2156979 dinov2 helpers.py:102] Training  [1620/6400]  eta: 1:53:13  loss: 101.3313 (124.2806)  lr: 0.0000 (0.0000)  time: 1.413600  data: 0.000595  max mem: 15684
+I20260709 07:47:06 2156979 dinov2 helpers.py:102] Training  [1630/6400]  eta: 1:52:58  loss: 101.4682 (124.1586)  lr: 0.0000 (0.0000)  time: 1.413398  data: 0.000565  max mem: 15684
+I20260709 07:47:20 2156979 dinov2 helpers.py:102] Training  [1640/6400]  eta: 1:52:44  loss: 101.5013 (124.0213)  lr: 0.0000 (0.0000)  time: 1.414254  data: 0.003614  max mem: 15684
+I20260709 07:47:34 2156979 dinov2 helpers.py:102] Training  [1650/6400]  eta: 1:52:30  loss: 101.4682 (123.8426)  lr: 0.0000 (0.0000)  time: 1.414088  data: 0.003613  max mem: 15684
+I20260709 07:47:48 2156979 dinov2 helpers.py:102] Training  [1660/6400]  eta: 1:52:15  loss: 101.4189 (123.7084)  lr: 0.0000 (0.0000)  time: 1.413271  data: 0.000572  max mem: 15684
+I20260709 07:47:54 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 07:47:54 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 07:48:03 2156979 dinov2 helpers.py:102] Training  [1670/6400]  eta: 1:52:02  loss: 101.3313 (123.5463)  lr: 0.0000 (0.0000)  time: 1.429785  data: 0.000606  max mem: 15684
+I20260709 07:48:17 2156979 dinov2 helpers.py:102] Training  [1680/6400]  eta: 1:51:47  loss: 101.3313 (123.3970)  lr: 0.0000 (0.0000)  time: 1.429713  data: 0.000637  max mem: 15684
+I20260709 07:48:31 2156979 dinov2 helpers.py:102] Training  [1690/6400]  eta: 1:51:33  loss: 101.3313 (123.2308)  lr: 0.0000 (0.0000)  time: 1.413323  data: 0.000640  max mem: 15684
+I20260709 07:48:45 2156979 dinov2 helpers.py:102] Training  [1700/6400]  eta: 1:51:18  loss: 99.3019 (123.0562)  lr: 0.0000 (0.0000)  time: 1.413341  data: 0.000626  max mem: 15684
+I20260709 07:48:59 2156979 dinov2 helpers.py:102] Training  [1710/6400]  eta: 1:51:04  loss: 98.3152 (122.8769)  lr: 0.0000 (0.0000)  time: 1.416460  data: 0.003630  max mem: 15684
+I20260709 07:49:14 2156979 dinov2 helpers.py:102] Training  [1720/6400]  eta: 1:50:50  loss: 98.3152 (122.7593)  lr: 0.0000 (0.0000)  time: 1.416372  data: 0.003640  max mem: 15684
+I20260709 07:49:25 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 07:49:25 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 07:49:28 2156979 dinov2 helpers.py:102] Training  [1730/6400]  eta: 1:50:36  loss: 98.3152 (122.6191)  lr: 0.0000 (0.0000)  time: 1.429273  data: 0.000613  max mem: 15684
+I20260709 07:49:42 2156979 dinov2 helpers.py:102] Training  [1740/6400]  eta: 1:50:22  loss: 97.9082 (122.4701)  lr: 0.0000 (0.0000)  time: 1.429384  data: 0.000619  max mem: 15684
+I20260709 07:49:56 2156979 dinov2 helpers.py:102] Training  [1750/6400]  eta: 1:50:07  loss: 97.2076 (122.3203)  lr: 0.0000 (0.0000)  time: 1.413243  data: 0.000625  max mem: 15684
+I20260709 07:50:10 2156979 dinov2 helpers.py:102] Training  [1760/6400]  eta: 1:49:53  loss: 97.2076 (122.1859)  lr: 0.0000 (0.0000)  time: 1.413237  data: 0.000612  max mem: 15684
+I20260709 07:50:25 2156979 dinov2 helpers.py:102] Training  [1770/6400]  eta: 1:49:39  loss: 96.7305 (122.0315)  lr: 0.0000 (0.0000)  time: 1.414340  data: 0.003766  max mem: 15684
+I20260709 07:50:39 2156979 dinov2 helpers.py:102] Training  [1780/6400]  eta: 1:49:24  loss: 96.7305 (121.8785)  lr: 0.0000 (0.0000)  time: 1.414286  data: 0.003755  max mem: 15684
+I20260709 07:50:53 2156979 dinov2 helpers.py:102] Training  [1790/6400]  eta: 1:49:10  loss: 96.5399 (121.7204)  lr: 0.0000 (0.0000)  time: 1.413294  data: 0.000641  max mem: 15684
+I20260709 07:50:56 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 07:50:56 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 07:51:07 2156979 dinov2 helpers.py:102] Training  [1800/6400]  eta: 1:48:56  loss: 96.4826 (121.5420)  lr: 0.0000 (0.0000)  time: 1.429311  data: 0.000650  max mem: 15684
+I20260709 07:51:21 2156979 dinov2 helpers.py:102] Training  [1810/6400]  eta: 1:48:42  loss: 96.4826 (121.4077)  lr: 0.0000 (0.0000)  time: 1.429399  data: 0.000612  max mem: 15684
+I20260709 07:51:36 2156979 dinov2 helpers.py:102] Training  [1820/6400]  eta: 1:48:27  loss: 96.0993 (121.2618)  lr: 0.0000 (0.0000)  time: 1.413571  data: 0.000618  max mem: 15684
+I20260709 07:51:50 2156979 dinov2 helpers.py:102] Training  [1830/6400]  eta: 1:48:13  loss: 96.0993 (121.1353)  lr: 0.0000 (0.0000)  time: 1.414499  data: 0.003620  max mem: 15684
+I20260709 07:52:04 2156979 dinov2 helpers.py:102] Training  [1840/6400]  eta: 1:47:59  loss: 95.1341 (120.9909)  lr: 0.0000 (0.0000)  time: 1.414415  data: 0.003605  max mem: 15684
+I20260709 07:52:18 2156979 dinov2 helpers.py:102] Training  [1850/6400]  eta: 1:47:44  loss: 96.0993 (120.8876)  lr: 0.0000 (0.0000)  time: 1.413450  data: 0.000593  max mem: 15684
+I20260709 07:52:26 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 07:52:26 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 07:52:32 2156979 dinov2 helpers.py:102] Training  [1860/6400]  eta: 1:47:31  loss: 95.1341 (120.7329)  lr: 0.0000 (0.0000)  time: 1.428757  data: 0.000602  max mem: 15684
+I20260709 07:52:47 2156979 dinov2 helpers.py:102] Training  [1870/6400]  eta: 1:47:16  loss: 95.1341 (120.5980)  lr: 0.0000 (0.0000)  time: 1.428802  data: 0.000588  max mem: 15684
+I20260709 07:53:01 2156979 dinov2 helpers.py:102] Training  [1880/6400]  eta: 1:47:02  loss: 95.1341 (120.4678)  lr: 0.0000 (0.0000)  time: 1.413681  data: 0.000583  max mem: 15684
+I20260709 07:53:15 2156979 dinov2 helpers.py:102] Training  [1890/6400]  eta: 1:46:47  loss: 95.3578 (120.3562)  lr: 0.0000 (0.0000)  time: 1.413841  data: 0.000598  max mem: 15684
+I20260709 07:53:29 2156979 dinov2 helpers.py:102] Training  [1900/6400]  eta: 1:46:33  loss: 95.3578 (120.2202)  lr: 0.0000 (0.0000)  time: 1.414667  data: 0.003632  max mem: 15684
+I20260709 07:53:43 2156979 dinov2 helpers.py:102] Training  [1910/6400]  eta: 1:46:19  loss: 95.3578 (120.0822)  lr: 0.0000 (0.0000)  time: 1.414312  data: 0.003620  max mem: 15684
+I20260709 07:53:57 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 07:53:57 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 07:53:58 2156979 dinov2 helpers.py:102] Training  [1920/6400]  eta: 1:46:05  loss: 94.7194 (119.9490)  lr: 0.0000 (0.0000)  time: 1.429068  data: 0.000572  max mem: 15684
+I20260709 07:54:12 2156979 dinov2 helpers.py:102] Training  [1930/6400]  eta: 1:45:51  loss: 94.7024 (119.7976)  lr: 0.0000 (0.0000)  time: 1.429157  data: 0.000585  max mem: 15684
+I20260709 07:54:26 2156979 dinov2 helpers.py:102] Training  [1940/6400]  eta: 1:45:36  loss: 94.7024 (119.6931)  lr: 0.0000 (0.0000)  time: 1.413408  data: 0.000588  max mem: 15684
+I20260709 07:54:40 2156979 dinov2 helpers.py:102] Training  [1950/6400]  eta: 1:45:22  loss: 94.6348 (119.5460)  lr: 0.0000 (0.0000)  time: 1.413515  data: 0.000610  max mem: 15684
+I20260709 07:54:54 2156979 dinov2 helpers.py:102] Training  [1960/6400]  eta: 1:45:08  loss: 94.4239 (119.4086)  lr: 0.0000 (0.0000)  time: 1.414613  data: 0.003787  max mem: 15684
+I20260709 07:55:08 2156979 dinov2 helpers.py:102] Training  [1970/6400]  eta: 1:44:53  loss: 94.4239 (119.2849)  lr: 0.0000 (0.0000)  time: 1.414767  data: 0.003750  max mem: 15684
+I20260709 07:55:22 2156979 dinov2 helpers.py:102] Training  [1980/6400]  eta: 1:44:39  loss: 94.4239 (119.1658)  lr: 0.0000 (0.0000)  time: 1.413906  data: 0.000574  max mem: 15684
+I20260709 07:55:28 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 07:55:28 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 07:55:37 2156979 dinov2 helpers.py:102] Training  [1990/6400]  eta: 1:44:25  loss: 94.7194 (119.0646)  lr: 0.0000 (0.0000)  time: 1.429119  data: 0.000571  max mem: 15684
+I20260709 07:55:51 2156979 dinov2 helpers.py:102] Training  [2000/6400]  eta: 1:44:11  loss: 94.9163 (118.9595)  lr: 0.0000 (0.0000)  time: 1.428699  data: 0.000565  max mem: 15684
+I20260709 07:56:05 2156979 dinov2 helpers.py:102] Training  [2010/6400]  eta: 1:43:57  loss: 94.9163 (118.8819)  lr: 0.0000 (0.0000)  time: 1.413115  data: 0.000572  max mem: 15684
+I20260709 07:56:19 2156979 dinov2 helpers.py:102] Training  [2020/6400]  eta: 1:43:42  loss: 94.9163 (118.7424)  lr: 0.0000 (0.0000)  time: 1.414103  data: 0.003626  max mem: 15684
+I20260709 07:56:33 2156979 dinov2 helpers.py:102] Training  [2030/6400]  eta: 1:43:28  loss: 94.4239 (118.6080)  lr: 0.0000 (0.0000)  time: 1.414253  data: 0.003634  max mem: 15684
+I20260709 07:56:48 2156979 dinov2 helpers.py:102] Training  [2040/6400]  eta: 1:43:13  loss: 94.9163 (118.4958)  lr: 0.0000 (0.0000)  time: 1.413193  data: 0.000582  max mem: 15684
+I20260709 07:56:59 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 07:56:59 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 07:57:02 2156979 dinov2 helpers.py:102] Training  [2050/6400]  eta: 1:43:00  loss: 94.3735 (118.3610)  lr: 0.0000 (0.0000)  time: 1.429382  data: 0.000584  max mem: 15684
+I20260709 07:57:16 2156979 dinov2 helpers.py:102] Training  [2060/6400]  eta: 1:42:45  loss: 94.3735 (118.2118)  lr: 0.0000 (0.0000)  time: 1.429715  data: 0.000593  max mem: 15684
+I20260709 07:57:30 2156979 dinov2 helpers.py:102] Training  [2070/6400]  eta: 1:42:31  loss: 94.3705 (118.0965)  lr: 0.0000 (0.0000)  time: 1.413611  data: 0.000577  max mem: 15684
+I20260709 07:57:44 2156979 dinov2 helpers.py:102] Training  [2080/6400]  eta: 1:42:17  loss: 94.2197 (117.9496)  lr: 0.0000 (0.0000)  time: 1.413517  data: 0.000566  max mem: 15684
+I20260709 07:57:59 2156979 dinov2 helpers.py:102] Training  [2090/6400]  eta: 1:42:02  loss: 94.2197 (117.8377)  lr: 0.0000 (0.0000)  time: 1.414422  data: 0.003602  max mem: 15684
+I20260709 07:58:13 2156979 dinov2 helpers.py:102] Training  [2100/6400]  eta: 1:41:48  loss: 93.7318 (117.6776)  lr: 0.0000 (0.0000)  time: 1.414507  data: 0.003596  max mem: 15684
+I20260709 07:58:27 2156979 dinov2 helpers.py:102] Training  [2110/6400]  eta: 1:41:34  loss: 92.4861 (117.5292)  lr: 0.0000 (0.0000)  time: 1.413483  data: 0.000565  max mem: 15684
+I20260709 07:58:30 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 07:58:30 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 07:58:41 2156979 dinov2 helpers.py:102] Training  [2120/6400]  eta: 1:41:20  loss: 91.3220 (117.3748)  lr: 0.0000 (0.0000)  time: 1.430698  data: 0.000573  max mem: 15684
+I20260709 07:58:55 2156979 dinov2 helpers.py:102] Training  [2130/6400]  eta: 1:41:06  loss: 92.4861 (117.2757)  lr: 0.0000 (0.0000)  time: 1.430956  data: 0.000573  max mem: 15684
+I20260709 07:59:10 2156979 dinov2 helpers.py:102] Training  [2140/6400]  eta: 1:40:51  loss: 91.3220 (117.1404)  lr: 0.0000 (0.0000)  time: 1.413891  data: 0.000561  max mem: 15684
+I20260709 07:59:24 2156979 dinov2 helpers.py:102] Training  [2150/6400]  eta: 1:40:37  loss: 92.4861 (117.0397)  lr: 0.0000 (0.0000)  time: 1.414738  data: 0.003570  max mem: 15684
+I20260709 07:59:38 2156979 dinov2 helpers.py:102] Training  [2160/6400]  eta: 1:40:23  loss: 93.7665 (116.9325)  lr: 0.0000 (0.0000)  time: 1.414568  data: 0.003570  max mem: 15684
+I20260709 07:59:52 2156979 dinov2 helpers.py:102] Training  [2170/6400]  eta: 1:40:08  loss: 91.3220 (116.7883)  lr: 0.0000 (0.0000)  time: 1.413922  data: 0.000599  max mem: 15684
+I20260709 08:00:00 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 08:00:00 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 08:00:06 2156979 dinov2 helpers.py:102] Training  [2180/6400]  eta: 1:39:55  loss: 90.7118 (116.6545)  lr: 0.0000 (0.0000)  time: 1.429966  data: 0.000611  max mem: 15684
+I20260709 08:00:21 2156979 dinov2 helpers.py:102] Training  [2190/6400]  eta: 1:39:40  loss: 90.7118 (116.5439)  lr: 0.0000 (0.0000)  time: 1.429614  data: 0.000560  max mem: 15684
+I20260709 08:00:35 2156979 dinov2 helpers.py:102] Training  [2200/6400]  eta: 1:39:26  loss: 90.5720 (116.4120)  lr: 0.0000 (0.0000)  time: 1.413511  data: 0.000560  max mem: 15684
+I20260709 08:00:49 2156979 dinov2 helpers.py:102] Training  [2210/6400]  eta: 1:39:12  loss: 90.5720 (116.3008)  lr: 0.0000 (0.0000)  time: 1.414441  data: 0.003616  max mem: 15684
+I20260709 08:01:03 2156979 dinov2 helpers.py:102] Training  [2220/6400]  eta: 1:38:57  loss: 89.9220 (116.1826)  lr: 0.0000 (0.0000)  time: 1.414404  data: 0.003644  max mem: 15684
+I20260709 08:01:17 2156979 dinov2 helpers.py:102] Training  [2230/6400]  eta: 1:38:43  loss: 89.9220 (116.0831)  lr: 0.0000 (0.0000)  time: 1.413374  data: 0.000656  max mem: 15684
+I20260709 08:01:31 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 08:01:31 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 08:01:32 2156979 dinov2 helpers.py:102] Training  [2240/6400]  eta: 1:38:29  loss: 89.9220 (115.9691)  lr: 0.0000 (0.0000)  time: 1.428612  data: 0.000644  max mem: 15684
+I20260709 08:01:46 2156979 dinov2 helpers.py:102] Training  [2250/6400]  eta: 1:38:15  loss: 89.9220 (115.8588)  lr: 0.0000 (0.0000)  time: 1.428485  data: 0.000591  max mem: 15684
+I20260709 08:02:00 2156979 dinov2 helpers.py:102] Training  [2260/6400]  eta: 1:38:01  loss: 89.9220 (115.7276)  lr: 0.0000 (0.0000)  time: 1.413259  data: 0.000633  max mem: 15684
+I20260709 08:02:14 2156979 dinov2 helpers.py:102] Training  [2270/6400]  eta: 1:37:46  loss: 88.1779 (115.5940)  lr: 0.0000 (0.0000)  time: 1.413345  data: 0.000653  max mem: 15684
+I20260709 08:02:28 2156979 dinov2 helpers.py:102] Training  [2280/6400]  eta: 1:37:32  loss: 88.1779 (115.4519)  lr: 0.0000 (0.0000)  time: 1.414351  data: 0.003660  max mem: 15684
+I20260709 08:02:42 2156979 dinov2 helpers.py:102] Training  [2290/6400]  eta: 1:37:18  loss: 88.1779 (115.3376)  lr: 0.0000 (0.0000)  time: 1.414388  data: 0.003649  max mem: 15684
+I20260709 08:02:56 2156979 dinov2 helpers.py:102] Training  [2300/6400]  eta: 1:37:03  loss: 88.1779 (115.2180)  lr: 0.0000 (0.0000)  time: 1.413249  data: 0.000601  max mem: 15684
+I20260709 08:03:02 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 08:03:02 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 08:03:11 2156979 dinov2 helpers.py:102] Training  [2310/6400]  eta: 1:36:50  loss: 89.1673 (115.1257)  lr: 0.0000 (0.0000)  time: 1.430854  data: 0.000600  max mem: 15684
+I20260709 08:03:25 2156979 dinov2 helpers.py:102] Training  [2320/6400]  eta: 1:36:35  loss: 89.9220 (115.0191)  lr: 0.0000 (0.0000)  time: 1.431039  data: 0.000598  max mem: 15684
+I20260709 08:03:39 2156979 dinov2 helpers.py:102] Training  [2330/6400]  eta: 1:36:21  loss: 89.1673 (114.8897)  lr: 0.0000 (0.0000)  time: 1.413619  data: 0.000599  max mem: 15684
+I20260709 08:03:53 2156979 dinov2 helpers.py:102] Training  [2340/6400]  eta: 1:36:07  loss: 89.9220 (114.7963)  lr: 0.0000 (0.0000)  time: 1.414600  data: 0.003630  max mem: 15684
+I20260709 08:04:07 2156979 dinov2 helpers.py:102] Training  [2350/6400]  eta: 1:35:52  loss: 89.1673 (114.6713)  lr: 0.0000 (0.0000)  time: 1.414583  data: 0.003635  max mem: 15684
+I20260709 08:04:22 2156979 dinov2 helpers.py:102] Training  [2360/6400]  eta: 1:35:38  loss: 87.7017 (114.5563)  lr: 0.0000 (0.0000)  time: 1.413585  data: 0.000597  max mem: 15684
+I20260709 08:04:33 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 08:04:33 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 08:04:36 2156979 dinov2 helpers.py:102] Training  [2370/6400]  eta: 1:35:24  loss: 87.7017 (114.4365)  lr: 0.0000 (0.0000)  time: 1.430140  data: 0.000586  max mem: 15684
+I20260709 08:04:50 2156979 dinov2 helpers.py:102] Training  [2380/6400]  eta: 1:35:10  loss: 89.1673 (114.3490)  lr: 0.0000 (0.0000)  time: 1.430362  data: 0.000586  max mem: 15684
+I20260709 08:05:04 2156979 dinov2 helpers.py:102] Training  [2390/6400]  eta: 1:34:56  loss: 87.7714 (114.2383)  lr: 0.0000 (0.0000)  time: 1.413996  data: 0.000589  max mem: 15684
+I20260709 08:05:19 2156979 dinov2 helpers.py:102] Training  [2400/6400]  eta: 1:34:41  loss: 87.7714 (114.1216)  lr: 0.0000 (0.0000)  time: 1.413924  data: 0.000606  max mem: 15684
+I20260709 08:05:33 2156979 dinov2 helpers.py:102] Training  [2410/6400]  eta: 1:34:27  loss: 87.7714 (114.0163)  lr: 0.0000 (0.0000)  time: 1.417244  data: 0.003816  max mem: 15684
+I20260709 08:05:47 2156979 dinov2 helpers.py:102] Training  [2420/6400]  eta: 1:34:13  loss: 87.7017 (113.8858)  lr: 0.0000 (0.0000)  time: 1.417164  data: 0.003793  max mem: 15684
+I20260709 08:06:01 2156979 dinov2 helpers.py:102] Training  [2430/6400]  eta: 1:33:58  loss: 87.4056 (113.7704)  lr: 0.0000 (0.0000)  time: 1.413580  data: 0.000567  max mem: 15684
+I20260709 08:06:04 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 08:06:04 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 08:06:15 2156979 dinov2 helpers.py:102] Training  [2440/6400]  eta: 1:33:45  loss: 87.4056 (113.6850)  lr: 0.0000 (0.0000)  time: 1.428944  data: 0.000566  max mem: 15684
+I20260709 08:06:30 2156979 dinov2 helpers.py:102] Training  [2450/6400]  eta: 1:33:30  loss: 86.1286 (113.5714)  lr: 0.0000 (0.0000)  time: 1.428798  data: 0.000630  max mem: 15684
+I20260709 08:06:44 2156979 dinov2 helpers.py:102] Training  [2460/6400]  eta: 1:33:16  loss: 87.4056 (113.4967)  lr: 0.0000 (0.0000)  time: 1.413152  data: 0.000628  max mem: 15684
+I20260709 08:06:58 2156979 dinov2 helpers.py:102] Training  [2470/6400]  eta: 1:33:02  loss: 87.7017 (113.4056)  lr: 0.0000 (0.0000)  time: 1.414081  data: 0.003585  max mem: 15684
+I20260709 08:07:12 2156979 dinov2 helpers.py:102] Training  [2480/6400]  eta: 1:32:47  loss: 87.7017 (113.2738)  lr: 0.0000 (0.0000)  time: 1.414361  data: 0.003606  max mem: 15684
+I20260709 08:07:26 2156979 dinov2 helpers.py:102] Training  [2490/6400]  eta: 1:32:33  loss: 87.4829 (113.1706)  lr: 0.0000 (0.0000)  time: 1.413643  data: 0.000612  max mem: 15684
+I20260709 08:07:35 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 08:07:35 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 08:07:41 2156979 dinov2 helpers.py:102] Training  [2500/6400]  eta: 1:32:19  loss: 87.4829 (113.0790)  lr: 0.0000 (0.0000)  time: 1.432047  data: 0.000613  max mem: 15684
+I20260709 08:07:55 2156979 dinov2 helpers.py:102] Training  [2510/6400]  eta: 1:32:05  loss: 87.4829 (112.9819)  lr: 0.0000 (0.0000)  time: 1.431962  data: 0.000615  max mem: 15684
+I20260709 08:08:09 2156979 dinov2 helpers.py:102] Training  [2520/6400]  eta: 1:31:51  loss: 87.4726 (112.8811)  lr: 0.0000 (0.0000)  time: 1.413573  data: 0.000602  max mem: 15684
+I20260709 08:08:23 2156979 dinov2 helpers.py:102] Training  [2530/6400]  eta: 1:31:36  loss: 87.4829 (112.8063)  lr: 0.0000 (0.0000)  time: 1.414512  data: 0.003611  max mem: 15684
+I20260709 08:08:37 2156979 dinov2 helpers.py:102] Training  [2540/6400]  eta: 1:31:22  loss: 87.4726 (112.6866)  lr: 0.0000 (0.0000)  time: 1.414244  data: 0.003620  max mem: 15684
+I20260709 08:08:51 2156979 dinov2 helpers.py:102] Training  [2550/6400]  eta: 1:31:08  loss: 87.4829 (112.6059)  lr: 0.0000 (0.0000)  time: 1.413127  data: 0.000601  max mem: 15684
+I20260709 08:09:04 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/model_0002559.pth
+I20260709 08:09:06 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 08:09:06 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 08:09:06 2156979 dinov2 helpers.py:102] Training  [2560/6400]  eta: 1:30:54  loss: 87.4829 (112.5065)  lr: 0.0000 (0.0000)  time: 1.439690  data: 0.000588  max mem: 15684
+I20260709 08:09:20 2156979 dinov2 helpers.py:102] Training  [2570/6400]  eta: 1:30:40  loss: 87.7714 (112.4165)  lr: 0.0000 (0.0000)  time: 1.439933  data: 0.000582  max mem: 15684
+I20260709 08:09:34 2156979 dinov2 helpers.py:102] Training  [2580/6400]  eta: 1:30:26  loss: 87.7714 (112.3403)  lr: 0.0000 (0.0000)  time: 1.413546  data: 0.000588  max mem: 15684
+I20260709 08:09:48 2156979 dinov2 helpers.py:102] Training  [2590/6400]  eta: 1:30:11  loss: 87.9003 (112.2463)  lr: 0.0000 (0.0000)  time: 1.413530  data: 0.000599  max mem: 15684
+I20260709 08:10:03 2156979 dinov2 helpers.py:102] Training  [2600/6400]  eta: 1:29:57  loss: 87.9003 (112.1469)  lr: 0.0000 (0.0000)  time: 1.414654  data: 0.003621  max mem: 15684
+I20260709 08:10:17 2156979 dinov2 helpers.py:102] Training  [2610/6400]  eta: 1:29:43  loss: 87.4829 (112.0527)  lr: 0.0000 (0.0000)  time: 1.414717  data: 0.003618  max mem: 15684
+I20260709 08:10:31 2156979 dinov2 helpers.py:102] Training  [2620/6400]  eta: 1:29:28  loss: 87.5840 (111.9596)  lr: 0.0000 (0.0000)  time: 1.413762  data: 0.000606  max mem: 15684
+I20260709 08:10:36 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 08:10:36 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 08:10:45 2156979 dinov2 helpers.py:102] Training  [2630/6400]  eta: 1:29:15  loss: 87.9003 (111.8707)  lr: 0.0000 (0.0000)  time: 1.429054  data: 0.000600  max mem: 15684
+I20260709 08:10:59 2156979 dinov2 helpers.py:102] Training  [2640/6400]  eta: 1:29:00  loss: 87.9003 (111.8126)  lr: 0.0000 (0.0000)  time: 1.428956  data: 0.000586  max mem: 15684
+I20260709 08:11:14 2156979 dinov2 helpers.py:102] Training  [2650/6400]  eta: 1:28:46  loss: 87.9003 (111.7046)  lr: 0.0000 (0.0000)  time: 1.413851  data: 0.000590  max mem: 15684
+I20260709 08:11:28 2156979 dinov2 helpers.py:102] Training  [2660/6400]  eta: 1:28:32  loss: 87.5840 (111.6106)  lr: 0.0000 (0.0000)  time: 1.414731  data: 0.003691  max mem: 15684
+I20260709 08:11:42 2156979 dinov2 helpers.py:102] Training  [2670/6400]  eta: 1:28:17  loss: 87.5840 (111.5672)  lr: 0.0000 (0.0000)  time: 1.414476  data: 0.003681  max mem: 15684
+I20260709 08:11:56 2156979 dinov2 helpers.py:102] Training  [2680/6400]  eta: 1:28:03  loss: 87.9003 (111.4795)  lr: 0.0000 (0.0000)  time: 1.413607  data: 0.000573  max mem: 15684
+I20260709 08:12:07 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 08:12:07 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 08:12:10 2156979 dinov2 helpers.py:102] Training  [2690/6400]  eta: 1:27:49  loss: 87.9003 (111.3795)  lr: 0.0000 (0.0000)  time: 1.429255  data: 0.000593  max mem: 15684
+I20260709 08:12:25 2156979 dinov2 helpers.py:102] Training  [2700/6400]  eta: 1:27:35  loss: 87.9003 (111.2955)  lr: 0.0000 (0.0000)  time: 1.429210  data: 0.000610  max mem: 15684
+I20260709 08:12:39 2156979 dinov2 helpers.py:102] Training  [2710/6400]  eta: 1:27:21  loss: 87.8052 (111.2091)  lr: 0.0000 (0.0000)  time: 1.413555  data: 0.000592  max mem: 15684
+I20260709 08:12:53 2156979 dinov2 helpers.py:102] Training  [2720/6400]  eta: 1:27:06  loss: 87.8052 (111.1205)  lr: 0.0000 (0.0000)  time: 1.414940  data: 0.004086  max mem: 15684
+I20260709 08:13:07 2156979 dinov2 helpers.py:102] Training  [2730/6400]  eta: 1:26:52  loss: 87.5840 (111.0222)  lr: 0.0000 (0.0000)  time: 1.414832  data: 0.004078  max mem: 15684
+I20260709 08:13:21 2156979 dinov2 helpers.py:102] Training  [2740/6400]  eta: 1:26:38  loss: 87.8052 (110.9416)  lr: 0.0000 (0.0000)  time: 1.413266  data: 0.000607  max mem: 15684
+I20260709 08:13:35 2156979 dinov2 helpers.py:102] Training  [2750/6400]  eta: 1:26:24  loss: 87.5840 (110.8480)  lr: 0.0000 (0.0000)  time: 1.413465  data: 0.000622  max mem: 15684
+I20260709 08:13:38 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 08:13:38 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 08:13:50 2156979 dinov2 helpers.py:102] Training  [2760/6400]  eta: 1:26:10  loss: 87.5840 (110.7357)  lr: 0.0000 (0.0000)  time: 1.430266  data: 0.000585  max mem: 15684
+I20260709 08:14:04 2156979 dinov2 helpers.py:102] Training  [2770/6400]  eta: 1:25:55  loss: 87.4576 (110.6154)  lr: 0.0000 (0.0000)  time: 1.430151  data: 0.000593  max mem: 15684
+I20260709 08:14:18 2156979 dinov2 helpers.py:102] Training  [2780/6400]  eta: 1:25:41  loss: 87.4576 (110.5519)  lr: 0.0000 (0.0000)  time: 1.413494  data: 0.000603  max mem: 15684
+I20260709 08:14:32 2156979 dinov2 helpers.py:102] Training  [2790/6400]  eta: 1:25:27  loss: 87.0165 (110.4601)  lr: 0.0000 (0.0000)  time: 1.414593  data: 0.003718  max mem: 15684
+I20260709 08:14:46 2156979 dinov2 helpers.py:102] Training  [2800/6400]  eta: 1:25:13  loss: 87.4576 (110.3850)  lr: 0.0000 (0.0000)  time: 1.414710  data: 0.003736  max mem: 15684
+I20260709 08:15:00 2156979 dinov2 helpers.py:102] Training  [2810/6400]  eta: 1:24:58  loss: 87.5840 (110.3197)  lr: 0.0000 (0.0000)  time: 1.413584  data: 0.000634  max mem: 15684
+I20260709 08:15:09 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 08:15:09 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 08:15:15 2156979 dinov2 helpers.py:102] Training  [2820/6400]  eta: 1:24:44  loss: 87.8052 (110.2450)  lr: 0.0000 (0.0000)  time: 1.428902  data: 0.000631  max mem: 15684
+I20260709 08:15:29 2156979 dinov2 helpers.py:102] Training  [2830/6400]  eta: 1:24:30  loss: 87.8052 (110.1723)  lr: 0.0000 (0.0000)  time: 1.428959  data: 0.000624  max mem: 15684
+I20260709 08:15:43 2156979 dinov2 helpers.py:102] Training  [2840/6400]  eta: 1:24:16  loss: 87.0165 (110.0574)  lr: 0.0000 (0.0000)  time: 1.413351  data: 0.000624  max mem: 15684
+I20260709 08:15:57 2156979 dinov2 helpers.py:102] Training  [2850/6400]  eta: 1:24:02  loss: 87.0165 (109.9663)  lr: 0.0000 (0.0000)  time: 1.414436  data: 0.003827  max mem: 15684
+I20260709 08:16:11 2156979 dinov2 helpers.py:102] Training  [2860/6400]  eta: 1:23:47  loss: 87.8052 (109.8899)  lr: 0.0000 (0.0000)  time: 1.414801  data: 0.003866  max mem: 15684
+I20260709 08:16:26 2156979 dinov2 helpers.py:102] Training  [2870/6400]  eta: 1:23:33  loss: 87.0165 (109.7795)  lr: 0.0000 (0.0000)  time: 1.413394  data: 0.000645  max mem: 15684
+I20260709 08:16:40 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 08:16:40 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 08:16:40 2156979 dinov2 helpers.py:102] Training  [2880/6400]  eta: 1:23:19  loss: 85.0995 (109.6859)  lr: 0.0000 (0.0000)  time: 1.428782  data: 0.000593  max mem: 15684
+I20260709 08:16:54 2156979 dinov2 helpers.py:102] Training  [2890/6400]  eta: 1:23:05  loss: 87.0165 (109.6136)  lr: 0.0000 (0.0000)  time: 1.428992  data: 0.000613  max mem: 15684
+I20260709 08:17:08 2156979 dinov2 helpers.py:102] Training  [2900/6400]  eta: 1:22:50  loss: 87.0165 (109.5479)  lr: 0.0000 (0.0000)  time: 1.413355  data: 0.000606  max mem: 15684
+I20260709 08:17:22 2156979 dinov2 helpers.py:102] Training  [2910/6400]  eta: 1:22:36  loss: 85.0995 (109.4634)  lr: 0.0000 (0.0000)  time: 1.414357  data: 0.003599  max mem: 15684
+I20260709 08:17:37 2156979 dinov2 helpers.py:102] Training  [2920/6400]  eta: 1:22:22  loss: 84.8821 (109.3770)  lr: 0.0000 (0.0000)  time: 1.414360  data: 0.003612  max mem: 15684
+I20260709 08:17:51 2156979 dinov2 helpers.py:102] Training  [2930/6400]  eta: 1:22:08  loss: 85.0995 (109.3078)  lr: 0.0000 (0.0000)  time: 1.413255  data: 0.000592  max mem: 15684
+I20260709 08:18:05 2156979 dinov2 helpers.py:102] Training  [2940/6400]  eta: 1:21:53  loss: 84.8821 (109.2222)  lr: 0.0000 (0.0000)  time: 1.413208  data: 0.000581  max mem: 15684
+I20260709 08:18:11 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 08:18:11 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 08:18:19 2156979 dinov2 helpers.py:102] Training  [2950/6400]  eta: 1:21:39  loss: 84.8381 (109.1216)  lr: 0.0000 (0.0000)  time: 1.429237  data: 0.000618  max mem: 15684
+I20260709 08:18:33 2156979 dinov2 helpers.py:102] Training  [2960/6400]  eta: 1:21:25  loss: 84.8821 (109.0537)  lr: 0.0000 (0.0000)  time: 1.429213  data: 0.000628  max mem: 15684
+I20260709 08:18:48 2156979 dinov2 helpers.py:102] Training  [2970/6400]  eta: 1:21:11  loss: 87.0552 (108.9799)  lr: 0.0000 (0.0000)  time: 1.413507  data: 0.000597  max mem: 15684
+I20260709 08:19:02 2156979 dinov2 helpers.py:102] Training  [2980/6400]  eta: 1:20:57  loss: 84.8821 (108.8805)  lr: 0.0000 (0.0000)  time: 1.414603  data: 0.003662  max mem: 15684
+I20260709 08:19:16 2156979 dinov2 helpers.py:102] Training  [2990/6400]  eta: 1:20:42  loss: 84.8821 (108.7894)  lr: 0.0000 (0.0000)  time: 1.414670  data: 0.003681  max mem: 15684
+I20260709 08:19:30 2156979 dinov2 helpers.py:102] Training  [3000/6400]  eta: 1:20:28  loss: 84.1472 (108.7013)  lr: 0.0000 (0.0000)  time: 1.414029  data: 0.000628  max mem: 15684
+I20260709 08:19:41 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 08:19:41 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 08:19:44 2156979 dinov2 helpers.py:102] Training  [3010/6400]  eta: 1:20:14  loss: 84.1472 (108.6292)  lr: 0.0000 (0.0000)  time: 1.430809  data: 0.000613  max mem: 15684
+I20260709 08:19:59 2156979 dinov2 helpers.py:102] Training  [3020/6400]  eta: 1:20:00  loss: 84.1472 (108.5493)  lr: 0.0000 (0.0000)  time: 1.430359  data: 0.000596  max mem: 15684
+I20260709 08:20:13 2156979 dinov2 helpers.py:102] Training  [3030/6400]  eta: 1:19:46  loss: 84.0490 (108.4586)  lr: 0.0000 (0.0000)  time: 1.413330  data: 0.000596  max mem: 15684
+I20260709 08:20:27 2156979 dinov2 helpers.py:102] Training  [3040/6400]  eta: 1:19:31  loss: 84.1472 (108.4066)  lr: 0.0000 (0.0000)  time: 1.414487  data: 0.003628  max mem: 15684
+I20260709 08:20:41 2156979 dinov2 helpers.py:102] Training  [3050/6400]  eta: 1:19:17  loss: 84.1472 (108.3066)  lr: 0.0000 (0.0000)  time: 1.414536  data: 0.003640  max mem: 15684
+I20260709 08:20:55 2156979 dinov2 helpers.py:102] Training  [3060/6400]  eta: 1:19:03  loss: 84.1472 (108.2387)  lr: 0.0000 (0.0000)  time: 1.413644  data: 0.000617  max mem: 15684
+I20260709 08:21:09 2156979 dinov2 helpers.py:102] Training  [3070/6400]  eta: 1:18:49  loss: 84.1472 (108.1529)  lr: 0.0000 (0.0000)  time: 1.413508  data: 0.000618  max mem: 15684
+I20260709 08:21:12 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 08:21:12 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 08:21:24 2156979 dinov2 helpers.py:102] Training  [3080/6400]  eta: 1:18:35  loss: 84.1472 (108.0667)  lr: 0.0000 (0.0000)  time: 1.428841  data: 0.000618  max mem: 15684
+I20260709 08:21:38 2156979 dinov2 helpers.py:102] Training  [3090/6400]  eta: 1:18:20  loss: 84.0490 (107.9867)  lr: 0.0000 (0.0000)  time: 1.429227  data: 0.000608  max mem: 15684
+I20260709 08:21:52 2156979 dinov2 helpers.py:102] Training  [3100/6400]  eta: 1:18:06  loss: 83.2687 (107.9064)  lr: 0.0000 (0.0000)  time: 1.413758  data: 0.000621  max mem: 15684
+I20260709 08:22:06 2156979 dinov2 helpers.py:102] Training  [3110/6400]  eta: 1:17:52  loss: 82.9949 (107.8192)  lr: 0.0000 (0.0000)  time: 1.416654  data: 0.003634  max mem: 15684
+I20260709 08:22:20 2156979 dinov2 helpers.py:102] Training  [3120/6400]  eta: 1:17:38  loss: 82.9949 (107.7665)  lr: 0.0000 (0.0000)  time: 1.416871  data: 0.003623  max mem: 15684
+I20260709 08:22:35 2156979 dinov2 helpers.py:102] Training  [3130/6400]  eta: 1:17:23  loss: 82.9949 (107.7024)  lr: 0.0000 (0.0000)  time: 1.413894  data: 0.000593  max mem: 15684
+I20260709 08:22:43 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 08:22:43 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 08:22:49 2156979 dinov2 helpers.py:102] Training  [3140/6400]  eta: 1:17:09  loss: 82.2765 (107.6185)  lr: 0.0000 (0.0000)  time: 1.430076  data: 0.000574  max mem: 15684
+I20260709 08:23:03 2156979 dinov2 helpers.py:102] Training  [3150/6400]  eta: 1:16:55  loss: 82.2765 (107.5211)  lr: 0.0000 (0.0000)  time: 1.429954  data: 0.000568  max mem: 15684
+I20260709 08:23:17 2156979 dinov2 helpers.py:102] Training  [3160/6400]  eta: 1:16:41  loss: 82.2765 (107.4522)  lr: 0.0000 (0.0000)  time: 1.413546  data: 0.000569  max mem: 15684
+I20260709 08:23:31 2156979 dinov2 helpers.py:102] Training  [3170/6400]  eta: 1:16:27  loss: 82.2765 (107.4005)  lr: 0.0000 (0.0000)  time: 1.414321  data: 0.003639  max mem: 15684
+I20260709 08:23:46 2156979 dinov2 helpers.py:102] Training  [3180/6400]  eta: 1:16:12  loss: 82.9949 (107.3248)  lr: 0.0000 (0.0000)  time: 1.414386  data: 0.003660  max mem: 15684
+I20260709 08:24:00 2156979 dinov2 helpers.py:102] Training  [3190/6400]  eta: 1:15:58  loss: 82.9949 (107.2449)  lr: 0.0000 (0.0000)  time: 1.413334  data: 0.000601  max mem: 15684
+I20260709 08:24:14 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 08:24:14 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 08:24:14 2156979 dinov2 helpers.py:102] Training  [3200/6400]  eta: 1:15:44  loss: 82.9949 (107.1603)  lr: 0.0000 (0.0000)  time: 1.429376  data: 0.000583  max mem: 15684
+I20260709 08:24:28 2156979 dinov2 helpers.py:102] Training  [3210/6400]  eta: 1:15:30  loss: 82.6690 (107.0842)  lr: 0.0000 (0.0000)  time: 1.429502  data: 0.000598  max mem: 15684
+I20260709 08:24:42 2156979 dinov2 helpers.py:102] Training  [3220/6400]  eta: 1:15:16  loss: 82.6690 (107.0191)  lr: 0.0000 (0.0000)  time: 1.413490  data: 0.000608  max mem: 15684
+I20260709 08:24:57 2156979 dinov2 helpers.py:102] Training  [3230/6400]  eta: 1:15:01  loss: 82.6690 (106.9360)  lr: 0.0000 (0.0000)  time: 1.414601  data: 0.003662  max mem: 15684
+I20260709 08:25:11 2156979 dinov2 helpers.py:102] Training  [3240/6400]  eta: 1:14:47  loss: 81.8300 (106.8575)  lr: 0.0000 (0.0000)  time: 1.414551  data: 0.003660  max mem: 15684
+I20260709 08:25:25 2156979 dinov2 helpers.py:102] Training  [3250/6400]  eta: 1:14:33  loss: 82.6690 (106.7867)  lr: 0.0000 (0.0000)  time: 1.413448  data: 0.000594  max mem: 15684
+I20260709 08:25:39 2156979 dinov2 helpers.py:102] Training  [3260/6400]  eta: 1:14:19  loss: 81.8300 (106.7080)  lr: 0.0000 (0.0000)  time: 1.413407  data: 0.000596  max mem: 15684
+I20260709 08:25:45 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 08:25:45 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 08:25:53 2156979 dinov2 helpers.py:102] Training  [3270/6400]  eta: 1:14:05  loss: 81.7439 (106.6297)  lr: 0.0000 (0.0000)  time: 1.428943  data: 0.000594  max mem: 15684
+I20260709 08:26:08 2156979 dinov2 helpers.py:102] Training  [3280/6400]  eta: 1:13:50  loss: 81.7439 (106.5516)  lr: 0.0000 (0.0000)  time: 1.428851  data: 0.000589  max mem: 15684
+I20260709 08:26:22 2156979 dinov2 helpers.py:102] Training  [3290/6400]  eta: 1:13:36  loss: 81.4229 (106.4599)  lr: 0.0000 (0.0000)  time: 1.413530  data: 0.000603  max mem: 15684
+I20260709 08:26:36 2156979 dinov2 helpers.py:102] Training  [3300/6400]  eta: 1:13:22  loss: 81.2763 (106.3686)  lr: 0.0000 (0.0000)  time: 1.414283  data: 0.003623  max mem: 15684
+I20260709 08:26:50 2156979 dinov2 helpers.py:102] Training  [3310/6400]  eta: 1:13:08  loss: 81.4229 (106.3041)  lr: 0.0000 (0.0000)  time: 1.413952  data: 0.003604  max mem: 15684
+I20260709 08:27:04 2156979 dinov2 helpers.py:102] Training  [3320/6400]  eta: 1:12:53  loss: 81.2763 (106.2273)  lr: 0.0000 (0.0000)  time: 1.413378  data: 0.000609  max mem: 15684
+I20260709 08:27:15 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 08:27:15 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 08:27:19 2156979 dinov2 helpers.py:102] Training  [3330/6400]  eta: 1:12:39  loss: 81.0516 (106.1440)  lr: 0.0000 (0.0000)  time: 1.430001  data: 0.000627  max mem: 15684
+I20260709 08:27:33 2156979 dinov2 helpers.py:102] Training  [3340/6400]  eta: 1:12:25  loss: 81.0516 (106.0798)  lr: 0.0000 (0.0000)  time: 1.429920  data: 0.000621  max mem: 15684
+I20260709 08:27:47 2156979 dinov2 helpers.py:102] Training  [3350/6400]  eta: 1:12:11  loss: 81.4229 (106.0132)  lr: 0.0000 (0.0000)  time: 1.413650  data: 0.000633  max mem: 15684
+I20260709 08:28:01 2156979 dinov2 helpers.py:102] Training  [3360/6400]  eta: 1:11:57  loss: 81.0516 (105.9336)  lr: 0.0000 (0.0000)  time: 1.414576  data: 0.003658  max mem: 15684
+I20260709 08:28:15 2156979 dinov2 helpers.py:102] Training  [3370/6400]  eta: 1:11:42  loss: 81.0230 (105.8578)  lr: 0.0000 (0.0000)  time: 1.414823  data: 0.003643  max mem: 15684
+I20260709 08:28:29 2156979 dinov2 helpers.py:102] Training  [3380/6400]  eta: 1:11:28  loss: 81.0230 (105.8029)  lr: 0.0000 (0.0000)  time: 1.414121  data: 0.000613  max mem: 15684
+I20260709 08:28:43 2156979 dinov2 helpers.py:102] Training  [3390/6400]  eta: 1:11:14  loss: 81.0230 (105.7369)  lr: 0.0000 (0.0000)  time: 1.413769  data: 0.000608  max mem: 15684
+I20260709 08:28:46 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 08:28:46 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 08:28:58 2156979 dinov2 helpers.py:102] Training  [3400/6400]  eta: 1:11:00  loss: 81.0230 (105.6622)  lr: 0.0000 (0.0000)  time: 1.430398  data: 0.000589  max mem: 15684
+I20260709 08:29:12 2156979 dinov2 helpers.py:102] Training  [3410/6400]  eta: 1:10:46  loss: 81.0230 (105.5907)  lr: 0.0000 (0.0000)  time: 1.430496  data: 0.000599  max mem: 15684
+I20260709 08:29:26 2156979 dinov2 helpers.py:102] Training  [3420/6400]  eta: 1:10:31  loss: 81.0230 (105.5215)  lr: 0.0000 (0.0000)  time: 1.414382  data: 0.003637  max mem: 15684
+I20260709 08:29:40 2156979 dinov2 helpers.py:102] Training  [3430/6400]  eta: 1:10:17  loss: 81.0516 (105.4641)  lr: 0.0000 (0.0000)  time: 1.414081  data: 0.003650  max mem: 15684
+I20260709 08:29:54 2156979 dinov2 helpers.py:102] Training  [3440/6400]  eta: 1:10:03  loss: 81.0230 (105.3822)  lr: 0.0000 (0.0000)  time: 1.413078  data: 0.000627  max mem: 15684
+I20260709 08:30:09 2156979 dinov2 helpers.py:102] Training  [3450/6400]  eta: 1:09:49  loss: 81.0230 (105.3198)  lr: 0.0000 (0.0000)  time: 1.413164  data: 0.000610  max mem: 15684
+I20260709 08:30:17 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 08:30:17 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 08:30:23 2156979 dinov2 helpers.py:102] Training  [3460/6400]  eta: 1:09:35  loss: 80.9453 (105.2458)  lr: 0.0000 (0.0000)  time: 1.429371  data: 0.000615  max mem: 15684
+I20260709 08:30:37 2156979 dinov2 helpers.py:102] Training  [3470/6400]  eta: 1:09:20  loss: 80.9453 (105.1783)  lr: 0.0000 (0.0000)  time: 1.429250  data: 0.000612  max mem: 15684
+I20260709 08:30:51 2156979 dinov2 helpers.py:102] Training  [3480/6400]  eta: 1:09:06  loss: 81.2143 (105.1235)  lr: 0.0000 (0.0000)  time: 1.413257  data: 0.000608  max mem: 15684
+I20260709 08:31:05 2156979 dinov2 helpers.py:102] Training  [3490/6400]  eta: 1:08:52  loss: 81.2143 (105.0314)  lr: 0.0000 (0.0000)  time: 1.414371  data: 0.003642  max mem: 15684
+I20260709 08:31:20 2156979 dinov2 helpers.py:102] Training  [3500/6400]  eta: 1:08:38  loss: 81.6788 (104.9648)  lr: 0.0000 (0.0000)  time: 1.414387  data: 0.003627  max mem: 15684
+I20260709 08:31:34 2156979 dinov2 helpers.py:102] Training  [3510/6400]  eta: 1:08:23  loss: 81.6788 (104.9074)  lr: 0.0000 (0.0000)  time: 1.413405  data: 0.000592  max mem: 15684
+I20260709 08:31:48 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 08:31:48 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 08:31:48 2156979 dinov2 helpers.py:102] Training  [3520/6400]  eta: 1:08:09  loss: 81.7544 (104.8556)  lr: 0.0000 (0.0000)  time: 1.431331  data: 0.000603  max mem: 15684
+I20260709 08:32:02 2156979 dinov2 helpers.py:102] Training  [3530/6400]  eta: 1:07:55  loss: 81.8577 (104.7957)  lr: 0.0000 (0.0000)  time: 1.431510  data: 0.000598  max mem: 15684
+I20260709 08:32:16 2156979 dinov2 helpers.py:102] Training  [3540/6400]  eta: 1:07:41  loss: 81.8577 (104.7511)  lr: 0.0000 (0.0000)  time: 1.413756  data: 0.000591  max mem: 15684
+I20260709 08:32:31 2156979 dinov2 helpers.py:102] Training  [3550/6400]  eta: 1:07:27  loss: 81.8577 (104.7264)  lr: 0.0000 (0.0000)  time: 1.414649  data: 0.003608  max mem: 15684
+I20260709 08:32:45 2156979 dinov2 helpers.py:102] Training  [3560/6400]  eta: 1:07:12  loss: 82.5759 (104.6644)  lr: 0.0000 (0.0000)  time: 1.414297  data: 0.003611  max mem: 15684
+I20260709 08:32:59 2156979 dinov2 helpers.py:102] Training  [3570/6400]  eta: 1:06:58  loss: 82.5759 (104.5891)  lr: 0.0000 (0.0000)  time: 1.413278  data: 0.000608  max mem: 15684
+I20260709 08:33:13 2156979 dinov2 helpers.py:102] Training  [3580/6400]  eta: 1:06:44  loss: 82.5759 (104.5396)  lr: 0.0000 (0.0000)  time: 1.413444  data: 0.000609  max mem: 15684
+I20260709 08:33:19 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 08:33:19 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 08:33:28 2156979 dinov2 helpers.py:102] Training  [3590/6400]  eta: 1:06:30  loss: 82.5759 (104.4919)  lr: 0.0000 (0.0000)  time: 1.430016  data: 0.000596  max mem: 15684
+I20260709 08:33:42 2156979 dinov2 helpers.py:102] Training  [3600/6400]  eta: 1:06:16  loss: 82.5759 (104.4118)  lr: 0.0000 (0.0000)  time: 1.430059  data: 0.000593  max mem: 15684
+I20260709 08:33:56 2156979 dinov2 helpers.py:102] Training  [3610/6400]  eta: 1:06:01  loss: 82.5759 (104.3484)  lr: 0.0000 (0.0000)  time: 1.414319  data: 0.003670  max mem: 15684
+I20260709 08:34:10 2156979 dinov2 helpers.py:102] Training  [3620/6400]  eta: 1:05:47  loss: 82.5759 (104.2842)  lr: 0.0000 (0.0000)  time: 1.414213  data: 0.003649  max mem: 15684
+I20260709 08:34:24 2156979 dinov2 helpers.py:102] Training  [3630/6400]  eta: 1:05:33  loss: 82.5613 (104.2245)  lr: 0.0000 (0.0000)  time: 1.413093  data: 0.000574  max mem: 15684
+I20260709 08:34:38 2156979 dinov2 helpers.py:102] Training  [3640/6400]  eta: 1:05:19  loss: 82.5613 (104.1563)  lr: 0.0000 (0.0000)  time: 1.413106  data: 0.000591  max mem: 15684
+I20260709 08:34:50 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 08:34:50 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 08:34:53 2156979 dinov2 helpers.py:102] Training  [3650/6400]  eta: 1:05:05  loss: 82.5613 (104.1066)  lr: 0.0000 (0.0000)  time: 1.429971  data: 0.000593  max mem: 15684
+I20260709 08:35:07 2156979 dinov2 helpers.py:102] Training  [3660/6400]  eta: 1:04:50  loss: 82.5613 (104.0227)  lr: 0.0000 (0.0000)  time: 1.430138  data: 0.000602  max mem: 15684
+I20260709 08:35:21 2156979 dinov2 helpers.py:102] Training  [3670/6400]  eta: 1:04:36  loss: 82.5613 (103.9541)  lr: 0.0000 (0.0000)  time: 1.413777  data: 0.000594  max mem: 15684
+I20260709 08:35:35 2156979 dinov2 helpers.py:102] Training  [3680/6400]  eta: 1:04:22  loss: 81.6788 (103.8865)  lr: 0.0000 (0.0000)  time: 1.414663  data: 0.003659  max mem: 15684
+I20260709 08:35:49 2156979 dinov2 helpers.py:102] Training  [3690/6400]  eta: 1:04:08  loss: 82.4067 (103.8285)  lr: 0.0000 (0.0000)  time: 1.414651  data: 0.003661  max mem: 15684
+I20260709 08:36:03 2156979 dinov2 helpers.py:102] Training  [3700/6400]  eta: 1:03:53  loss: 82.5613 (103.7804)  lr: 0.0000 (0.0000)  time: 1.413826  data: 0.000584  max mem: 15684
+I20260709 08:36:18 2156979 dinov2 helpers.py:102] Training  [3710/6400]  eta: 1:03:39  loss: 82.4067 (103.7216)  lr: 0.0000 (0.0000)  time: 1.413806  data: 0.000574  max mem: 15684
+I20260709 08:36:20 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 08:36:20 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 08:36:32 2156979 dinov2 helpers.py:102] Training  [3720/6400]  eta: 1:03:25  loss: 81.8869 (103.6420)  lr: 0.0000 (0.0000)  time: 1.430431  data: 0.000570  max mem: 15684
+I20260709 08:36:46 2156979 dinov2 helpers.py:102] Training  [3730/6400]  eta: 1:03:11  loss: 81.8869 (103.5867)  lr: 0.0000 (0.0000)  time: 1.430367  data: 0.000600  max mem: 15684
+I20260709 08:37:00 2156979 dinov2 helpers.py:102] Training  [3740/6400]  eta: 1:02:57  loss: 81.4863 (103.5228)  lr: 0.0000 (0.0000)  time: 1.414854  data: 0.003714  max mem: 15684
+I20260709 08:37:14 2156979 dinov2 helpers.py:102] Training  [3750/6400]  eta: 1:02:42  loss: 81.4863 (103.4671)  lr: 0.0000 (0.0000)  time: 1.414919  data: 0.003691  max mem: 15684
+I20260709 08:37:29 2156979 dinov2 helpers.py:102] Training  [3760/6400]  eta: 1:02:28  loss: 81.0197 (103.4002)  lr: 0.0000 (0.0000)  time: 1.414016  data: 0.000580  max mem: 15684
+I20260709 08:37:43 2156979 dinov2 helpers.py:102] Training  [3770/6400]  eta: 1:02:14  loss: 81.4863 (103.3499)  lr: 0.0000 (0.0000)  time: 1.414111  data: 0.000599  max mem: 15684
+I20260709 08:37:51 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 08:37:51 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 08:37:57 2156979 dinov2 helpers.py:102] Training  [3780/6400]  eta: 1:02:00  loss: 81.0197 (103.2750)  lr: 0.0000 (0.0000)  time: 1.430690  data: 0.000604  max mem: 15684
+I20260709 08:38:11 2156979 dinov2 helpers.py:102] Training  [3790/6400]  eta: 1:01:46  loss: 81.0197 (103.2220)  lr: 0.0000 (0.0000)  time: 1.430357  data: 0.000581  max mem: 15684
+I20260709 08:38:25 2156979 dinov2 helpers.py:102] Training  [3800/6400]  eta: 1:01:31  loss: 81.0197 (103.1511)  lr: 0.0000 (0.0000)  time: 1.413595  data: 0.000570  max mem: 15684
+I20260709 08:38:40 2156979 dinov2 helpers.py:102] Training  [3810/6400]  eta: 1:01:17  loss: 79.6147 (103.0891)  lr: 0.0000 (0.0000)  time: 1.417264  data: 0.003702  max mem: 15684
+I20260709 08:38:54 2156979 dinov2 helpers.py:102] Training  [3820/6400]  eta: 1:01:03  loss: 79.4959 (103.0182)  lr: 0.0000 (0.0000)  time: 1.417218  data: 0.003724  max mem: 15684
+I20260709 08:39:08 2156979 dinov2 helpers.py:102] Training  [3830/6400]  eta: 1:00:49  loss: 79.3222 (102.9550)  lr: 0.0000 (0.0000)  time: 1.413612  data: 0.000585  max mem: 15684
+I20260709 08:39:21 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/model_0003839.pth
+I20260709 08:39:22 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 08:39:22 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 08:39:23 2156979 dinov2 helpers.py:102] Training  [3840/6400]  eta: 1:00:35  loss: 79.4959 (102.9033)  lr: 0.0000 (0.0000)  time: 1.439781  data: 0.000555  max mem: 15684
+I20260709 08:39:37 2156979 dinov2 helpers.py:102] Training  [3850/6400]  eta: 1:00:21  loss: 79.4959 (102.8490)  lr: 0.0000 (0.0000)  time: 1.439865  data: 0.000579  max mem: 15684
+I20260709 08:39:51 2156979 dinov2 helpers.py:102] Training  [3860/6400]  eta: 1:00:06  loss: 79.6147 (102.7991)  lr: 0.0000 (0.0000)  time: 1.413756  data: 0.000593  max mem: 15684
+I20260709 08:40:05 2156979 dinov2 helpers.py:102] Training  [3870/6400]  eta: 0:59:52  loss: 81.7206 (102.7448)  lr: 0.0000 (0.0000)  time: 1.414822  data: 0.003607  max mem: 15684
+I20260709 08:40:19 2156979 dinov2 helpers.py:102] Training  [3880/6400]  eta: 0:59:38  loss: 81.8869 (102.7027)  lr: 0.0000 (0.0000)  time: 1.414955  data: 0.003631  max mem: 15684
+I20260709 08:40:33 2156979 dinov2 helpers.py:102] Training  [3890/6400]  eta: 0:59:24  loss: 81.8869 (102.6511)  lr: 0.0000 (0.0000)  time: 1.413941  data: 0.000631  max mem: 15684
+I20260709 08:40:47 2156979 dinov2 helpers.py:102] Training  [3900/6400]  eta: 0:59:09  loss: 81.8869 (102.6178)  lr: 0.0000 (0.0000)  time: 1.413714  data: 0.000623  max mem: 15684
+I20260709 08:40:53 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 08:40:53 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 08:41:02 2156979 dinov2 helpers.py:102] Training  [3910/6400]  eta: 0:58:55  loss: 81.9394 (102.5783)  lr: 0.0000 (0.0000)  time: 1.429571  data: 0.000629  max mem: 15684
+I20260709 08:41:16 2156979 dinov2 helpers.py:102] Training  [3920/6400]  eta: 0:58:41  loss: 81.9394 (102.5159)  lr: 0.0000 (0.0000)  time: 1.429560  data: 0.000622  max mem: 15684
+I20260709 08:41:30 2156979 dinov2 helpers.py:102] Training  [3930/6400]  eta: 0:58:27  loss: 81.7206 (102.4563)  lr: 0.0000 (0.0000)  time: 1.414511  data: 0.003625  max mem: 15684
+I20260709 08:41:44 2156979 dinov2 helpers.py:102] Training  [3940/6400]  eta: 0:58:13  loss: 81.7206 (102.3951)  lr: 0.0000 (0.0000)  time: 1.414338  data: 0.003616  max mem: 15684
+I20260709 08:41:58 2156979 dinov2 helpers.py:102] Training  [3950/6400]  eta: 0:57:58  loss: 80.7485 (102.3404)  lr: 0.0000 (0.0000)  time: 1.413360  data: 0.000595  max mem: 15684
+I20260709 08:42:13 2156979 dinov2 helpers.py:102] Training  [3960/6400]  eta: 0:57:44  loss: 80.8512 (102.2863)  lr: 0.0000 (0.0000)  time: 1.413371  data: 0.000615  max mem: 15684
+I20260709 08:42:24 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 08:42:24 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 08:42:27 2156979 dinov2 helpers.py:102] Training  [3970/6400]  eta: 0:57:30  loss: 80.7485 (102.2217)  lr: 0.0000 (0.0000)  time: 1.430021  data: 0.000624  max mem: 15684
+I20260709 08:42:41 2156979 dinov2 helpers.py:102] Training  [3980/6400]  eta: 0:57:16  loss: 80.7485 (102.1639)  lr: 0.0000 (0.0000)  time: 1.430336  data: 0.000615  max mem: 15684
+I20260709 08:42:55 2156979 dinov2 helpers.py:102] Training  [3990/6400]  eta: 0:57:02  loss: 79.4959 (102.1050)  lr: 0.0000 (0.0000)  time: 1.413973  data: 0.000603  max mem: 15684
+I20260709 08:43:10 2156979 dinov2 helpers.py:102] Training  [4000/6400]  eta: 0:56:47  loss: 79.4959 (102.0302)  lr: 0.0000 (0.0000)  time: 1.414784  data: 0.003644  max mem: 15684
+I20260709 08:43:24 2156979 dinov2 helpers.py:102] Training  [4010/6400]  eta: 0:56:33  loss: 79.1775 (101.9573)  lr: 0.0000 (0.0000)  time: 1.414703  data: 0.003653  max mem: 15684
+I20260709 08:43:38 2156979 dinov2 helpers.py:102] Training  [4020/6400]  eta: 0:56:19  loss: 79.1775 (101.8990)  lr: 0.0000 (0.0000)  time: 1.413755  data: 0.000635  max mem: 15684
+I20260709 08:43:52 2156979 dinov2 helpers.py:102] Training  [4030/6400]  eta: 0:56:05  loss: 79.1775 (101.8400)  lr: 0.0000 (0.0000)  time: 1.413629  data: 0.000623  max mem: 15684
+I20260709 08:43:55 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 08:43:55 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 08:44:06 2156979 dinov2 helpers.py:102] Training  [4040/6400]  eta: 0:55:51  loss: 79.1775 (101.7848)  lr: 0.0000 (0.0000)  time: 1.431857  data: 0.000599  max mem: 15684
+I20260709 08:44:21 2156979 dinov2 helpers.py:102] Training  [4050/6400]  eta: 0:55:36  loss: 79.1775 (101.7340)  lr: 0.0000 (0.0000)  time: 1.431868  data: 0.000601  max mem: 15684
+I20260709 08:44:35 2156979 dinov2 helpers.py:102] Training  [4060/6400]  eta: 0:55:22  loss: 79.1775 (101.6922)  lr: 0.0000 (0.0000)  time: 1.414424  data: 0.003633  max mem: 15684
+I20260709 08:44:49 2156979 dinov2 helpers.py:102] Training  [4070/6400]  eta: 0:55:08  loss: 79.0174 (101.6348)  lr: 0.0000 (0.0000)  time: 1.414584  data: 0.003633  max mem: 15684
+I20260709 08:45:03 2156979 dinov2 helpers.py:102] Training  [4080/6400]  eta: 0:54:54  loss: 78.6150 (101.5767)  lr: 0.0000 (0.0000)  time: 1.413905  data: 0.000660  max mem: 15684
+I20260709 08:45:17 2156979 dinov2 helpers.py:102] Training  [4090/6400]  eta: 0:54:40  loss: 78.4301 (101.5094)  lr: 0.0000 (0.0000)  time: 1.413699  data: 0.000710  max mem: 15684
+I20260709 08:45:26 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 08:45:26 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 08:45:32 2156979 dinov2 helpers.py:102] Training  [4100/6400]  eta: 0:54:25  loss: 78.4301 (101.4659)  lr: 0.0000 (0.0000)  time: 1.429968  data: 0.000648  max mem: 15684
+I20260709 08:45:46 2156979 dinov2 helpers.py:102] Training  [4110/6400]  eta: 0:54:11  loss: 78.4301 (101.4202)  lr: 0.0000 (0.0000)  time: 1.430005  data: 0.000597  max mem: 15684
+I20260709 08:46:00 2156979 dinov2 helpers.py:102] Training  [4120/6400]  eta: 0:53:57  loss: 78.5746 (101.3649)  lr: 0.0000 (0.0000)  time: 1.414408  data: 0.003666  max mem: 15684
+I20260709 08:46:14 2156979 dinov2 helpers.py:102] Training  [4130/6400]  eta: 0:53:43  loss: 78.4301 (101.3095)  lr: 0.0000 (0.0000)  time: 1.414440  data: 0.003658  max mem: 15684
+I20260709 08:46:28 2156979 dinov2 helpers.py:102] Training  [4140/6400]  eta: 0:53:29  loss: 78.4301 (101.2285)  lr: 0.0000 (0.0000)  time: 1.413461  data: 0.000665  max mem: 15684
+I20260709 08:46:42 2156979 dinov2 helpers.py:102] Training  [4150/6400]  eta: 0:53:14  loss: 78.4301 (101.1776)  lr: 0.0000 (0.0000)  time: 1.413299  data: 0.000671  max mem: 15684
+I20260709 08:46:56 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 08:46:56 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 08:46:57 2156979 dinov2 helpers.py:102] Training  [4160/6400]  eta: 0:53:00  loss: 78.4260 (101.1030)  lr: 0.0000 (0.0000)  time: 1.430193  data: 0.000591  max mem: 15684
+I20260709 08:47:11 2156979 dinov2 helpers.py:102] Training  [4170/6400]  eta: 0:52:46  loss: 78.4301 (101.0652)  lr: 0.0000 (0.0000)  time: 1.430580  data: 0.000575  max mem: 15684
+I20260709 08:47:25 2156979 dinov2 helpers.py:102] Training  [4180/6400]  eta: 0:52:32  loss: 78.4301 (101.0191)  lr: 0.0000 (0.0000)  time: 1.413754  data: 0.000575  max mem: 15684
+I20260709 08:47:39 2156979 dinov2 helpers.py:102] Training  [4190/6400]  eta: 0:52:18  loss: 78.4301 (100.9818)  lr: 0.0000 (0.0000)  time: 1.414396  data: 0.003633  max mem: 15684
+I20260709 08:47:53 2156979 dinov2 helpers.py:102] Training  [4200/6400]  eta: 0:52:03  loss: 78.4301 (100.9122)  lr: 0.0000 (0.0000)  time: 1.414561  data: 0.003635  max mem: 15684
+I20260709 08:48:07 2156979 dinov2 helpers.py:102] Training  [4210/6400]  eta: 0:51:49  loss: 78.5746 (100.8659)  lr: 0.0000 (0.0000)  time: 1.413804  data: 0.000589  max mem: 15684
+I20260709 08:48:22 2156979 dinov2 helpers.py:102] Training  [4220/6400]  eta: 0:51:35  loss: 78.5746 (100.7998)  lr: 0.0000 (0.0000)  time: 1.413560  data: 0.000598  max mem: 15684
+I20260709 08:48:27 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 08:48:27 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 08:48:36 2156979 dinov2 helpers.py:102] Training  [4230/6400]  eta: 0:51:21  loss: 79.4829 (100.7510)  lr: 0.0000 (0.0000)  time: 1.428744  data: 0.000601  max mem: 15684
+I20260709 08:48:50 2156979 dinov2 helpers.py:102] Training  [4240/6400]  eta: 0:51:07  loss: 78.8493 (100.6994)  lr: 0.0000 (0.0000)  time: 1.428916  data: 0.000606  max mem: 15684
+I20260709 08:49:04 2156979 dinov2 helpers.py:102] Training  [4250/6400]  eta: 0:50:52  loss: 78.5746 (100.6470)  lr: 0.0000 (0.0000)  time: 1.414437  data: 0.003660  max mem: 15684
+I20260709 08:49:18 2156979 dinov2 helpers.py:102] Training  [4260/6400]  eta: 0:50:38  loss: 78.4260 (100.5855)  lr: 0.0000 (0.0000)  time: 1.414255  data: 0.003656  max mem: 15684
+I20260709 08:49:33 2156979 dinov2 helpers.py:102] Training  [4270/6400]  eta: 0:50:24  loss: 78.5746 (100.5343)  lr: 0.0000 (0.0000)  time: 1.413151  data: 0.000602  max mem: 15684
+I20260709 08:49:47 2156979 dinov2 helpers.py:102] Training  [4280/6400]  eta: 0:50:10  loss: 78.5746 (100.4797)  lr: 0.0000 (0.0000)  time: 1.413210  data: 0.000595  max mem: 15684
+I20260709 08:49:58 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 08:49:58 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 08:50:01 2156979 dinov2 helpers.py:102] Training  [4290/6400]  eta: 0:49:56  loss: 78.5746 (100.4282)  lr: 0.0000 (0.0000)  time: 1.429752  data: 0.000599  max mem: 15684
+I20260709 08:50:15 2156979 dinov2 helpers.py:102] Training  [4300/6400]  eta: 0:49:41  loss: 78.4260 (100.3662)  lr: 0.0000 (0.0000)  time: 1.429597  data: 0.000592  max mem: 15684
+I20260709 08:50:29 2156979 dinov2 helpers.py:102] Training  [4310/6400]  eta: 0:49:27  loss: 78.3694 (100.3151)  lr: 0.0000 (0.0000)  time: 1.414071  data: 0.003643  max mem: 15684
+I20260709 08:50:44 2156979 dinov2 helpers.py:102] Training  [4320/6400]  eta: 0:49:13  loss: 78.3694 (100.2662)  lr: 0.0000 (0.0000)  time: 1.414221  data: 0.003646  max mem: 15684
+I20260709 08:50:58 2156979 dinov2 helpers.py:102] Training  [4330/6400]  eta: 0:48:59  loss: 78.3598 (100.2141)  lr: 0.0000 (0.0000)  time: 1.413460  data: 0.000597  max mem: 15684
+I20260709 08:51:12 2156979 dinov2 helpers.py:102] Training  [4340/6400]  eta: 0:48:44  loss: 78.3598 (100.1613)  lr: 0.0000 (0.0000)  time: 1.413453  data: 0.000597  max mem: 15684
+I20260709 08:51:26 2156979 dinov2 helpers.py:102] Training  [4350/6400]  eta: 0:48:30  loss: 78.2603 (100.1057)  lr: 0.0000 (0.0000)  time: 1.413168  data: 0.000591  max mem: 15684
+I20260709 08:51:29 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 08:51:29 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 08:51:40 2156979 dinov2 helpers.py:102] Training  [4360/6400]  eta: 0:48:16  loss: 78.2603 (100.0397)  lr: 0.0000 (0.0000)  time: 1.428451  data: 0.000576  max mem: 15684
+I20260709 08:51:55 2156979 dinov2 helpers.py:102] Training  [4370/6400]  eta: 0:48:02  loss: 78.2603 (100.0081)  lr: 0.0000 (0.0000)  time: 1.428679  data: 0.000579  max mem: 15684
+I20260709 08:52:09 2156979 dinov2 helpers.py:102] Training  [4380/6400]  eta: 0:47:48  loss: 77.6520 (99.9497)  lr: 0.0000 (0.0000)  time: 1.414540  data: 0.003650  max mem: 15684
+I20260709 08:52:23 2156979 dinov2 helpers.py:102] Training  [4390/6400]  eta: 0:47:33  loss: 77.6050 (99.8989)  lr: 0.0000 (0.0000)  time: 1.414586  data: 0.003652  max mem: 15684
+I20260709 08:52:37 2156979 dinov2 helpers.py:102] Training  [4400/6400]  eta: 0:47:19  loss: 77.6520 (99.8511)  lr: 0.0000 (0.0000)  time: 1.413634  data: 0.000603  max mem: 15684
+I20260709 08:52:51 2156979 dinov2 helpers.py:102] Training  [4410/6400]  eta: 0:47:05  loss: 77.6520 (99.8044)  lr: 0.0000 (0.0000)  time: 1.413719  data: 0.000599  max mem: 15684
+I20260709 08:53:00 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 08:53:00 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 08:53:06 2156979 dinov2 helpers.py:102] Training  [4420/6400]  eta: 0:46:51  loss: 78.2603 (99.7572)  lr: 0.0000 (0.0000)  time: 1.429887  data: 0.000593  max mem: 15684
+I20260709 08:53:20 2156979 dinov2 helpers.py:102] Training  [4430/6400]  eta: 0:46:37  loss: 77.6520 (99.6983)  lr: 0.0000 (0.0000)  time: 1.429900  data: 0.000594  max mem: 15684
+I20260709 08:53:34 2156979 dinov2 helpers.py:102] Training  [4440/6400]  eta: 0:46:22  loss: 77.6050 (99.6452)  lr: 0.0000 (0.0000)  time: 1.414749  data: 0.003670  max mem: 15684
+I20260709 08:53:48 2156979 dinov2 helpers.py:102] Training  [4450/6400]  eta: 0:46:08  loss: 77.2679 (99.5929)  lr: 0.0000 (0.0000)  time: 1.414793  data: 0.003666  max mem: 15684
+I20260709 08:54:02 2156979 dinov2 helpers.py:102] Training  [4460/6400]  eta: 0:45:54  loss: 77.6050 (99.5497)  lr: 0.0000 (0.0000)  time: 1.413725  data: 0.000592  max mem: 15684
+I20260709 08:54:16 2156979 dinov2 helpers.py:102] Training  [4470/6400]  eta: 0:45:40  loss: 77.6050 (99.5095)  lr: 0.0000 (0.0000)  time: 1.413501  data: 0.000600  max mem: 15684
+I20260709 08:54:30 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 08:54:30 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 08:54:31 2156979 dinov2 helpers.py:102] Training  [4480/6400]  eta: 0:45:26  loss: 77.6520 (99.4755)  lr: 0.0000 (0.0000)  time: 1.429489  data: 0.000600  max mem: 15684
+I20260709 08:54:45 2156979 dinov2 helpers.py:102] Training  [4490/6400]  eta: 0:45:11  loss: 77.6050 (99.4251)  lr: 0.0000 (0.0000)  time: 1.429537  data: 0.000588  max mem: 15684
+I20260709 08:54:59 2156979 dinov2 helpers.py:102] Training  [4500/6400]  eta: 0:44:57  loss: 77.6520 (99.3942)  lr: 0.0000 (0.0000)  time: 1.413282  data: 0.000592  max mem: 15684
+I20260709 08:55:13 2156979 dinov2 helpers.py:102] Training  [4510/6400]  eta: 0:44:43  loss: 77.6520 (99.3506)  lr: 0.0000 (0.0000)  time: 1.416281  data: 0.003580  max mem: 15684
+I20260709 08:55:27 2156979 dinov2 helpers.py:102] Training  [4520/6400]  eta: 0:44:29  loss: 77.6050 (99.2903)  lr: 0.0000 (0.0000)  time: 1.416622  data: 0.003582  max mem: 15684
+I20260709 08:55:42 2156979 dinov2 helpers.py:102] Training  [4530/6400]  eta: 0:44:15  loss: 77.2679 (99.2346)  lr: 0.0000 (0.0000)  time: 1.413780  data: 0.000629  max mem: 15684
+I20260709 08:55:56 2156979 dinov2 helpers.py:102] Training  [4540/6400]  eta: 0:44:00  loss: 77.6050 (99.1913)  lr: 0.0000 (0.0000)  time: 1.413701  data: 0.000667  max mem: 15684
+I20260709 08:56:01 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 08:56:01 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 08:56:10 2156979 dinov2 helpers.py:102] Training  [4550/6400]  eta: 0:43:46  loss: 77.6050 (99.1394)  lr: 0.0000 (0.0000)  time: 1.428674  data: 0.000691  max mem: 15684
+I20260709 08:56:24 2156979 dinov2 helpers.py:102] Training  [4560/6400]  eta: 0:43:32  loss: 77.6050 (99.0867)  lr: 0.0000 (0.0000)  time: 1.428674  data: 0.000675  max mem: 15684
+I20260709 08:56:38 2156979 dinov2 helpers.py:102] Training  [4570/6400]  eta: 0:43:18  loss: 77.6050 (99.0495)  lr: 0.0000 (0.0000)  time: 1.414636  data: 0.003681  max mem: 15684
+I20260709 08:56:53 2156979 dinov2 helpers.py:102] Training  [4580/6400]  eta: 0:43:04  loss: 77.7297 (99.0031)  lr: 0.0000 (0.0000)  time: 1.414828  data: 0.003672  max mem: 15684
+I20260709 08:57:07 2156979 dinov2 helpers.py:102] Training  [4590/6400]  eta: 0:42:49  loss: 78.5617 (98.9587)  lr: 0.0000 (0.0000)  time: 1.413933  data: 0.000635  max mem: 15684
+I20260709 08:57:21 2156979 dinov2 helpers.py:102] Training  [4600/6400]  eta: 0:42:35  loss: 77.7297 (98.9042)  lr: 0.0000 (0.0000)  time: 1.413678  data: 0.000629  max mem: 15684
+I20260709 08:57:32 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 08:57:32 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 08:57:35 2156979 dinov2 helpers.py:102] Training  [4610/6400]  eta: 0:42:21  loss: 77.7297 (98.8655)  lr: 0.0000 (0.0000)  time: 1.431212  data: 0.000611  max mem: 15684
+I20260709 08:57:49 2156979 dinov2 helpers.py:102] Training  [4620/6400]  eta: 0:42:07  loss: 76.7936 (98.8145)  lr: 0.0000 (0.0000)  time: 1.431020  data: 0.000617  max mem: 15684
+I20260709 08:58:04 2156979 dinov2 helpers.py:102] Training  [4630/6400]  eta: 0:41:53  loss: 76.7936 (98.7554)  lr: 0.0000 (0.0000)  time: 1.414209  data: 0.003646  max mem: 15684
+I20260709 08:58:18 2156979 dinov2 helpers.py:102] Training  [4640/6400]  eta: 0:41:38  loss: 77.7297 (98.7131)  lr: 0.0000 (0.0000)  time: 1.414476  data: 0.003631  max mem: 15684
+I20260709 08:58:32 2156979 dinov2 helpers.py:102] Training  [4650/6400]  eta: 0:41:24  loss: 78.5617 (98.6752)  lr: 0.0000 (0.0000)  time: 1.413449  data: 0.000604  max mem: 15684
+I20260709 08:58:46 2156979 dinov2 helpers.py:102] Training  [4660/6400]  eta: 0:41:10  loss: 77.7297 (98.6245)  lr: 0.0000 (0.0000)  time: 1.413623  data: 0.000613  max mem: 15684
+I20260709 08:59:00 2156979 dinov2 helpers.py:102] Training  [4670/6400]  eta: 0:40:56  loss: 76.7936 (98.5735)  lr: 0.0000 (0.0000)  time: 1.413756  data: 0.000603  max mem: 15684
+I20260709 08:59:03 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 08:59:03 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 08:59:15 2156979 dinov2 helpers.py:102] Training  [4680/6400]  eta: 0:40:42  loss: 76.7936 (98.5430)  lr: 0.0000 (0.0000)  time: 1.430316  data: 0.000595  max mem: 15684
+I20260709 08:59:29 2156979 dinov2 helpers.py:102] Training  [4690/6400]  eta: 0:40:27  loss: 77.7297 (98.5097)  lr: 0.0000 (0.0000)  time: 1.430161  data: 0.000605  max mem: 15684
+I20260709 08:59:43 2156979 dinov2 helpers.py:102] Training  [4700/6400]  eta: 0:40:13  loss: 75.5359 (98.4559)  lr: 0.0000 (0.0000)  time: 1.414278  data: 0.003682  max mem: 15684
+I20260709 08:59:57 2156979 dinov2 helpers.py:102] Training  [4710/6400]  eta: 0:39:59  loss: 75.5359 (98.4149)  lr: 0.0000 (0.0000)  time: 1.414465  data: 0.003675  max mem: 15684
+I20260709 09:00:11 2156979 dinov2 helpers.py:102] Training  [4720/6400]  eta: 0:39:45  loss: 77.4105 (98.3705)  lr: 0.0000 (0.0000)  time: 1.413416  data: 0.000605  max mem: 15684
+I20260709 09:00:25 2156979 dinov2 helpers.py:102] Training  [4730/6400]  eta: 0:39:31  loss: 77.6064 (98.3267)  lr: 0.0000 (0.0000)  time: 1.413241  data: 0.000606  max mem: 15684
+I20260709 09:00:34 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 09:00:34 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 09:00:40 2156979 dinov2 helpers.py:102] Training  [4740/6400]  eta: 0:39:16  loss: 77.4105 (98.2806)  lr: 0.0000 (0.0000)  time: 1.429658  data: 0.000608  max mem: 15684
+I20260709 09:00:54 2156979 dinov2 helpers.py:102] Training  [4750/6400]  eta: 0:39:02  loss: 77.6064 (98.2446)  lr: 0.0000 (0.0000)  time: 1.429638  data: 0.000605  max mem: 15684
+I20260709 09:01:08 2156979 dinov2 helpers.py:102] Training  [4760/6400]  eta: 0:38:48  loss: 77.7297 (98.2092)  lr: 0.0000 (0.0000)  time: 1.414239  data: 0.003665  max mem: 15684
+I20260709 09:01:22 2156979 dinov2 helpers.py:102] Training  [4770/6400]  eta: 0:38:34  loss: 77.6064 (98.1561)  lr: 0.0000 (0.0000)  time: 1.414346  data: 0.003682  max mem: 15684
+I20260709 09:01:36 2156979 dinov2 helpers.py:102] Training  [4780/6400]  eta: 0:38:20  loss: 77.6064 (98.1187)  lr: 0.0000 (0.0000)  time: 1.413657  data: 0.000628  max mem: 15684
+I20260709 09:01:50 2156979 dinov2 helpers.py:102] Training  [4790/6400]  eta: 0:38:05  loss: 77.4105 (98.0567)  lr: 0.0000 (0.0000)  time: 1.413623  data: 0.000616  max mem: 15684
+I20260709 09:02:05 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 09:02:05 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 09:02:05 2156979 dinov2 helpers.py:102] Training  [4800/6400]  eta: 0:37:51  loss: 77.6064 (98.0220)  lr: 0.0000 (0.0000)  time: 1.430935  data: 0.000602  max mem: 15684
+I20260709 09:02:19 2156979 dinov2 helpers.py:102] Training  [4810/6400]  eta: 0:37:37  loss: 77.4105 (97.9630)  lr: 0.0000 (0.0000)  time: 1.430950  data: 0.000607  max mem: 15684
+I20260709 09:02:33 2156979 dinov2 helpers.py:102] Training  [4820/6400]  eta: 0:37:23  loss: 77.6064 (97.9227)  lr: 0.0000 (0.0000)  time: 1.414280  data: 0.003784  max mem: 15684
+I20260709 09:02:47 2156979 dinov2 helpers.py:102] Training  [4830/6400]  eta: 0:37:09  loss: 78.5118 (97.8877)  lr: 0.0000 (0.0000)  time: 1.414166  data: 0.003772  max mem: 15684
+I20260709 09:03:02 2156979 dinov2 helpers.py:102] Training  [4840/6400]  eta: 0:36:54  loss: 78.5118 (97.8533)  lr: 0.0000 (0.0000)  time: 1.413293  data: 0.000591  max mem: 15684
+I20260709 09:03:16 2156979 dinov2 helpers.py:102] Training  [4850/6400]  eta: 0:36:40  loss: 77.6064 (97.8088)  lr: 0.0000 (0.0000)  time: 1.413419  data: 0.000584  max mem: 15684
+I20260709 09:03:30 2156979 dinov2 helpers.py:102] Training  [4860/6400]  eta: 0:36:26  loss: 77.6064 (97.7608)  lr: 0.0000 (0.0000)  time: 1.413346  data: 0.000595  max mem: 15684
+I20260709 09:03:35 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 09:03:35 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 09:03:44 2156979 dinov2 helpers.py:102] Training  [4870/6400]  eta: 0:36:12  loss: 78.2160 (97.7207)  lr: 0.0000 (0.0000)  time: 1.431274  data: 0.000666  max mem: 15684
+I20260709 09:03:58 2156979 dinov2 helpers.py:102] Training  [4880/6400]  eta: 0:35:58  loss: 77.8422 (97.6800)  lr: 0.0000 (0.0000)  time: 1.431594  data: 0.000661  max mem: 15684
+I20260709 09:04:13 2156979 dinov2 helpers.py:102] Training  [4890/6400]  eta: 0:35:43  loss: 77.6064 (97.6314)  lr: 0.0000 (0.0000)  time: 1.414639  data: 0.003641  max mem: 15684
+I20260709 09:04:27 2156979 dinov2 helpers.py:102] Training  [4900/6400]  eta: 0:35:29  loss: 77.6064 (97.5859)  lr: 0.0000 (0.0000)  time: 1.414534  data: 0.003634  max mem: 15684
+I20260709 09:04:41 2156979 dinov2 helpers.py:102] Training  [4910/6400]  eta: 0:35:15  loss: 77.4105 (97.5426)  lr: 0.0000 (0.0000)  time: 1.413646  data: 0.000591  max mem: 15684
+I20260709 09:04:55 2156979 dinov2 helpers.py:102] Training  [4920/6400]  eta: 0:35:01  loss: 77.6064 (97.5097)  lr: 0.0000 (0.0000)  time: 1.413544  data: 0.000605  max mem: 15684
+I20260709 09:05:06 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 09:05:06 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 09:05:09 2156979 dinov2 helpers.py:102] Training  [4930/6400]  eta: 0:34:47  loss: 77.8422 (97.4748)  lr: 0.0000 (0.0000)  time: 1.430086  data: 0.000617  max mem: 15684
+I20260709 09:05:24 2156979 dinov2 helpers.py:102] Training  [4940/6400]  eta: 0:34:32  loss: 78.2160 (97.4468)  lr: 0.0000 (0.0000)  time: 1.430053  data: 0.000656  max mem: 15684
+I20260709 09:05:38 2156979 dinov2 helpers.py:102] Training  [4950/6400]  eta: 0:34:18  loss: 77.8422 (97.3980)  lr: 0.0000 (0.0000)  time: 1.414191  data: 0.003690  max mem: 15684
+I20260709 09:05:52 2156979 dinov2 helpers.py:102] Training  [4960/6400]  eta: 0:34:04  loss: 77.8287 (97.3587)  lr: 0.0000 (0.0000)  time: 1.414015  data: 0.003692  max mem: 15684
+I20260709 09:06:06 2156979 dinov2 helpers.py:102] Training  [4970/6400]  eta: 0:33:50  loss: 77.8287 (97.3191)  lr: 0.0000 (0.0000)  time: 1.413240  data: 0.000640  max mem: 15684
+I20260709 09:06:20 2156979 dinov2 helpers.py:102] Training  [4980/6400]  eta: 0:33:36  loss: 77.6376 (97.2764)  lr: 0.0000 (0.0000)  time: 1.413470  data: 0.000586  max mem: 15684
+I20260709 09:06:34 2156979 dinov2 helpers.py:102] Training  [4990/6400]  eta: 0:33:21  loss: 77.8287 (97.2390)  lr: 0.0000 (0.0000)  time: 1.413612  data: 0.000583  max mem: 15684
+I20260709 09:06:37 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 09:06:37 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 09:06:49 2156979 dinov2 helpers.py:102] Training  [5000/6400]  eta: 0:33:07  loss: 77.6376 (97.1963)  lr: 0.0000 (0.0000)  time: 1.430287  data: 0.000565  max mem: 15684
+I20260709 09:07:03 2156979 dinov2 helpers.py:102] Training  [5010/6400]  eta: 0:32:53  loss: 77.6376 (97.1555)  lr: 0.0000 (0.0000)  time: 1.431089  data: 0.003575  max mem: 15684
+I20260709 09:07:17 2156979 dinov2 helpers.py:102] Training  [5020/6400]  eta: 0:32:39  loss: 76.7322 (97.1051)  lr: 0.0000 (0.0000)  time: 1.414591  data: 0.003592  max mem: 15684
+I20260709 09:07:31 2156979 dinov2 helpers.py:102] Training  [5030/6400]  eta: 0:32:25  loss: 76.7322 (97.0652)  lr: 0.0000 (0.0000)  time: 1.413839  data: 0.000572  max mem: 15684
+I20260709 09:07:45 2156979 dinov2 helpers.py:102] Training  [5040/6400]  eta: 0:32:10  loss: 76.7322 (97.0429)  lr: 0.0000 (0.0000)  time: 1.413742  data: 0.000564  max mem: 15684
+I20260709 09:07:59 2156979 dinov2 helpers.py:102] Training  [5050/6400]  eta: 0:31:56  loss: 76.7322 (96.9888)  lr: 0.0000 (0.0000)  time: 1.413843  data: 0.000591  max mem: 15684
+I20260709 09:08:08 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 09:08:08 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 09:08:14 2156979 dinov2 helpers.py:102] Training  [5060/6400]  eta: 0:31:42  loss: 76.7322 (96.9455)  lr: 0.0000 (0.0000)  time: 1.429848  data: 0.000597  max mem: 15684
+I20260709 09:08:28 2156979 dinov2 helpers.py:102] Training  [5070/6400]  eta: 0:31:28  loss: 76.2701 (96.9017)  lr: 0.0000 (0.0000)  time: 1.429517  data: 0.000578  max mem: 15684
+I20260709 09:08:42 2156979 dinov2 helpers.py:102] Training  [5080/6400]  eta: 0:31:14  loss: 76.0272 (96.8590)  lr: 0.0000 (0.0000)  time: 1.414436  data: 0.003623  max mem: 15684
+I20260709 09:08:56 2156979 dinov2 helpers.py:102] Training  [5090/6400]  eta: 0:30:59  loss: 76.2701 (96.8259)  lr: 0.0000 (0.0000)  time: 1.414555  data: 0.003634  max mem: 15684
+I20260709 09:09:10 2156979 dinov2 helpers.py:102] Training  [5100/6400]  eta: 0:30:45  loss: 76.2701 (96.7718)  lr: 0.0000 (0.0000)  time: 1.413398  data: 0.000590  max mem: 15684
+I20260709 09:09:25 2156979 dinov2 helpers.py:102] Training  [5110/6400]  eta: 0:30:31  loss: 76.0272 (96.7308)  lr: 0.0000 (0.0000)  time: 1.413298  data: 0.000576  max mem: 15684
+I20260709 09:09:37 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/model_0005119.pth
+I20260709 09:09:39 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 09:09:39 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 09:09:39 2156979 dinov2 helpers.py:102] Training  [5120/6400]  eta: 0:30:17  loss: 76.0272 (96.6948)  lr: 0.0000 (0.0000)  time: 1.439538  data: 0.000567  max mem: 15684
+I20260709 09:09:53 2156979 dinov2 helpers.py:102] Training  [5130/6400]  eta: 0:30:03  loss: 76.0272 (96.6573)  lr: 0.0000 (0.0000)  time: 1.439585  data: 0.000594  max mem: 15684
+I20260709 09:10:08 2156979 dinov2 helpers.py:102] Training  [5140/6400]  eta: 0:29:48  loss: 76.0272 (96.6189)  lr: 0.0000 (0.0000)  time: 1.414401  data: 0.003639  max mem: 15684
+I20260709 09:10:22 2156979 dinov2 helpers.py:102] Training  [5150/6400]  eta: 0:29:34  loss: 76.7322 (96.5934)  lr: 0.0000 (0.0000)  time: 1.414386  data: 0.003608  max mem: 15684
+I20260709 09:10:36 2156979 dinov2 helpers.py:102] Training  [5160/6400]  eta: 0:29:20  loss: 76.7322 (96.5592)  lr: 0.0000 (0.0000)  time: 1.413446  data: 0.000558  max mem: 15684
+I20260709 09:10:50 2156979 dinov2 helpers.py:102] Training  [5170/6400]  eta: 0:29:06  loss: 76.7322 (96.5245)  lr: 0.0000 (0.0000)  time: 1.413231  data: 0.000563  max mem: 15684
+I20260709 09:11:04 2156979 dinov2 helpers.py:102] Training  [5180/6400]  eta: 0:28:52  loss: 76.8639 (96.4891)  lr: 0.0000 (0.0000)  time: 1.413127  data: 0.000573  max mem: 15684
+I20260709 09:11:10 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 09:11:10 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 09:11:19 2156979 dinov2 helpers.py:102] Training  [5190/6400]  eta: 0:28:37  loss: 76.8639 (96.4555)  lr: 0.0000 (0.0000)  time: 1.429294  data: 0.000583  max mem: 15684
+I20260709 09:11:33 2156979 dinov2 helpers.py:102] Training  [5200/6400]  eta: 0:28:23  loss: 76.9921 (96.4192)  lr: 0.0000 (0.0000)  time: 1.429218  data: 0.000582  max mem: 15684
+I20260709 09:11:47 2156979 dinov2 helpers.py:102] Training  [5210/6400]  eta: 0:28:09  loss: 77.4617 (96.3920)  lr: 0.0000 (0.0000)  time: 1.416184  data: 0.003625  max mem: 15684
+I20260709 09:12:01 2156979 dinov2 helpers.py:102] Training  [5220/6400]  eta: 0:27:55  loss: 77.4617 (96.3380)  lr: 0.0000 (0.0000)  time: 1.416348  data: 0.003611  max mem: 15684
+I20260709 09:12:15 2156979 dinov2 helpers.py:102] Training  [5230/6400]  eta: 0:27:41  loss: 77.5187 (96.3117)  lr: 0.0000 (0.0000)  time: 1.413209  data: 0.000577  max mem: 15684
+I20260709 09:12:29 2156979 dinov2 helpers.py:102] Training  [5240/6400]  eta: 0:27:26  loss: 77.5187 (96.2825)  lr: 0.0000 (0.0000)  time: 1.412966  data: 0.000599  max mem: 15684
+I20260709 09:12:41 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 09:12:41 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 09:12:44 2156979 dinov2 helpers.py:102] Training  [5250/6400]  eta: 0:27:12  loss: 77.5187 (96.2462)  lr: 0.0000 (0.0000)  time: 1.429448  data: 0.000590  max mem: 15684
+I20260709 09:12:58 2156979 dinov2 helpers.py:102] Training  [5260/6400]  eta: 0:26:58  loss: 78.1251 (96.2236)  lr: 0.0000 (0.0000)  time: 1.429591  data: 0.000575  max mem: 15684
+I20260709 09:13:12 2156979 dinov2 helpers.py:102] Training  [5270/6400]  eta: 0:26:44  loss: 78.1251 (96.1859)  lr: 0.0000 (0.0000)  time: 1.414467  data: 0.003782  max mem: 15684
+I20260709 09:13:26 2156979 dinov2 helpers.py:102] Training  [5280/6400]  eta: 0:26:30  loss: 78.2655 (96.1577)  lr: 0.0000 (0.0000)  time: 1.414672  data: 0.003791  max mem: 15684
+I20260709 09:13:40 2156979 dinov2 helpers.py:102] Training  [5290/6400]  eta: 0:26:15  loss: 78.1251 (96.1122)  lr: 0.0000 (0.0000)  time: 1.413344  data: 0.000577  max mem: 15684
+I20260709 09:13:54 2156979 dinov2 helpers.py:102] Training  [5300/6400]  eta: 0:26:01  loss: 78.1251 (96.0680)  lr: 0.0000 (0.0000)  time: 1.413190  data: 0.000570  max mem: 15684
+I20260709 09:14:09 2156979 dinov2 helpers.py:102] Training  [5310/6400]  eta: 0:25:47  loss: 78.1251 (96.0288)  lr: 0.0000 (0.0000)  time: 1.413405  data: 0.000594  max mem: 15684
+I20260709 09:14:11 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 09:14:11 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 09:14:23 2156979 dinov2 helpers.py:102] Training  [5320/6400]  eta: 0:25:33  loss: 77.5187 (95.9912)  lr: 0.0000 (0.0000)  time: 1.429640  data: 0.000620  max mem: 15684
+I20260709 09:14:37 2156979 dinov2 helpers.py:102] Training  [5330/6400]  eta: 0:25:19  loss: 77.5187 (95.9490)  lr: 0.0000 (0.0000)  time: 1.430492  data: 0.003695  max mem: 15684
+I20260709 09:14:51 2156979 dinov2 helpers.py:102] Training  [5340/6400]  eta: 0:25:04  loss: 78.1251 (95.9265)  lr: 0.0000 (0.0000)  time: 1.414220  data: 0.003690  max mem: 15684
+I20260709 09:15:05 2156979 dinov2 helpers.py:102] Training  [5350/6400]  eta: 0:24:50  loss: 77.5187 (95.8919)  lr: 0.0000 (0.0000)  time: 1.413496  data: 0.000614  max mem: 15684
+I20260709 09:15:20 2156979 dinov2 helpers.py:102] Training  [5360/6400]  eta: 0:24:36  loss: 77.5187 (95.8634)  lr: 0.0000 (0.0000)  time: 1.413414  data: 0.000620  max mem: 15684
+I20260709 09:15:34 2156979 dinov2 helpers.py:102] Training  [5370/6400]  eta: 0:24:22  loss: 77.3931 (95.8171)  lr: 0.0000 (0.0000)  time: 1.413397  data: 0.000618  max mem: 15684
+I20260709 09:15:42 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 09:15:42 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 09:15:48 2156979 dinov2 helpers.py:102] Training  [5380/6400]  eta: 0:24:08  loss: 77.3931 (95.7958)  lr: 0.0000 (0.0000)  time: 1.430131  data: 0.000615  max mem: 15684
+I20260709 09:16:02 2156979 dinov2 helpers.py:102] Training  [5390/6400]  eta: 0:23:53  loss: 77.3931 (95.7639)  lr: 0.0000 (0.0000)  time: 1.430021  data: 0.000608  max mem: 15684
+I20260709 09:16:16 2156979 dinov2 helpers.py:102] Training  [5400/6400]  eta: 0:23:39  loss: 77.3931 (95.7322)  lr: 0.0000 (0.0000)  time: 1.414459  data: 0.003666  max mem: 15684
+I20260709 09:16:31 2156979 dinov2 helpers.py:102] Training  [5410/6400]  eta: 0:23:25  loss: 77.3931 (95.6985)  lr: 0.0000 (0.0000)  time: 1.414407  data: 0.003662  max mem: 15684
+I20260709 09:16:45 2156979 dinov2 helpers.py:102] Training  [5420/6400]  eta: 0:23:11  loss: 77.3931 (95.6645)  lr: 0.0000 (0.0000)  time: 1.413314  data: 0.000602  max mem: 15684
+I20260709 09:16:59 2156979 dinov2 helpers.py:102] Training  [5430/6400]  eta: 0:22:57  loss: 77.3931 (95.6330)  lr: 0.0000 (0.0000)  time: 1.413218  data: 0.000609  max mem: 15684
+I20260709 09:17:13 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 09:17:13 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 09:17:13 2156979 dinov2 helpers.py:102] Training  [5440/6400]  eta: 0:22:42  loss: 77.3931 (95.6042)  lr: 0.0000 (0.0000)  time: 1.429016  data: 0.000605  max mem: 15684
+I20260709 09:17:27 2156979 dinov2 helpers.py:102] Training  [5450/6400]  eta: 0:22:28  loss: 77.3931 (95.5649)  lr: 0.0000 (0.0000)  time: 1.429289  data: 0.000594  max mem: 15684
+I20260709 09:17:42 2156979 dinov2 helpers.py:102] Training  [5460/6400]  eta: 0:22:14  loss: 77.2297 (95.5240)  lr: 0.0000 (0.0000)  time: 1.414940  data: 0.003790  max mem: 15684
+I20260709 09:17:56 2156979 dinov2 helpers.py:102] Training  [5470/6400]  eta: 0:22:00  loss: 77.2297 (95.4872)  lr: 0.0000 (0.0000)  time: 1.414935  data: 0.003797  max mem: 15684
+I20260709 09:18:10 2156979 dinov2 helpers.py:102] Training  [5480/6400]  eta: 0:21:46  loss: 76.0115 (95.4391)  lr: 0.0000 (0.0000)  time: 1.413831  data: 0.000604  max mem: 15684
+I20260709 09:18:24 2156979 dinov2 helpers.py:102] Training  [5490/6400]  eta: 0:21:31  loss: 77.2297 (95.4159)  lr: 0.0000 (0.0000)  time: 1.413838  data: 0.000617  max mem: 15684
+I20260709 09:18:38 2156979 dinov2 helpers.py:102] Training  [5500/6400]  eta: 0:21:17  loss: 77.2297 (95.3749)  lr: 0.0000 (0.0000)  time: 1.413852  data: 0.000616  max mem: 15684
+I20260709 09:18:44 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 09:18:44 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 09:18:53 2156979 dinov2 helpers.py:102] Training  [5510/6400]  eta: 0:21:03  loss: 77.2297 (95.3339)  lr: 0.0000 (0.0000)  time: 1.430022  data: 0.000608  max mem: 15684
+I20260709 09:19:07 2156979 dinov2 helpers.py:102] Training  [5520/6400]  eta: 0:20:49  loss: 77.2297 (95.2874)  lr: 0.0000 (0.0000)  time: 1.430660  data: 0.003693  max mem: 15684
+I20260709 09:19:21 2156979 dinov2 helpers.py:102] Training  [5530/6400]  eta: 0:20:35  loss: 77.3931 (95.2552)  lr: 0.0000 (0.0000)  time: 1.414454  data: 0.003694  max mem: 15684
+I20260709 09:19:35 2156979 dinov2 helpers.py:102] Training  [5540/6400]  eta: 0:20:20  loss: 77.2297 (95.2226)  lr: 0.0000 (0.0000)  time: 1.413586  data: 0.000621  max mem: 15684
+I20260709 09:19:49 2156979 dinov2 helpers.py:102] Training  [5550/6400]  eta: 0:20:06  loss: 77.2297 (95.1922)  lr: 0.0000 (0.0000)  time: 1.413464  data: 0.000625  max mem: 15684
+I20260709 09:20:03 2156979 dinov2 helpers.py:102] Training  [5560/6400]  eta: 0:19:52  loss: 77.2297 (95.1660)  lr: 0.0000 (0.0000)  time: 1.413675  data: 0.000607  max mem: 15684
+I20260709 09:20:15 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 09:20:15 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 09:20:18 2156979 dinov2 helpers.py:102] Training  [5570/6400]  eta: 0:19:38  loss: 77.2297 (95.1251)  lr: 0.0000 (0.0000)  time: 1.429289  data: 0.000603  max mem: 15684
+I20260709 09:20:32 2156979 dinov2 helpers.py:102] Training  [5580/6400]  eta: 0:19:24  loss: 77.2297 (95.0961)  lr: 0.0000 (0.0000)  time: 1.429199  data: 0.000601  max mem: 15684
+I20260709 09:20:46 2156979 dinov2 helpers.py:102] Training  [5590/6400]  eta: 0:19:09  loss: 77.1399 (95.0494)  lr: 0.0000 (0.0000)  time: 1.414958  data: 0.003797  max mem: 15684
+I20260709 09:21:00 2156979 dinov2 helpers.py:102] Training  [5600/6400]  eta: 0:18:55  loss: 75.3271 (95.0041)  lr: 0.0000 (0.0000)  time: 1.415253  data: 0.003802  max mem: 15684
+I20260709 09:21:14 2156979 dinov2 helpers.py:102] Training  [5610/6400]  eta: 0:18:41  loss: 75.3271 (94.9753)  lr: 0.0000 (0.0000)  time: 1.414070  data: 0.000590  max mem: 15684
+I20260709 09:21:28 2156979 dinov2 helpers.py:102] Training  [5620/6400]  eta: 0:18:27  loss: 75.3271 (94.9483)  lr: 0.0000 (0.0000)  time: 1.413611  data: 0.000590  max mem: 15684
+I20260709 09:21:43 2156979 dinov2 helpers.py:102] Training  [5630/6400]  eta: 0:18:13  loss: 74.1654 (94.9109)  lr: 0.0000 (0.0000)  time: 1.413576  data: 0.000606  max mem: 15684
+I20260709 09:21:45 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 09:21:45 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 09:21:57 2156979 dinov2 helpers.py:102] Training  [5640/6400]  eta: 0:17:59  loss: 74.1654 (94.8819)  lr: 0.0000 (0.0000)  time: 1.429842  data: 0.000588  max mem: 15684
+I20260709 09:22:11 2156979 dinov2 helpers.py:102] Training  [5650/6400]  eta: 0:17:44  loss: 74.9238 (94.8467)  lr: 0.0000 (0.0000)  time: 1.430678  data: 0.003606  max mem: 15684
+I20260709 09:22:25 2156979 dinov2 helpers.py:102] Training  [5660/6400]  eta: 0:17:30  loss: 75.3271 (94.8186)  lr: 0.0000 (0.0000)  time: 1.414549  data: 0.003607  max mem: 15684
+I20260709 09:22:40 2156979 dinov2 helpers.py:102] Training  [5670/6400]  eta: 0:17:16  loss: 77.1399 (94.7914)  lr: 0.0000 (0.0000)  time: 1.413597  data: 0.000619  max mem: 15684
+I20260709 09:22:54 2156979 dinov2 helpers.py:102] Training  [5680/6400]  eta: 0:17:02  loss: 77.1399 (94.7475)  lr: 0.0000 (0.0000)  time: 1.413519  data: 0.000614  max mem: 15684
+I20260709 09:23:08 2156979 dinov2 helpers.py:102] Training  [5690/6400]  eta: 0:16:47  loss: 76.3841 (94.7153)  lr: 0.0000 (0.0000)  time: 1.413451  data: 0.000565  max mem: 15684
+I20260709 09:23:16 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 09:23:16 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 09:23:22 2156979 dinov2 helpers.py:102] Training  [5700/6400]  eta: 0:16:33  loss: 77.1399 (94.6884)  lr: 0.0000 (0.0000)  time: 1.428681  data: 0.000566  max mem: 15684
+I20260709 09:23:36 2156979 dinov2 helpers.py:102] Training  [5710/6400]  eta: 0:16:19  loss: 77.1399 (94.6516)  lr: 0.0000 (0.0000)  time: 1.429664  data: 0.003645  max mem: 15684
+I20260709 09:23:51 2156979 dinov2 helpers.py:102] Training  [5720/6400]  eta: 0:16:05  loss: 77.4375 (94.6249)  lr: 0.0000 (0.0000)  time: 1.414299  data: 0.003656  max mem: 15684
+I20260709 09:24:05 2156979 dinov2 helpers.py:102] Training  [5730/6400]  eta: 0:15:51  loss: 78.3387 (94.5979)  lr: 0.0000 (0.0000)  time: 1.413384  data: 0.000579  max mem: 15684
+I20260709 09:24:19 2156979 dinov2 helpers.py:102] Training  [5740/6400]  eta: 0:15:36  loss: 78.3387 (94.5655)  lr: 0.0000 (0.0000)  time: 1.413477  data: 0.000576  max mem: 15684
+I20260709 09:24:33 2156979 dinov2 helpers.py:102] Training  [5750/6400]  eta: 0:15:22  loss: 76.3841 (94.5281)  lr: 0.0000 (0.0000)  time: 1.413585  data: 0.000591  max mem: 15684
+I20260709 09:24:47 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 09:24:47 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 09:24:47 2156979 dinov2 helpers.py:102] Training  [5760/6400]  eta: 0:15:08  loss: 75.9246 (94.4950)  lr: 0.0000 (0.0000)  time: 1.429827  data: 0.000585  max mem: 15684
+I20260709 09:25:02 2156979 dinov2 helpers.py:102] Training  [5770/6400]  eta: 0:14:54  loss: 75.9246 (94.4610)  lr: 0.0000 (0.0000)  time: 1.429825  data: 0.000570  max mem: 15684
+I20260709 09:25:16 2156979 dinov2 helpers.py:102] Training  [5780/6400]  eta: 0:14:40  loss: 75.9246 (94.4364)  lr: 0.0000 (0.0000)  time: 1.414704  data: 0.003631  max mem: 15684
+I20260709 09:25:30 2156979 dinov2 helpers.py:102] Training  [5790/6400]  eta: 0:14:26  loss: 75.9246 (94.3982)  lr: 0.0000 (0.0000)  time: 1.414569  data: 0.003667  max mem: 15684
+I20260709 09:25:44 2156979 dinov2 helpers.py:102] Training  [5800/6400]  eta: 0:14:11  loss: 76.3807 (94.3672)  lr: 0.0000 (0.0000)  time: 1.413712  data: 0.000635  max mem: 15684
+I20260709 09:25:58 2156979 dinov2 helpers.py:102] Training  [5810/6400]  eta: 0:13:57  loss: 76.3807 (94.3522)  lr: 0.0000 (0.0000)  time: 1.413970  data: 0.000604  max mem: 15684
+I20260709 09:26:12 2156979 dinov2 helpers.py:102] Training  [5820/6400]  eta: 0:13:43  loss: 76.3807 (94.3258)  lr: 0.0000 (0.0000)  time: 1.413945  data: 0.000606  max mem: 15684
+I20260709 09:26:18 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 09:26:18 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 09:26:27 2156979 dinov2 helpers.py:102] Training  [5830/6400]  eta: 0:13:29  loss: 76.3807 (94.2894)  lr: 0.0000 (0.0000)  time: 1.428659  data: 0.000621  max mem: 15684
+I20260709 09:26:41 2156979 dinov2 helpers.py:102] Training  [5840/6400]  eta: 0:13:15  loss: 75.9246 (94.2552)  lr: 0.0000 (0.0000)  time: 1.429489  data: 0.003675  max mem: 15684
+I20260709 09:26:55 2156979 dinov2 helpers.py:102] Training  [5850/6400]  eta: 0:13:00  loss: 75.9246 (94.2183)  lr: 0.0000 (0.0000)  time: 1.414656  data: 0.003668  max mem: 15684
+I20260709 09:27:09 2156979 dinov2 helpers.py:102] Training  [5860/6400]  eta: 0:12:46  loss: 75.9246 (94.1993)  lr: 0.0000 (0.0000)  time: 1.413672  data: 0.000600  max mem: 15684
+I20260709 09:27:23 2156979 dinov2 helpers.py:102] Training  [5870/6400]  eta: 0:12:32  loss: 75.9246 (94.1752)  lr: 0.0000 (0.0000)  time: 1.413600  data: 0.000577  max mem: 15684
+I20260709 09:27:37 2156979 dinov2 helpers.py:102] Training  [5880/6400]  eta: 0:12:18  loss: 75.9246 (94.1401)  lr: 0.0000 (0.0000)  time: 1.413182  data: 0.000573  max mem: 15684
+I20260709 09:27:49 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 09:27:49 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 09:27:52 2156979 dinov2 helpers.py:102] Training  [5890/6400]  eta: 0:12:04  loss: 75.9246 (94.1100)  lr: 0.0000 (0.0000)  time: 1.429547  data: 0.000591  max mem: 15684
+I20260709 09:28:06 2156979 dinov2 helpers.py:102] Training  [5900/6400]  eta: 0:11:49  loss: 75.9246 (94.0891)  lr: 0.0000 (0.0000)  time: 1.430017  data: 0.000610  max mem: 15684
+I20260709 09:28:20 2156979 dinov2 helpers.py:102] Training  [5910/6400]  eta: 0:11:35  loss: 76.3807 (94.0593)  lr: 0.0000 (0.0000)  time: 1.416850  data: 0.003664  max mem: 15684
+I20260709 09:28:34 2156979 dinov2 helpers.py:102] Training  [5920/6400]  eta: 0:11:21  loss: 76.3807 (94.0387)  lr: 0.0000 (0.0000)  time: 1.416972  data: 0.003664  max mem: 15684
+I20260709 09:28:48 2156979 dinov2 helpers.py:102] Training  [5930/6400]  eta: 0:11:07  loss: 75.9246 (94.0011)  lr: 0.0000 (0.0000)  time: 1.413856  data: 0.000601  max mem: 15684
+I20260709 09:29:03 2156979 dinov2 helpers.py:102] Training  [5940/6400]  eta: 0:10:53  loss: 76.3807 (93.9781)  lr: 0.0000 (0.0000)  time: 1.413589  data: 0.000587  max mem: 15684
+I20260709 09:29:17 2156979 dinov2 helpers.py:102] Training  [5950/6400]  eta: 0:10:38  loss: 76.3807 (93.9421)  lr: 0.0000 (0.0000)  time: 1.413491  data: 0.000608  max mem: 15684
+I20260709 09:29:20 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 09:29:20 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 09:29:31 2156979 dinov2 helpers.py:102] Training  [5960/6400]  eta: 0:10:24  loss: 76.3807 (93.9093)  lr: 0.0000 (0.0000)  time: 1.430329  data: 0.000605  max mem: 15684
+I20260709 09:29:45 2156979 dinov2 helpers.py:102] Training  [5970/6400]  eta: 0:10:10  loss: 76.3821 (93.8905)  lr: 0.0000 (0.0000)  time: 1.431108  data: 0.003633  max mem: 15684
+I20260709 09:29:59 2156979 dinov2 helpers.py:102] Training  [5980/6400]  eta: 0:09:56  loss: 76.3821 (93.8698)  lr: 0.0000 (0.0000)  time: 1.414222  data: 0.003653  max mem: 15684
+I20260709 09:30:14 2156979 dinov2 helpers.py:102] Training  [5990/6400]  eta: 0:09:42  loss: 76.4232 (93.8432)  lr: 0.0000 (0.0000)  time: 1.413493  data: 0.000623  max mem: 15684
+I20260709 09:30:28 2156979 dinov2 helpers.py:102] Training  [6000/6400]  eta: 0:09:27  loss: 76.7608 (93.8148)  lr: 0.0000 (0.0000)  time: 1.413502  data: 0.000603  max mem: 15684
+I20260709 09:30:42 2156979 dinov2 helpers.py:102] Training  [6010/6400]  eta: 0:09:13  loss: 76.7608 (93.7886)  lr: 0.0000 (0.0000)  time: 1.413297  data: 0.000614  max mem: 15684
+I20260709 09:30:50 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 09:30:50 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 09:30:56 2156979 dinov2 helpers.py:102] Training  [6020/6400]  eta: 0:08:59  loss: 76.6128 (93.7602)  lr: 0.0000 (0.0000)  time: 1.430201  data: 0.000619  max mem: 15684
+I20260709 09:31:11 2156979 dinov2 helpers.py:102] Training  [6030/6400]  eta: 0:08:45  loss: 76.7608 (93.7324)  lr: 0.0000 (0.0000)  time: 1.431445  data: 0.003940  max mem: 15684
+I20260709 09:31:25 2156979 dinov2 helpers.py:102] Training  [6040/6400]  eta: 0:08:31  loss: 77.0103 (93.7144)  lr: 0.0000 (0.0000)  time: 1.414651  data: 0.003985  max mem: 15684
+I20260709 09:31:39 2156979 dinov2 helpers.py:102] Training  [6050/6400]  eta: 0:08:16  loss: 77.0103 (93.6738)  lr: 0.0000 (0.0000)  time: 1.413649  data: 0.000652  max mem: 15684
+I20260709 09:31:53 2156979 dinov2 helpers.py:102] Training  [6060/6400]  eta: 0:08:02  loss: 76.7608 (93.6415)  lr: 0.0000 (0.0000)  time: 1.413753  data: 0.000628  max mem: 15684
+I20260709 09:32:07 2156979 dinov2 helpers.py:102] Training  [6070/6400]  eta: 0:07:48  loss: 76.7608 (93.6214)  lr: 0.0000 (0.0000)  time: 1.413385  data: 0.000628  max mem: 15684
+I20260709 09:32:21 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 09:32:21 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 09:32:22 2156979 dinov2 helpers.py:102] Training  [6080/6400]  eta: 0:07:34  loss: 76.7608 (93.5889)  lr: 0.0000 (0.0000)  time: 1.429905  data: 0.000615  max mem: 15684
+I20260709 09:32:36 2156979 dinov2 helpers.py:102] Training  [6090/6400]  eta: 0:07:20  loss: 77.0103 (93.5708)  lr: 0.0000 (0.0000)  time: 1.430146  data: 0.000615  max mem: 15684
+I20260709 09:32:50 2156979 dinov2 helpers.py:102] Training  [6100/6400]  eta: 0:07:05  loss: 77.0103 (93.5464)  lr: 0.0000 (0.0000)  time: 1.414614  data: 0.003638  max mem: 15684
+I20260709 09:33:04 2156979 dinov2 helpers.py:102] Training  [6110/6400]  eta: 0:06:51  loss: 77.0103 (93.5181)  lr: 0.0000 (0.0000)  time: 1.414588  data: 0.003625  max mem: 15684
+I20260709 09:33:18 2156979 dinov2 helpers.py:102] Training  [6120/6400]  eta: 0:06:37  loss: 76.7608 (93.4882)  lr: 0.0000 (0.0000)  time: 1.413554  data: 0.000604  max mem: 15684
+I20260709 09:33:32 2156979 dinov2 helpers.py:102] Training  [6130/6400]  eta: 0:06:23  loss: 76.7608 (93.4601)  lr: 0.0000 (0.0000)  time: 1.413748  data: 0.000622  max mem: 15684
+I20260709 09:33:46 2156979 dinov2 helpers.py:102] Training  [6140/6400]  eta: 0:06:09  loss: 76.7608 (93.4344)  lr: 0.0000 (0.0000)  time: 1.413682  data: 0.000623  max mem: 15684
+I20260709 09:33:52 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 09:33:52 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 09:34:01 2156979 dinov2 helpers.py:102] Training  [6150/6400]  eta: 0:05:54  loss: 77.0103 (93.4135)  lr: 0.0000 (0.0000)  time: 1.431226  data: 0.000627  max mem: 15684
+I20260709 09:34:15 2156979 dinov2 helpers.py:102] Training  [6160/6400]  eta: 0:05:40  loss: 77.0103 (93.3828)  lr: 0.0000 (0.0000)  time: 1.431969  data: 0.003619  max mem: 15684
+I20260709 09:34:29 2156979 dinov2 helpers.py:102] Training  [6170/6400]  eta: 0:05:26  loss: 77.0103 (93.3626)  lr: 0.0000 (0.0000)  time: 1.414212  data: 0.003608  max mem: 15684
+I20260709 09:34:43 2156979 dinov2 helpers.py:102] Training  [6180/6400]  eta: 0:05:12  loss: 77.0103 (93.3415)  lr: 0.0000 (0.0000)  time: 1.413628  data: 0.000609  max mem: 15684
+I20260709 09:34:57 2156979 dinov2 helpers.py:102] Training  [6190/6400]  eta: 0:04:58  loss: 77.0103 (93.3262)  lr: 0.0000 (0.0000)  time: 1.413699  data: 0.000605  max mem: 15684
+I20260709 09:35:12 2156979 dinov2 helpers.py:102] Training  [6200/6400]  eta: 0:04:43  loss: 77.6419 (93.3019)  lr: 0.0000 (0.0000)  time: 1.413443  data: 0.000603  max mem: 15684
+I20260709 09:35:23 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 09:35:23 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 09:35:26 2156979 dinov2 helpers.py:102] Training  [6210/6400]  eta: 0:04:29  loss: 77.0103 (93.2628)  lr: 0.0000 (0.0000)  time: 1.429186  data: 0.000609  max mem: 15684
+I20260709 09:35:40 2156979 dinov2 helpers.py:102] Training  [6220/6400]  eta: 0:04:15  loss: 77.6419 (93.2482)  lr: 0.0000 (0.0000)  time: 1.430228  data: 0.003761  max mem: 15684
+I20260709 09:35:54 2156979 dinov2 helpers.py:102] Training  [6230/6400]  eta: 0:04:01  loss: 77.6419 (93.2191)  lr: 0.0000 (0.0000)  time: 1.414404  data: 0.003760  max mem: 15684
+I20260709 09:36:08 2156979 dinov2 helpers.py:102] Training  [6240/6400]  eta: 0:03:47  loss: 76.2366 (93.1879)  lr: 0.0000 (0.0000)  time: 1.413279  data: 0.000606  max mem: 15684
+I20260709 09:36:23 2156979 dinov2 helpers.py:102] Training  [6250/6400]  eta: 0:03:32  loss: 76.2366 (93.1578)  lr: 0.0000 (0.0000)  time: 1.413289  data: 0.000605  max mem: 15684
+I20260709 09:36:37 2156979 dinov2 helpers.py:102] Training  [6260/6400]  eta: 0:03:18  loss: 77.6419 (93.1335)  lr: 0.0000 (0.0000)  time: 1.413387  data: 0.000599  max mem: 15684
+I20260709 09:36:51 2156979 dinov2 helpers.py:102] Training  [6270/6400]  eta: 0:03:04  loss: 77.6419 (93.1111)  lr: 0.0000 (0.0000)  time: 1.413439  data: 0.000593  max mem: 15684
+I20260709 09:36:54 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 09:36:54 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 09:37:05 2156979 dinov2 helpers.py:102] Training  [6280/6400]  eta: 0:02:50  loss: 77.6419 (93.0831)  lr: 0.0000 (0.0000)  time: 1.429933  data: 0.000602  max mem: 15684
+I20260709 09:37:19 2156979 dinov2 helpers.py:102] Training  [6290/6400]  eta: 0:02:36  loss: 76.2366 (93.0482)  lr: 0.0000 (0.0000)  time: 1.430737  data: 0.003619  max mem: 15684
+I20260709 09:37:34 2156979 dinov2 helpers.py:102] Training  [6300/6400]  eta: 0:02:21  loss: 76.2366 (93.0353)  lr: 0.0000 (0.0000)  time: 1.414178  data: 0.003603  max mem: 15684
+I20260709 09:37:48 2156979 dinov2 helpers.py:102] Training  [6310/6400]  eta: 0:02:07  loss: 77.6419 (93.0120)  lr: 0.0000 (0.0000)  time: 1.413360  data: 0.000587  max mem: 15684
+I20260709 09:38:02 2156979 dinov2 helpers.py:102] Training  [6320/6400]  eta: 0:01:53  loss: 77.6419 (92.9875)  lr: 0.0000 (0.0000)  time: 1.413202  data: 0.000586  max mem: 15684
+I20260709 09:38:16 2156979 dinov2 helpers.py:102] Training  [6330/6400]  eta: 0:01:39  loss: 77.6419 (92.9614)  lr: 0.0000 (0.0000)  time: 1.413200  data: 0.000585  max mem: 15684
+I20260709 09:38:24 2156979 dinov2 linear.py:377] Checkpointing running_checkpoint
+I20260709 09:38:24 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/running_checkpoint_linear_eval.pth
+I20260709 09:38:30 2156979 dinov2 helpers.py:102] Training  [6340/6400]  eta: 0:01:25  loss: 77.5236 (92.9289)  lr: 0.0000 (0.0000)  time: 1.429643  data: 0.000574  max mem: 15684
+I20260709 09:38:45 2156979 dinov2 helpers.py:102] Training  [6350/6400]  eta: 0:01:10  loss: 77.5236 (92.9119)  lr: 0.0000 (0.0000)  time: 1.430574  data: 0.003588  max mem: 15684
+I20260709 09:38:59 2156979 dinov2 helpers.py:102] Training  [6360/6400]  eta: 0:00:56  loss: 77.5236 (92.8792)  lr: 0.0000 (0.0000)  time: 1.414448  data: 0.003591  max mem: 15684
+I20260709 09:39:13 2156979 dinov2 helpers.py:102] Training  [6370/6400]  eta: 0:00:42  loss: 76.4307 (92.8529)  lr: 0.0000 (0.0000)  time: 1.413606  data: 0.000564  max mem: 15684
+I20260709 09:39:27 2156979 dinov2 helpers.py:102] Training  [6380/6400]  eta: 0:00:28  loss: 76.4307 (92.8282)  lr: 0.0000 (0.0000)  time: 1.413757  data: 0.000563  max mem: 15684
+I20260709 09:39:41 2156979 dinov2 helpers.py:102] Training  [6390/6400]  eta: 0:00:14  loss: 76.0983 (92.8010)  lr: 0.0000 (0.0000)  time: 1.413719  data: 0.000560  max mem: 15684
+I20260709 09:39:54 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/model_0006399.pth
+I20260709 09:39:54 2156979 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing/stanford_cars/unitok/model_final.pth
+I20260709 09:39:54 2156979 dinov2 helpers.py:102] Training  [6399/6400]  eta: 0:00:01  loss: 76.0983 (92.8010)  lr: 0.0000 (0.0000)  time: 1.435401  data: 0.000573  max mem: 15684
+I20260709 09:39:54 2156979 dinov2 helpers.py:130] Training Total time: 2:31:26 (1.419750 s / it)
+I20260709 09:39:54 2156979 dinov2 linear.py:272] running validation !
+I20260709 09:39:58 2156979 dinov2 helpers.py:102] Test:  [ 0/63]  eta: 0:03:51    time: 3.682373  data: 2.061957  max mem: 15780
+I20260709 09:40:12 2156979 dinov2 helpers.py:102] Test:  [10/63]  eta: 0:01:26    time: 1.636337  data: 0.187675  max mem: 15908
+I20260709 09:40:27 2156979 dinov2 helpers.py:102] Test:  [20/63]  eta: 0:01:06    time: 1.431506  data: 0.000257  max mem: 15908
+I20260709 09:40:41 2156979 dinov2 helpers.py:102] Test:  [30/63]  eta: 0:00:49    time: 1.432207  data: 0.000294  max mem: 15908
+I20260709 09:40:55 2156979 dinov2 helpers.py:102] Test:  [40/63]  eta: 0:00:34    time: 1.433002  data: 0.000398  max mem: 15908
+I20260709 09:41:10 2156979 dinov2 helpers.py:102] Test:  [50/63]  eta: 0:00:19    time: 1.432577  data: 0.000369  max mem: 15908
+I20260709 09:41:24 2156979 dinov2 helpers.py:102] Test:  [60/63]  eta: 0:00:04    time: 1.432125  data: 0.000220  max mem: 15908
+I20260709 09:41:27 2156979 dinov2 helpers.py:102] Test:  [62/63]  eta: 0:00:01    time: 1.420333  data: 0.000207  max mem: 15908
+I20260709 09:41:27 2156979 dinov2 helpers.py:130] Test: Total time: 0:01:32 (1.467366 s / it)
+I20260709 09:41:27 2156979 dinov2 utils.py:79] Averaged stats: 
+I20260709 09:41:27 2156979 dinov2 linear.py:287] 
+I20260709 09:41:27 2156979 dinov2 linear.py:292]  -- Classifier: classifier_1_blocks_avgpool_False_lr_0_00001 * {'top-1': tensor(0.0878, device='cuda:0'), 'top-5': tensor(0.2691, device='cuda:0')}
+I20260709 09:41:27 2156979 dinov2 linear.py:292]  -- Classifier: classifier_1_blocks_avgpool_False_lr_0_00003 * {'top-1': tensor(0.3716, device='cuda:0'), 'top-5': tensor(0.7324, device='cuda:0')}
+I20260709 09:41:27 2156979 dinov2 linear.py:292]  -- Classifier: classifier_1_blocks_avgpool_False_lr_0_00005 * {'top-1': tensor(0.6033, device='cuda:0'), 'top-5': tensor(0.9382, device='cuda:0')}
+I20260709 09:41:27 2156979 dinov2 linear.py:292]  -- Classifier: classifier_1_blocks_avgpool_False_lr_0_00010 * {'top-1': tensor(0.7620, device='cuda:0'), 'top-5': tensor(0.9853, device='cuda:0')}
+I20260709 09:41:27 2156979 dinov2 linear.py:292]  -- Classifier: classifier_1_blocks_avgpool_False_lr_0_00025 * {'top-1': tensor(0.8674, device='cuda:0'), 'top-5': tensor(0.9954, device='cuda:0')}
+I20260709 09:41:27 2156979 dinov2 linear.py:292]  -- Classifier: classifier_1_blocks_avgpool_False_lr_0_00050 * {'top-1': tensor(0.8965, device='cuda:0'), 'top-5': tensor(0.9973, device='cuda:0')}
+I20260709 09:41:27 2156979 dinov2 linear.py:292]  -- Classifier: classifier_1_blocks_avgpool_False_lr_0_00100 * {'top-1': tensor(0.9116, device='cuda:0'), 'top-5': tensor(0.9974, device='cuda:0')}
+I20260709 09:41:27 2156979 dinov2 linear.py:292]  -- Classifier: classifier_1_blocks_avgpool_False_lr_0_00250 * {'top-1': tensor(0.9185, device='cuda:0'), 'top-5': tensor(0.9974, device='cuda:0')}
+I20260709 09:41:27 2156979 dinov2 linear.py:292]  -- Classifier: classifier_1_blocks_avgpool_False_lr_0_00500 * {'top-1': tensor(0.9213, device='cuda:0'), 'top-5': tensor(0.9974, device='cuda:0')}
+I20260709 09:41:27 2156979 dinov2 linear.py:292]  -- Classifier: classifier_1_blocks_avgpool_False_lr_0_01000 * {'top-1': tensor(0.9199, device='cuda:0'), 'top-5': tensor(0.9973, device='cuda:0')}
+I20260709 09:41:27 2156979 dinov2 linear.py:292]  -- Classifier: classifier_1_blocks_avgpool_False_lr_0_02500 * {'top-1': tensor(0.9190, device='cuda:0'), 'top-5': tensor(0.9973, device='cuda:0')}
+I20260709 09:41:27 2156979 dinov2 linear.py:292]  -- Classifier: classifier_1_blocks_avgpool_False_lr_0_05000 * {'top-1': tensor(0.9137, device='cuda:0'), 'top-5': tensor(0.9968, device='cuda:0')}
+I20260709 09:41:27 2156979 dinov2 linear.py:292]  -- Classifier: classifier_1_blocks_avgpool_True_lr_0_00001 * {'top-1': tensor(0.1019, device='cuda:0'), 'top-5': tensor(0.2944, device='cuda:0')}
+I20260709 09:41:27 2156979 dinov2 linear.py:292]  -- Classifier: classifier_1_blocks_avgpool_True_lr_0_00003 * {'top-1': tensor(0.3833, device='cuda:0'), 'top-5': tensor(0.7659, device='cuda:0')}
+I20260709 09:41:27 2156979 dinov2 linear.py:292]  -- Classifier: classifier_1_blocks_avgpool_True_lr_0_00005 * {'top-1': tensor(0.6274, device='cuda:0'), 'top-5': tensor(0.9432, device='cuda:0')}
+I20260709 09:41:27 2156979 dinov2 linear.py:292]  -- Classifier: classifier_1_blocks_avgpool_True_lr_0_00010 * {'top-1': tensor(0.7723, device='cuda:0'), 'top-5': tensor(0.9851, device='cuda:0')}
+I20260709 09:41:27 2156979 dinov2 linear.py:292]  -- Classifier: classifier_1_blocks_avgpool_True_lr_0_00025 * {'top-1': tensor(0.8718, device='cuda:0'), 'top-5': tensor(0.9961, device='cuda:0')}
+I20260709 09:41:27 2156979 dinov2 linear.py:292]  -- Classifier: classifier_1_blocks_avgpool_True_lr_0_00050 * {'top-1': tensor(0.8998, device='cuda:0'), 'top-5': tensor(0.9969, device='cuda:0')}
+I20260709 09:41:27 2156979 dinov2 linear.py:292]  -- Classifier: classifier_1_blocks_avgpool_True_lr_0_00100 * {'top-1': tensor(0.9112, device='cuda:0'), 'top-5': tensor(0.9971, device='cuda:0')}
+I20260709 09:41:27 2156979 dinov2 linear.py:292]  -- Classifier: classifier_1_blocks_avgpool_True_lr_0_00250 * {'top-1': tensor(0.9193, device='cuda:0'), 'top-5': tensor(0.9973, device='cuda:0')}
+I20260709 09:41:27 2156979 dinov2 linear.py:292]  -- Classifier: classifier_1_blocks_avgpool_True_lr_0_00500 * {'top-1': tensor(0.9194, device='cuda:0'), 'top-5': tensor(0.9973, device='cuda:0')}
+I20260709 09:41:27 2156979 dinov2 linear.py:292]  -- Classifier: classifier_1_blocks_avgpool_True_lr_0_01000 * {'top-1': tensor(0.9202, device='cuda:0'), 'top-5': tensor(0.9974, device='cuda:0')}
+I20260709 09:41:27 2156979 dinov2 linear.py:292]  -- Classifier: classifier_1_blocks_avgpool_True_lr_0_02500 * {'top-1': tensor(0.9169, device='cuda:0'), 'top-5': tensor(0.9966, device='cuda:0')}
+I20260709 09:41:27 2156979 dinov2 linear.py:292]  -- Classifier: classifier_1_blocks_avgpool_True_lr_0_05000 * {'top-1': tensor(0.9131, device='cuda:0'), 'top-5': tensor(0.9968, device='cuda:0')}
+I20260709 09:41:27 2156979 dinov2 linear.py:292]  -- Classifier: classifier_4_blocks_avgpool_False_lr_0_00001 * {'top-1': tensor(0.3311, device='cuda:0'), 'top-5': tensor(0.6851, device='cuda:0')}
+I20260709 09:41:27 2156979 dinov2 linear.py:292]  -- Classifier: classifier_4_blocks_avgpool_False_lr_0_00003 * {'top-1': tensor(0.6684, device='cuda:0'), 'top-5': tensor(0.9608, device='cuda:0')}
+I20260709 09:41:27 2156979 dinov2 linear.py:292]  -- Classifier: classifier_4_blocks_avgpool_False_lr_0_00005 * {'top-1': tensor(0.8164, device='cuda:0'), 'top-5': tensor(0.9919, device='cuda:0')}
+I20260709 09:41:27 2156979 dinov2 linear.py:292]  -- Classifier: classifier_4_blocks_avgpool_False_lr_0_00010 * {'top-1': tensor(0.8761, device='cuda:0'), 'top-5': tensor(0.9975, device='cuda:0')}
+I20260709 09:41:27 2156979 dinov2 linear.py:292]  -- Classifier: classifier_4_blocks_avgpool_False_lr_0_00025 * {'top-1': tensor(0.9076, device='cuda:0'), 'top-5': tensor(0.9974, device='cuda:0')}
+I20260709 09:41:27 2156979 dinov2 linear.py:292]  -- Classifier: classifier_4_blocks_avgpool_False_lr_0_00050 * {'top-1': tensor(0.9141, device='cuda:0'), 'top-5': tensor(0.9973, device='cuda:0')}
+I20260709 09:41:27 2156979 dinov2 linear.py:292]  -- Classifier: classifier_4_blocks_avgpool_False_lr_0_00100 * {'top-1': tensor(0.9180, device='cuda:0'), 'top-5': tensor(0.9975, device='cuda:0')}
+I20260709 09:41:27 2156979 dinov2 linear.py:292]  -- Classifier: classifier_4_blocks_avgpool_False_lr_0_00250 * {'top-1': tensor(0.9215, device='cuda:0'), 'top-5': tensor(0.9970, device='cuda:0')}
+I20260709 09:41:27 2156979 dinov2 linear.py:292]  -- Classifier: classifier_4_blocks_avgpool_False_lr_0_00500 * {'top-1': tensor(0.9199, device='cuda:0'), 'top-5': tensor(0.9971, device='cuda:0')}
+I20260709 09:41:27 2156979 dinov2 linear.py:292]  -- Classifier: classifier_4_blocks_avgpool_False_lr_0_01000 * {'top-1': tensor(0.9163, device='cuda:0'), 'top-5': tensor(0.9970, device='cuda:0')}
+I20260709 09:41:27 2156979 dinov2 linear.py:292]  -- Classifier: classifier_4_blocks_avgpool_False_lr_0_02500 * {'top-1': tensor(0.9085, device='cuda:0'), 'top-5': tensor(0.9964, device='cuda:0')}
+I20260709 09:41:27 2156979 dinov2 linear.py:292]  -- Classifier: classifier_4_blocks_avgpool_False_lr_0_05000 * {'top-1': tensor(0.9052, device='cuda:0'), 'top-5': tensor(0.9963, device='cuda:0')}
+I20260709 09:41:27 2156979 dinov2 linear.py:292]  -- Classifier: classifier_4_blocks_avgpool_True_lr_0_00001 * {'top-1': tensor(0.3500, device='cuda:0'), 'top-5': tensor(0.6984, device='cuda:0')}
+I20260709 09:41:27 2156979 dinov2 linear.py:292]  -- Classifier: classifier_4_blocks_avgpool_True_lr_0_00003 * {'top-1': tensor(0.6722, device='cuda:0'), 'top-5': tensor(0.9663, device='cuda:0')}
+I20260709 09:41:27 2156979 dinov2 linear.py:292]  -- Classifier: classifier_4_blocks_avgpool_True_lr_0_00005 * {'top-1': tensor(0.8171, device='cuda:0'), 'top-5': tensor(0.9929, device='cuda:0')}
+I20260709 09:41:27 2156979 dinov2 linear.py:292]  -- Classifier: classifier_4_blocks_avgpool_True_lr_0_00010 * {'top-1': tensor(0.8822, device='cuda:0'), 'top-5': tensor(0.9961, device='cuda:0')}
+I20260709 09:41:27 2156979 dinov2 linear.py:292]  -- Classifier: classifier_4_blocks_avgpool_True_lr_0_00025 * {'top-1': tensor(0.9054, device='cuda:0'), 'top-5': tensor(0.9970, device='cuda:0')}
+I20260709 09:41:27 2156979 dinov2 linear.py:292]  -- Classifier: classifier_4_blocks_avgpool_True_lr_0_00050 * {'top-1': tensor(0.9172, device='cuda:0'), 'top-5': tensor(0.9973, device='cuda:0')}
+I20260709 09:41:27 2156979 dinov2 linear.py:292]  -- Classifier: classifier_4_blocks_avgpool_True_lr_0_00100 * {'top-1': tensor(0.9192, device='cuda:0'), 'top-5': tensor(0.9975, device='cuda:0')}
+I20260709 09:41:27 2156979 dinov2 linear.py:292]  -- Classifier: classifier_4_blocks_avgpool_True_lr_0_00250 * {'top-1': tensor(0.9194, device='cuda:0'), 'top-5': tensor(0.9971, device='cuda:0')}
+I20260709 09:41:27 2156979 dinov2 linear.py:292]  -- Classifier: classifier_4_blocks_avgpool_True_lr_0_00500 * {'top-1': tensor(0.9174, device='cuda:0'), 'top-5': tensor(0.9971, device='cuda:0')}
+I20260709 09:41:27 2156979 dinov2 linear.py:292]  -- Classifier: classifier_4_blocks_avgpool_True_lr_0_01000 * {'top-1': tensor(0.9156, device='cuda:0'), 'top-5': tensor(0.9968, device='cuda:0')}
+I20260709 09:41:27 2156979 dinov2 linear.py:292]  -- Classifier: classifier_4_blocks_avgpool_True_lr_0_02500 * {'top-1': tensor(0.9081, device='cuda:0'), 'top-5': tensor(0.9964, device='cuda:0')}
+I20260709 09:41:27 2156979 dinov2 linear.py:292]  -- Classifier: classifier_4_blocks_avgpool_True_lr_0_05000 * {'top-1': tensor(0.9056, device='cuda:0'), 'top-5': tensor(0.9961, device='cuda:0')}
+I20260709 09:41:27 2156979 dinov2 linear.py:301] best classifier: {'name': 'classifier_4_blocks_avgpool_False_lr_0_00250', 'accuracy': 0.9215271472930908}
+I20260709 09:41:27 2156979 dinov2 linear.py:606] Test Results Dict {'best_classifier': 'classifier_4_blocks_avgpool_False_lr_0_00250', 'HFDataset:name=stanford_cars:split=VAL:root=/cache/ma-user/VTBenchLab/data/hf_datasets_accuracy': 92.15271472930908}

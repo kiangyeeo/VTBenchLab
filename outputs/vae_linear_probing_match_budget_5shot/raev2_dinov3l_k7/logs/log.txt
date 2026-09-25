@@ -1,0 +1,38 @@
+I20260912 14:41:59 99442 dinov3 vision_transformer.py:112] using base=100 for rope new
+I20260912 14:41:59 99442 dinov3 vision_transformer.py:113] using min_period=None for rope new
+I20260912 14:41:59 99442 dinov3 vision_transformer.py:114] using max_period=None for rope new
+I20260912 14:41:59 99442 dinov3 vision_transformer.py:115] using normalize_coords=separate for rope new
+I20260912 14:41:59 99442 dinov3 vision_transformer.py:116] using shift_coords=None for rope new
+I20260912 14:41:59 99442 dinov3 vision_transformer.py:117] using rescale_coords=2 for rope new
+I20260912 14:41:59 99442 dinov3 vision_transformer.py:118] using jitter_coords=None for rope new
+I20260912 14:41:59 99442 dinov3 vision_transformer.py:119] using dtype=fp32 for rope new
+I20260912 14:41:59 99442 dinov3 vision_transformer.py:133] using mlp layer as FFN
+I20260912 14:42:03 99442 dinov2 loaders.py:96] using dataset: "ImageNet:split=TRAIN:root=/cache/ma-user/VTBenchLab/data/imagenet1k:extra=/cache/ma-user/VTBenchLab/data/imagenet1k/extra"
+I20260912 14:42:03 99442 dinov2 loaders.py:101] # of dataset samples: 1,281,167
+I20260912 14:42:04 99442 dinov2 loaders.py:96] using dataset: "ImageNet:split=VAL:root=/cache/ma-user/VTBenchLab/data/imagenet1k:extra=/cache/ma-user/VTBenchLab/data/imagenet1k/extra"
+I20260912 14:42:04 99442 dinov2 loaders.py:101] # of dataset samples: 50,000
+I20260912 14:42:05 99442 dinov2 linear_probe.py:877] Protocol: {"backbone_precision": "float32", "base_learning_rates": [0.0001, 0.0002, 0.0005, 0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.3, 0.5], "bias": true, "budget_scope": "5,000 frozen-tokenizer training forwards; official validation forwards are reported separately", "checkpoint_paths": ["/cache/ma-user/VTBenchLab/TokBench/tokenizer_modelzoo/RAEv2-models/encoders/dinov3/dinov3_vitl16_pretrain_lvd1689m-8aa4cbdd.pth", "/cache/ma-user/VTBenchLab/TokBench/tokenizer_modelzoo/RAEv2-models/stage1/imagenet/dinov3l-k7/stats.pt", "/cache/ma-user/VTBenchLab/TokBench/tokenzier_vae_scripts/image_scripts/RAEv2", "/cache/ma-user/VTBenchLab/TokBench/tokenzier_vae_scripts/image_scripts/dinov3"], "cuda_matmul_tf32": true, "cudnn_tf32": true, "dataset": "ImageNet-1k", "effective_learning_rates": [0.000390625, 0.00078125, 0.001953125, 0.00390625, 0.0078125, 0.01953125, 0.0390625, 0.078125, 0.1953125, 0.390625, 0.78125, 1.171875, 1.953125], "epoch_length_updates": 5, "epochs": 1, "eval_period_updates": 5, "feature_extraction_microbatch_size": 128, "feature_microbatch_semantics": "frozen backbone only; concatenate one FP32 [global_batch,D] tensor before linear heads", "feature_normalization": false, "fingerprint": "3c37ea75304fd1df27d22e9e996419ffeac8dcc52851ae8f8045523ee0e0ce5a", "global_batch_size": 1000, "gradient_accumulation_steps": 1, "head_bias_init": 0.0, "head_weight_init": "normal(mean=0,std=0.01)", "linear_head_precision": "float32", "loss": "cross_entropy", "lr_scaling": "effective_lr = base_lr * global_batch_size / 256", "lr_schedule": "cosine_to_zero", "max_updates": 5, "model": "raev2_dinov3l_k7", "model_rank": 51, "momentum": 0.9, "multi_block_search": false, "num_classes": 1000, "official_train_samples": 1281167, "optimizer": "SGD", "probe_head": "Linear", "probe_head_source": "scripts/linear_probe_tokenizers/linear_probe.py", "readout_search": false, "representation": "spatial mean of the normalized RAEv2 DINOv3-L/16 K=7 multi-layer tokenizer latent", "samples_drawn_per_epoch": 5000, "seed": 0, "shots_per_class": 5, "single_gpu": true, "support_indices_sha256": "681151991440c47050719cb1908502ca841f995f0965577403e9f163a99abf8f", "support_seed": 0, "train_samples": 5000, "train_sampling": "exactly 5 distinct images per class without replacement", "train_split": "fixed class-balanced subset of official train", "transform": "train=RandomResizedCrop(256)+HorizontalFlip(0.5), eval=Resize(256)+CenterCrop(256), transform output in [0,1]; encoder-internal normalization mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)", "validation_batch_size": 1024, "validation_feature_extraction_microbatch_size": 128, "validation_samples": 50000, "validation_split": "official ImageNet-1k validation (50,000 images)", "version": "tokenizer_linear_probe_imagenet_5shot_1epoch_v1", "vision_encoder": "raev2_dinov3l_k7", "warmup_updates": 0, "weight_decay": 0.0}
+I20260912 14:42:05 99442 dinov2 linear_probe.py:878] Feature dimension=1024; heads=13
+I20260912 14:42:05 99442 fvcore.common.checkpoint checkpoint.py:148] No checkpoint found. Initializing model from scratch
+I20260912 14:42:05 99442 dinov2 loaders.py:134] sampler: sharded infinite
+I20260912 14:42:05 99442 dinov2 loaders.py:218] using PyTorch data loader
+I20260912 14:42:05 99442 dinov2 loaders.py:233] infinite data loader
+I20260912 14:42:05 99442 dinov2 loaders.py:159] sampler: distributed
+I20260912 14:42:05 99442 dinov2 loaders.py:218] using PyTorch data loader
+I20260912 14:42:05 99442 dinov2 loaders.py:231] # of batches: 49
+I20260912 14:42:05 99442 dinov2 linear_probe.py:924] Starting raev2_dinov3l_k7 from update 0/5 with requested cutoff epoch=1 (5 updates), optimization global batch 1000, and frozen-backbone feature microbatch 128 (validation 128)
+I20260912 14:42:14 99442 dinov2 helpers.py:102] Training  [0/5]  eta: 0:00:45  loss: 90.1873 (90.1873)  lr: 0.0004 (0.0004)  time: 9.054787  data: 5.679966  max mem: 3635
+I20260912 14:42:25 99442 dinov2 helpers.py:102] Training  [4/5]  eta: 0:00:04  loss: 90.1873 (90.1873)  lr: 0.0004 (0.0004)  time: 4.000300  data: 1.144197  max mem: 3745
+I20260912 14:42:25 99442 dinov2 helpers.py:130] Training Total time: 0:00:20 (4.000681 s / it)
+I20260912 14:42:28 99442 dinov2 linear_probe.py:1015] Released training batches and DataLoader workers before cutoff validation
+I20260912 14:42:28 99442 fvcore.common.checkpoint checkpoint.py:124] Saving checkpoint to /cache/ma-user/VTBenchLab/outputs/vae_linear_probing_match_budget_5shot/raev2_dinov3l_k7/model_final.pth
+I20260912 14:42:57 99442 dinov2 helpers.py:102] Test:  [ 0/49]  eta: 0:23:21    time: 28.591961  data: 25.088213  max mem: 4367
+I20260912 14:47:45 99442 dinov2 helpers.py:102] Test:  [10/49]  eta: 0:18:44    time: 28.820532  data: 25.997608  max mem: 4376
+I20260912 14:52:29 99442 dinov2 helpers.py:102] Test:  [20/49]  eta: 0:13:50    time: 28.647146  data: 25.893116  max mem: 4376
+I20260912 14:57:12 99442 dinov2 helpers.py:102] Test:  [30/49]  eta: 0:09:01    time: 28.328686  data: 25.575741  max mem: 4376
+I20260912 15:01:56 99442 dinov2 helpers.py:102] Test:  [40/49]  eta: 0:04:16    time: 28.345493  data: 25.593777  max mem: 4376
+I20260912 15:05:41 99442 dinov2 helpers.py:102] Test:  [48/49]  eta: 0:00:28    time: 28.281103  data: 25.553391  max mem: 4376
+I20260912 15:05:41 99442 dinov2 helpers.py:130] Test: Total time: 0:23:12 (28.423797 s / it)
+I20260912 15:05:41 99442 dinov2 utils.py:83] Averaged stats: 
+I20260912 15:05:41 99442 dinov2 linear_probe.py:799] Validation at update 5: best={'name': 'classifier_fixed_readout_lr_1_953125', 'accuracy': 0.36673998832702637, 'top5_accuracy': 0.6289399862289429, 'base_lr': 0.5, 'configured_lr': 0.5, 'effective_lr': 1.953125, 'lr_boundary': 'high', 'readout': 'fixed_preselected_representation'}
+I20260912 15:05:41 99442 dinov2 linear_probe.py:1049] Final result: {'name': 'classifier_fixed_readout_lr_1_953125', 'accuracy': 0.36673998832702637, 'top5_accuracy': 0.6289399862289429, 'base_lr': 0.5, 'configured_lr': 0.5, 'effective_lr': 1.953125, 'lr_boundary': 'high', 'readout': 'fixed_preselected_representation'}

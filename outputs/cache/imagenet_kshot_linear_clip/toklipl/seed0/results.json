@@ -1,0 +1,83 @@
+{
+  "protocol": "OpenAI CLIP README logistic-regression linear probe",
+  "model": "toklipl",
+  "dataset": "ImageNet-1K",
+  "seed": 0,
+  "shots": [
+    1,
+    2,
+    4,
+    8,
+    16
+  ],
+  "support_split": "/cache/ma-user/VTBenchLab/outputs/imagenet_kshot_linear_clip/splits/imagenet1k_seed0_max16.npz",
+  "feature_dim": 1152,
+  "feature_surface": "TokLIP-L semantic visual representation before the output head",
+  "feature_normalized": false,
+  "preprocessing": "deterministic model-native resize/center-crop",
+  "feature_extraction_batch_size": 100,
+  "classifier": "sklearn.linear_model.LogisticRegression(solver='lbfgs')",
+  "classifier_config": {
+    "random_state": 0,
+    "C": 0.316,
+    "max_iter": 1000,
+    "tol": 0.0001
+  },
+  "results": [
+    {
+      "shot": 1,
+      "train_samples": 1000,
+      "top1": 47.658,
+      "top5": 72.346,
+      "C": 0.316,
+      "max_iter": 1000,
+      "n_iter_max": 55,
+      "converged": true,
+      "elapsed_seconds": 17.06168246269226
+    },
+    {
+      "shot": 2,
+      "train_samples": 2000,
+      "top1": 61.5,
+      "top5": 85.214,
+      "C": 0.316,
+      "max_iter": 1000,
+      "n_iter_max": 49,
+      "converged": true,
+      "elapsed_seconds": 18.590133905410767
+    },
+    {
+      "shot": 4,
+      "train_samples": 4000,
+      "top1": 71.06,
+      "top5": 91.662,
+      "C": 0.316,
+      "max_iter": 1000,
+      "n_iter_max": 34,
+      "converged": true,
+      "elapsed_seconds": 20.902446508407593
+    },
+    {
+      "shot": 8,
+      "train_samples": 8000,
+      "top1": 75.992,
+      "top5": 93.908,
+      "C": 0.316,
+      "max_iter": 1000,
+      "n_iter_max": 40,
+      "converged": true,
+      "elapsed_seconds": 39.303396701812744
+    },
+    {
+      "shot": 16,
+      "train_samples": 16000,
+      "top1": 78.496,
+      "top5": 95.08,
+      "C": 0.316,
+      "max_iter": 1000,
+      "n_iter_max": 66,
+      "converged": true,
+      "elapsed_seconds": 106.6854076385498
+    }
+  ]
+}
